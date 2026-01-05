@@ -1087,9 +1087,14 @@ static int luaopen_lvgl(lua_State* L) {
     lua_pushinteger(L, LV_EVENT_PRESSING); lua_setfield(L, -2, "EVENT_PRESSING");
     lua_pushinteger(L, LV_EVENT_RELEASED); lua_setfield(L, -2, "EVENT_RELEASED");
     lua_pushinteger(L, LV_EVENT_CLICKED); lua_setfield(L, -2, "EVENT_CLICKED");
-    lua_pushinteger(L, LV_EVENT_VALUE_CHANGED); lua_setfield(L, -2, "EVENT_VALUE_CHANGED");
-    lua_pushinteger(L, LV_EVENT_LONG_PRESSED); lua_setfield(L, -2, "EVENT_LONG_PRESSED");
     lua_pushinteger(L, LV_EVENT_SHORT_CLICKED); lua_setfield(L, -2, "EVENT_SHORT_CLICKED");
+    lua_pushinteger(L, LV_EVENT_LONG_PRESSED); lua_setfield(L, -2, "EVENT_LONG_PRESSED");
+    lua_pushinteger(L, LV_EVENT_LONG_PRESSED_REPEAT); lua_setfield(L, -2, "EVENT_LONG_PRESSED_REPEAT");
+    lua_pushinteger(L, LV_EVENT_SINGLE_CLICKED); lua_setfield(L, -2, "EVENT_SINGLE_CLICKED");
+    lua_pushinteger(L, LV_EVENT_DOUBLE_CLICKED); lua_setfield(L, -2, "EVENT_DOUBLE_CLICKED");
+    lua_pushinteger(L, LV_EVENT_VALUE_CHANGED); lua_setfield(L, -2, "EVENT_VALUE_CHANGED");
+    lua_pushinteger(L, LV_EVENT_FOCUSED); lua_setfield(L, -2, "EVENT_FOCUSED");
+    lua_pushinteger(L, LV_EVENT_DEFOCUSED); lua_setfield(L, -2, "EVENT_DEFOCUSED");
     
     lua_pushinteger(L, LV_OPA_TRANSP); lua_setfield(L, -2, "OPA_TRANSP");
     lua_pushinteger(L, LV_OPA_COVER); lua_setfield(L, -2, "OPA_COVER");

@@ -29,9 +29,10 @@ static const char* DEFAULT_SCRIPT_PATH = "lua\\editor\\main_editor.lua";
 
 // Default Lua search path
 static const char* DEFAULT_LUA_PATH = "lua\\editor\\?.lua;"
-                                       "lua\\editor\\?\\init.lua;"
-                                       "lua\\?.lua;"
-                                       "lua\\?\\init.lua;";
+"lua\\editor\\?\\init.lua;"
+"lua\\?.lua;"
+"lua\\?\\init.lua;"
+"lau\\actions\\?.lua";
 
 // Default font path (黑体)
 static const char* DEFAULT_FONT_PATH = "fonts\\simhei.ttf";

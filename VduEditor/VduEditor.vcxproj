@@ -142,6 +142,7 @@
     <ClInclude Include="lvgl_lua_bindings.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="lua\actions\page_navigation.lua" />
     <None Include="lua\demo_button.lua" />
     <None Include="lua\demo_trend_chart.lua" />
     <None Include="lua\demo_valve.lua" />

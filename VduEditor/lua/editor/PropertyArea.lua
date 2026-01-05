@@ -18,9 +18,27 @@ PropertyArea.__widget_meta = {
     version = "1.0",
 }
 local selectedItems ={}
+
+-- 动作模块缓存
+local _action_modules_cache = {}
+
+-- 加载动作模块
+local function load_action_module(module_path)
+    if _action_modules_cache[module_path] then
+        return _action_modules_cache[module_path]
+    end
+    local ok, module = pcall(require, module_path)
+    if ok then
+        _action_modules_cache[module_path] = module
+        return module
+    else
+        print("[属性窗口] 加载动作模块失败: " .. module_path .. " - " .. tostring(module))
+        return nil
+    end
+end
+
 -- 构造函数
 function PropertyArea.new(parent, props)
-    
     props = props or {}
     local self = setmetatable({}, PropertyArea)
     
@@ -69,7 +87,7 @@ function PropertyArea.new(parent, props)
         start_mouse_x = 0,
         start_mouse_y = 0,
     }
-    self._content_height = 600  -- 内容区域高度（可根据需要调整）
+    self._content_height = 700  -- 内容区域高度（可根据需要调整）
     -- 创建主容器（浮动窗口样式）
     self.container = lv.obj_create(parent)
     self.container:set_pos(self.props.x, self.props.y)
@@ -186,7 +204,8 @@ function PropertyArea:_create_content_area()
     self.content:set_style_border_width(0, 0)
     self.content:set_style_text_color(self.props.text_color, 0)
     self.content:set_style_pad_all(5, 0)
-    self.content:remove_flag(lv.OBJ_FLAG_SCROLLABLE)  -- 启用滚动以支持更多内容
+    self.content:set_style_pad_right(10, 0)  -- 为滚动条留出空间
+    self.content:add_flag(lv.OBJ_FLAG_SCROLLABLE)  -- 启用滚动
     self.content:remove_flag(lv.OBJ_FLAG_GESTURE_BUBBLE)  -- 禁用手势冒泡
     self.content:clear_layout()
 end
@@ -435,7 +454,10 @@ function PropertyArea:_display_widget_properties(widget_entry)
     local y_pos = self:_create_metadata_table(meta)
     
     -- 显示第二个表：属性编辑表（可修改）
-    self:_create_properties_table(y_pos,widget_entry, meta)
+    y_pos = self:_create_properties_table(y_pos, widget_entry, meta)
+    
+    -- 显示第三个表：事件绑定表
+    self:_create_events_table(y_pos, widget_entry, meta)
 end
 
 -- 创建元数据表（不可修改）
@@ -483,7 +505,7 @@ function PropertyArea:_create_properties_table(y_pos, widget_entry, meta)
     
     if not meta.properties then
         print("[属性窗口] 模块没有 properties 定义")
-        return
+        return y_pos
     end
     
     -- 获取当前实例的属性值
@@ -510,6 +532,12 @@ function PropertyArea:_create_properties_table(y_pos, widget_entry, meta)
             -- 跳过 design_mode 属性
             goto continue
         end
+        
+        -- 跳过 action 和 action_params 类型，这些在事件绑定表中显示
+        if prop_def.type == "action" or prop_def.type == "action_params" then
+            goto continue
+        end
+        
         local prop_label = prop_def.label or prop_name
         local prop_type = prop_def.type
         local prop_value = current_props[prop_name] or prop_def.default or ""
@@ -543,6 +571,387 @@ function PropertyArea:_create_properties_table(y_pos, widget_entry, meta)
         y_pos = y_pos + item_height
         ::continue::
     end
+    
+    return y_pos + 10
+end
+
+-- 创建事件绑定表
+function PropertyArea:_create_events_table(y_pos, widget_entry, meta)
+    local this = self
+    local instance = widget_entry.instance
+    
+    -- 检查是否有 action 类型的属性
+    local action_props = {}
+    if meta.properties then
+        for _, prop_def in ipairs(meta.properties) do
+            if prop_def.type == "action" then
+                table.insert(action_props, prop_def)
+            end
+        end
+    end
+    
+    -- 如果没有 action 属性，不显示事件绑定表
+    if #action_props == 0 then
+        return y_pos
+    end
+    
+    local table_title_height = 20
+    local item_height = 28
+    
+    -- 表标题
+    local title = lv.label_create(self.content)
+    title:set_text("事件绑定")
+    title:set_style_text_color(0xFF6600, 0)
+    title:set_pos(0, y_pos)
+    y_pos = y_pos + table_title_height + 5
+    
+    -- 获取当前实例的属性值
+    local current_props = {}
+    if instance.get_properties then
+        current_props = instance:get_properties()
+    end
+    
+    -- 遍历 action 属性，按事件分组显示
+    for _, prop_def in ipairs(action_props) do
+        local prop_name = prop_def.name
+        local prop_label = prop_def.label or prop_name
+        local prop_value = current_props[prop_name] or prop_def.default or ""
+        local action_module_path = prop_def.action_module
+        local event_name = prop_def.event or ""
+        
+        -- 显示事件名称作为小标题（如果有event属性）
+        if event_name ~= "" then
+            local event_title = lv.label_create(self.content)
+            event_title:set_text("[" .. event_name .. "]")
+            event_title:set_style_text_color(0x888888, 0)
+            event_title:set_pos(5, y_pos)
+            y_pos = y_pos + 18
+        end
+        
+        -- 创建标签（属性名）
+        local label = lv.label_create(self.content)
+        label:set_text(prop_label .. ": ")
+        label:set_style_text_color(0xCCCCCC, 0)
+        label:set_pos(5, y_pos)
+        label:set_width(80)
+        
+        -- 查找对应的参数属性（根据event名称匹配）
+        local params_prop_name = nil
+        local params_prop_def = nil
+        for _, p in ipairs(meta.properties) do
+            if p.type == "action_params" then
+                if p.event and p.event == event_name then
+                    params_prop_name = p.name
+                    params_prop_def = p
+                    break
+                elseif not p.event and prop_name:match("_action$") then
+                    local expected_params = prop_name:gsub("_action$", "_params")
+                    if p.name == expected_params then
+                        params_prop_name = p.name
+                        params_prop_def = p
+                        break
+                    end
+                end
+            end
+        end
+        
+        -- 创建参数输入框的占位容器（用于动态更新）
+        local params_container = nil
+        local params_y_pos = y_pos + item_height
+        
+        if params_prop_name then
+            params_container = lv.obj_create(self.content)
+            params_container:set_pos(0, params_y_pos)
+            params_container:set_size(self.props.width - 10, item_height)
+            params_container:set_style_bg_opa(0, 0)
+            params_container:set_style_border_width(0, 0)
+            params_container:set_style_pad_all(0, 0)
+            params_container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+            params_container:clear_layout()
+        end
+        
+        -- 创建/更新参数输入框的函数
+        local function update_params_input(selected_action_id)
+            if not params_container or not params_prop_name then return end
+            
+            -- 清空参数容器
+            local child_count = params_container:get_child_count()
+            for i = child_count - 1, 0, -1 do
+                local child = params_container:get_child(i)
+                if child then child:delete() end
+            end
+            
+            -- 获取当前参数值
+            local params_value = "{}"
+            if instance.get_properties then
+                local props = instance:get_properties()
+                params_value = props[params_prop_name] or "{}"
+            end
+            
+            local params_label_text = params_prop_def and params_prop_def.label or "参数"
+            
+            -- 创建参数标签
+            local params_label = lv.label_create(params_container)
+            params_label:set_text(params_label_text .. ": ")
+            params_label:set_style_text_color(0xCCCCCC, 0)
+            params_label:set_pos(5, 2)
+            params_label:set_width(80)
+            
+            -- 创建参数输入框
+            this:_create_action_params_input_in_container(
+                params_container, params_prop_name, params_value, 
+                selected_action_id, action_module_path, widget_entry
+            )
+        end
+        
+        -- 创建动作选择下拉框，传入回调函数用于更新参数
+        self:_create_action_dropdown_with_callback(
+            prop_name, prop_value, action_module_path, widget_entry, y_pos,
+            update_params_input
+        )
+        y_pos = y_pos + item_height
+        
+        -- 如果有参数属性，初始化参数输入框
+        if params_prop_name then
+            update_params_input(prop_value)
+            y_pos = y_pos + item_height
+        end
+        
+        -- 事件之间添加间隔
+        y_pos = y_pos + 5
+    end
+    
+    return y_pos
+end
+
+-- 创建动作选择下拉框（带回调）
+function PropertyArea:_create_action_dropdown_with_callback(prop_name, current_value, action_module_path, widget_entry, y_pos, on_action_changed)
+    local this = self
+    
+    -- 加载动作模块获取可用动作列表
+    local actions = {}
+    local action_names = { "(无)" }
+    local action_ids = { "" }
+    
+    if action_module_path then
+        local action_module = load_action_module(action_module_path)
+        if action_module and action_module.available_actions then
+            for _, action_def in ipairs(action_module.available_actions) do
+                table.insert(actions, action_def)
+                table.insert(action_names, action_def.name)
+                table.insert(action_ids, action_def.id)
+            end
+        end
+    end
+    
+    -- 创建下拉框容器
+    local dropdown_container = lv.obj_create(self.content)
+    dropdown_container:set_pos(95, y_pos + 2)
+    dropdown_container:set_size(self.props.width - 115, 24)
+    dropdown_container:set_style_bg_color(0x1E1E1E, 0)
+    dropdown_container:set_style_border_width(1, 0)
+    dropdown_container:set_style_border_color(0x555555, 0)
+    dropdown_container:set_style_radius(0, 0)
+    dropdown_container:set_style_pad_all(2, 0)
+    dropdown_container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    dropdown_container:add_flag(lv.OBJ_FLAG_CLICKABLE)
+    
+    -- 显示当前选中的动作名称
+    local current_name = "(无)"
+    for i, id in ipairs(action_ids) do
+        if id == current_value then
+            current_name = action_names[i]
+            break
+        end
+    end
+    
+    local display_label = lv.label_create(dropdown_container)
+    display_label:set_text(current_name)
+    display_label:set_style_text_color(0xFFFFFF, 0)
+    display_label:align(lv.ALIGN_LEFT_MID, 4, 0)
+    
+    -- 下拉箭头
+    local arrow_label = lv.label_create(dropdown_container)
+    arrow_label:set_text("v")
+    arrow_label:set_style_text_color(0xAAAAAA, 0)
+    arrow_label:align(lv.ALIGN_RIGHT_MID, -4, 0)
+    
+    -- 下拉列表
+    local dropdown_list = nil
+    local is_open = false
+    
+    local function close_dropdown()
+        if dropdown_list then
+            dropdown_list:delete()
+            dropdown_list = nil
+            is_open = false
+        end
+    end
+    
+    local function open_dropdown()
+        if is_open then
+            close_dropdown()
+            return
+        end
+        
+        dropdown_list = lv.obj_create(self._parent)
+        local list_height = math.min(#action_names * 24 + 4, 200)
+        dropdown_list:set_size(self.props.width - 115, list_height)
+        
+        local abs_x = self.props.x + 95
+        local abs_y = self.props.y + self.props.title_height + y_pos + 28
+        dropdown_list:set_pos(abs_x, abs_y)
+        
+        dropdown_list:set_style_bg_color(0x2D2D2D, 0)
+        dropdown_list:set_style_border_width(1, 0)
+        dropdown_list:set_style_border_color(0x555555, 0)
+        dropdown_list:set_style_radius(4, 0)
+        dropdown_list:set_style_pad_all(2, 0)
+        dropdown_list:add_flag(lv.OBJ_FLAG_SCROLLABLE)
+        dropdown_list:clear_layout()
+        
+        for i, name in ipairs(action_names) do
+            local item = lv.obj_create(dropdown_list)
+            item:set_pos(0, (i - 1) * 24)
+            item:set_size(self.props.width - 121, 22)
+            item:set_style_bg_color(action_ids[i] == current_value and 0x007ACC or 0x3D3D3D, 0)
+            item:set_style_radius(2, 0)
+            item:set_style_border_width(0, 0)
+            item:set_style_pad_all(0, 0)
+            item:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+            item:add_flag(lv.OBJ_FLAG_CLICKABLE)
+            
+            local item_label = lv.label_create(item)
+            item_label:set_text(name)
+            item_label:set_style_text_color(0xFFFFFF, 0)
+            item_label:align(lv.ALIGN_LEFT_MID, 6, 0)
+            
+            local action_id = action_ids[i]
+            item:add_event_cb(function(e)
+                display_label:set_text(name)
+                current_value = action_id
+                
+                if widget_entry.instance and widget_entry.instance.set_property then
+                    widget_entry.instance:set_property(prop_name, action_id)
+                end
+                this:_emit("property_changed", prop_name, action_id, widget_entry)
+                
+                -- 调用回调更新参数输入框
+                if on_action_changed then
+                    on_action_changed(action_id)
+                end
+                
+                print("[属性窗口] 动作已选择: " .. prop_name .. " = " .. tostring(action_id))
+                
+                close_dropdown()
+            end, lv.EVENT_CLICKED, nil)
+        end
+        
+        is_open = true
+    end
+    
+    dropdown_container:add_event_cb(function(e)
+        open_dropdown()
+    end, lv.EVENT_CLICKED, nil)
+end
+
+-- 在容器中创建动作参数输入框
+function PropertyArea:_create_action_params_input_in_container(container, prop_name, current_value, action_id, action_module_path, widget_entry)
+    local this = self
+    
+    -- 获取动作的参数定义
+    local param_defs = {}
+    if action_module_path and action_id and action_id ~= "" then
+        local action_module = load_action_module(action_module_path)
+        if action_module and action_module.available_actions then
+            for _, action_def in ipairs(action_module.available_actions) do
+                if action_def.id == action_id then
+                    param_defs = action_def.params or {}
+                    break
+                end
+            end
+        end
+    end
+    
+    -- 如果没有参数定义或动作为空
+    if #param_defs == 0 then
+        local textarea = lv.textarea_create(container)
+        textarea:set_pos(95, 2)
+        textarea:set_size(self.props.width - 115, 22)
+        textarea:set_style_bg_color(0x1E1E1E, 0)
+        textarea:set_style_border_width(1, 0)
+        textarea:set_style_border_color(0x555555, 0)
+        textarea:set_style_text_color(0x888888, 0)
+        textarea:set_style_radius(0, 0)
+        textarea:set_style_pad_all(2, 0)
+        textarea:set_style_pad_left(4, 0)
+        textarea:set_one_line(true)
+        textarea:set_text("(无参数)")
+        textarea:add_state(lv.STATE_DISABLED)
+        textarea:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+        return
+    end
+    
+    -- 解析当前参数值
+    local current_params = {}
+    if current_value and current_value ~= "" and current_value ~= "{}" then
+        local ok, parsed = pcall(function()
+            local content = current_value:match("^%s*{(.*)%s*}%s*$") or current_value
+            local result = {}
+            for key, value in content:gmatch('([%w_]+)%s*=%s*([^,}]+)') do
+                value = value:gsub('^%s*"(.*)"%s*$', '%1')
+                value = value:gsub("^%s*'(.*)'%s*$", '%1')
+                value = value:gsub("^%s*(.-)%s*$", '%1')
+                local num = tonumber(value)
+                if num then
+                    result[key] = num
+                else
+                    result[key] = value
+                end
+            end
+            return result
+        end)
+        if ok then
+            current_params = parsed
+        end
+    end
+    
+    -- 构建参数提示
+    local param_hint = "{"
+    for i, p in ipairs(param_defs) do
+        local default_val = current_params[p.name] or p.default or ""
+        if i > 1 then param_hint = param_hint .. ", " end
+        if p.type == "string" then
+            param_hint = param_hint .. p.name .. '="' .. tostring(default_val) .. '"'
+        else
+            param_hint = param_hint .. p.name .. "=" .. tostring(default_val)
+        end
+    end
+    param_hint = param_hint .. "}"
+    
+    local textarea = lv.textarea_create(container)
+    textarea:set_pos(95, 2)
+    textarea:set_size(self.props.width - 115, 22)
+    textarea:set_style_bg_color(0x1E1E1E, 0)
+    textarea:set_style_border_width(1, 0)
+    textarea:set_style_border_color(0x555555, 0)
+    textarea:set_style_text_color(0xFFFFFF, 0)
+    textarea:set_style_radius(0, 0)
+    textarea:set_style_pad_all(2, 0)
+    textarea:set_style_pad_left(4, 0)
+    textarea:set_one_line(true)
+    textarea:set_text(current_value ~= "" and current_value ~= "{}" and current_value or param_hint)
+    textarea:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    
+    -- 添加值变更事件回调
+    textarea:add_event_cb(function(e)
+        local new_value = textarea:get_text()
+        if widget_entry.instance and widget_entry.instance.set_property then
+            widget_entry.instance:set_property(prop_name, new_value)
+        end
+        this:_emit("property_changed", prop_name, new_value, widget_entry)
+        print("[属性窗口] 参数已更新: " .. prop_name .. " = " .. new_value)
+    end, lv.EVENT_VALUE_CHANGED, nil)
 end
 
 -- 创建文本输入框

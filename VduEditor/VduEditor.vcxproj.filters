@@ -88,6 +88,9 @@
     <None Include="lua\widgets\valve.lua">
       <Filter>lua</Filter>
     </None>
+    <None Include="lua\actions\page_navigation.lua">
+      <Filter>lua</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

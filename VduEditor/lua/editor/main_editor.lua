@@ -81,22 +81,22 @@ local canvas = CanvasArea.new(scr, {
 -- ========== 创建浮动工具箱（在画布上方）==========
 local toolbox = ToolsBox.new(scr, {
     x = 20,
-    y = MENUBAR_HEIGHT + 10,
+    y = MENUBAR_HEIGHT + 30,
     width = 150,
 })
 
 -- 创建属性窗口
 local property_area = PropertyArea.new(scr, {
-    x = 600,
-    y = MENUBAR_HEIGHT + 10,
-    width = 300,
+    x = 620,
+    y = MENUBAR_HEIGHT + 30,
+    width = 400,
     visible = true
 })
 
 -- 创建图页列表窗口
 local canvas_list = CanvasList.new(scr, {
     x = 10,
-    y = MENUBAR_HEIGHT + 10 + 200,
+    y = MENUBAR_HEIGHT + 30 + 200,
     width = 200,
     visible = true
 })
