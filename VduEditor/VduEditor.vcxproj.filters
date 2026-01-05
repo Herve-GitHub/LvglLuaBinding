@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="lua">
+      <UniqueIdentifier>{3be68670-cfb4-48ab-8917-341f41ab088f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="fonts">
+      <UniqueIdentifier>{da96d038-280d-43bd-a275-58871cbe9340}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="VduEditor.cpp">
@@ -29,5 +35,63 @@
     <ClInclude Include="lvgl_lua_bindings.h">
       <Filter>头文件</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="lua\widgets\button.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\editor\CanvasArea.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\editor\CanvasList.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\editor\ColorDialog.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\demo_button.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\demo_trend_chart.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\demo_valve.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\demo_valve_control.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\general.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\editor\main_editor.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\editor\MenuBar.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\print_widget_meta.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\editor\PropertyArea.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\widgets\status_bar.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\editor\tools_box.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\widgets\trend_chart.lua">
+      <Filter>lua</Filter>
+    </None>
+    <None Include="lua\widgets\valve.lua">
+      <Filter>lua</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="fonts\simhei.ttf">
+      <Filter>fonts</Filter>
+    </Font>
   </ItemGroup>
 </Project>

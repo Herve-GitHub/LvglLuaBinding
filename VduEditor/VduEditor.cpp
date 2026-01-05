@@ -25,16 +25,16 @@ static const int WINDOW_WIDTH = 1024;
 static const int WINDOW_HEIGHT = 768;
 
 // Default script path
-static const char* DEFAULT_SCRIPT_PATH = "D:\\CodePro\\lvgl_git\\lv_port_pc_visual_studio\\VduEditor\\lua\\editor\\main_editor.lua";
+static const char* DEFAULT_SCRIPT_PATH = "lua\\editor\\main_editor.lua";
 
 // Default Lua search path
-static const char* DEFAULT_LUA_PATH = "D:\\CodePro\\lvgl_git\\lv_port_pc_visual_studio\\VduEditor\\lua\\editor\\?.lua;"
-                                       "D:\\CodePro\\lvgl_git\\lv_port_pc_visual_studio\\VduEditor\\lua\\editor\\?\\init.lua;"
-                                       "D:\\CodePro\\lvgl_git\\lv_port_pc_visual_studio\\VduEditor\\lua\\?.lua;"
-                                       "D:\\CodePro\\lvgl_git\\lv_port_pc_visual_studio\\VduEditor\\lua\\?\\init.lua;";
+static const char* DEFAULT_LUA_PATH = "lua\\editor\\?.lua;"
+                                       "lua\\editor\\?\\init.lua;"
+                                       "lua\\?.lua;"
+                                       "lua\\?\\init.lua;";
 
 // Default font path (黑体)
-static const char* DEFAULT_FONT_PATH = "D:\\CodePro\\lvgl_git\\lv_port_pc_visual_studio\\VduEditor\\fonts\\simhei.ttf";
+static const char* DEFAULT_FONT_PATH = "fonts\\simhei.ttf";
 static const int DEFAULT_FONT_SIZE = 14;
 
 // Lua state
@@ -53,25 +53,59 @@ extern "C" lv_font_t* get_chinese_font(void)
 }
 
 /**
+ * @brief Get the current executable directory
+ * @return The directory path ending with backslash, or empty string on failure
+ */
+static std::string get_exe_directory()
+{
+    char path[MAX_PATH];
+    DWORD len = GetModuleFileNameA(NULL, path, MAX_PATH);
+    if (len == 0 || len >= MAX_PATH) {
+        return "";
+    }
+    
+    // Find the last backslash and truncate
+    std::string dir(path);
+    size_t pos = dir.find_last_of("\\/");
+    if (pos != std::string::npos) {
+        dir = dir.substr(0, pos + 1);  // Include the backslash
+    }
+    return dir;
+}
+
+/**
  * @brief Initialize Chinese font using TinyTTF
  * @return true if successful
  */
 static bool init_chinese_font()
 {
 #if LV_USE_TINY_TTF
+    // Get the executable directory and build full font path
+    std::string exe_dir = get_exe_directory();
+    std::string full_font_path = exe_dir + DEFAULT_FONT_PATH;
+    
+    std::cout << "Executable directory: " << exe_dir << std::endl;
+    std::cout << "Font path: " << full_font_path << std::endl;
+    
     // Check if font file exists
     FILE* f = nullptr;
-    if (fopen_s(&f, DEFAULT_FONT_PATH, "rb") != 0 || !f) {
-        std::cerr << "Font file not found: " << DEFAULT_FONT_PATH << std::endl;
+    if (fopen_s(&f, full_font_path.c_str(), "rb") != 0 || !f) {
+        std::cerr << "Font file not found: " << full_font_path << std::endl;
         std::cerr << "Please copy simhei.ttf to the fonts directory." << std::endl;
         return false;
     }
     fclose(f);
 
-    // Create TTF font
-    g_chinese_font = lv_tiny_ttf_create_file(DEFAULT_FONT_PATH, DEFAULT_FONT_SIZE);
+    // Create TTF font with kerning disabled
+    // Note: For Chinese fonts, kerning should be disabled to avoid character spacing issues
+    g_chinese_font = lv_tiny_ttf_create_file_ex(
+        full_font_path.c_str(), 
+        DEFAULT_FONT_SIZE,
+        LV_FONT_KERNING_NONE,  // Disable kerning for Chinese fonts
+        LV_TINY_TTF_CACHE_GLYPH_CNT
+    );
     if (!g_chinese_font) {
-        std::cerr << "Failed to create TTF font from: " << DEFAULT_FONT_PATH << std::endl;
+        std::cerr << "Failed to create TTF font from: " << full_font_path << std::endl;
         return false;
     }
 
@@ -88,7 +122,7 @@ static bool init_chinese_font()
         }
     }
 
-    std::cout << "Chinese font loaded: " << DEFAULT_FONT_PATH << " (size: " << DEFAULT_FONT_SIZE << ")" << std::endl;
+    std::cout << "Chinese font loaded: " << full_font_path << " (size: " << DEFAULT_FONT_SIZE << ", kerning: disabled)" << std::endl;
     return true;
 #else
     std::cerr << "TinyTTF is not enabled. Please set LV_USE_TINY_TTF to 1 in lv_conf.h" << std::endl;

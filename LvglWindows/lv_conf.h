@@ -620,7 +620,7 @@
 
 /** Enables/disables support for compressed fonts. */
 #define LV_USE_FONT_COMPRESSED 0
-
+#define LV_FONT_SUBPX_BGR 0
 /** Enable drawing placeholders when glyph dsc is not found. */
 #define LV_USE_FONT_PLACEHOLDER 1
 

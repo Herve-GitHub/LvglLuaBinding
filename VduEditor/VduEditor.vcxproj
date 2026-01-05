@@ -141,6 +141,28 @@
     <ClInclude Include="lv_conf.h" />
     <ClInclude Include="lvgl_lua_bindings.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="lua\demo_button.lua" />
+    <None Include="lua\demo_trend_chart.lua" />
+    <None Include="lua\demo_valve.lua" />
+    <None Include="lua\demo_valve_control.lua" />
+    <None Include="lua\editor\CanvasArea.lua" />
+    <None Include="lua\editor\CanvasList.lua" />
+    <None Include="lua\editor\ColorDialog.lua" />
+    <None Include="lua\editor\main_editor.lua" />
+    <None Include="lua\editor\MenuBar.lua" />
+    <None Include="lua\editor\PropertyArea.lua" />
+    <None Include="lua\editor\tools_box.lua" />
+    <None Include="lua\general.lua" />
+    <None Include="lua\print_widget_meta.lua" />
+    <None Include="lua\widgets\button.lua" />
+    <None Include="lua\widgets\status_bar.lua" />
+    <None Include="lua\widgets\trend_chart.lua" />
+    <None Include="lua\widgets\valve.lua" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="fonts\simhei.ttf" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

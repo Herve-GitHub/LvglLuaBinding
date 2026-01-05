@@ -544,12 +544,9 @@ static bool tiny_ttf_glyph_cache_create_cb(tiny_ttf_glyph_cache_data_t * node, v
     int advw;
     int lsb;
     stbtt_GetGlyphHMetrics(&dsc->info, g1, &advw, &lsb);
-    if(dsc->kerning != LV_FONT_KERNING_NORMAL) { /* calculate default advance */
-        dsc_out->adv_w = ttf_get_glyph_pair_kerning_width(dsc, g1, 0, advw);
-    }
-    else {
-        dsc_out->adv_w = ttf_calculate_kerning_width(dsc->scale, advw, 0);
-    }
+    /* Always use simple advance width calculation without kerning adjustment.
+     * Kerning will be applied dynamically in ttf_get_glyph_dsc_cb when needed. */
+    dsc_out->adv_w = ttf_calculate_kerning_width(dsc->scale, advw, 0);
     /* precalculate no kerning value */
     node->adv_w = advw;
     dsc_out->box_w = (x2 - x1 + 1);         /*width of the bitmap in [px]*/

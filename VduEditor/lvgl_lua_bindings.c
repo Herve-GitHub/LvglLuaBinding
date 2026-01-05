@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+
 // Event callback data structure
 typedef struct {
     lua_State* L;
@@ -483,7 +484,14 @@ static int l_obj_add_event_cb(lua_State* L) {
 static int l_obj_set_text(lua_State* L) {
     lv_obj_t* obj = check_lv_obj(L, 1);
     const char* text = luaL_checkstring(L, 2);
-    if (obj) lv_label_set_text(obj, text);
+    if (obj) {
+        // Check object type and call appropriate function
+        if (lv_obj_check_type(obj, &lv_textarea_class)) {
+            lv_textarea_set_text(obj, text);
+        } else {
+            lv_label_set_text(obj, text);
+        }
+    }
     return 0;
 }
 
@@ -558,6 +566,145 @@ static int l_obj_scroll_to_view(lua_State* L) {
     return 0;
 }
 
+// obj:add_state(state)
+static int l_obj_add_state(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lv_state_t state = (lv_state_t)luaL_checkinteger(L, 2);
+    if (obj) lv_obj_add_state(obj, state);
+    return 0;
+}
+
+// obj:remove_state(state)
+static int l_obj_remove_state(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lv_state_t state = (lv_state_t)luaL_checkinteger(L, 2);
+    if (obj) lv_obj_remove_state(obj, state);
+    return 0;
+}
+
+// obj:has_state(state)
+static int l_obj_has_state(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lv_state_t state = (lv_state_t)luaL_checkinteger(L, 2);
+    lua_pushboolean(L, obj ? lv_obj_has_state(obj, state) : 0);
+    return 1;
+}
+
+// ========== Textarea specific methods ==========
+
+// textarea:set_text(text)
+static int l_textarea_set_text(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    const char* text = luaL_checkstring(L, 2);
+    if (obj) {
+        // Check if the object is a textarea
+        if (lv_obj_check_type(obj, &lv_textarea_class)) {
+            lv_textarea_set_text(obj, text);
+        } else if (lv_obj_check_type(obj, &lv_label_class)) {
+            lv_label_set_text(obj, text);
+        }
+    }
+    return 0;
+}
+
+// textarea:get_text()
+static int l_textarea_get_text(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    if (obj) {
+        // Check if it's a textarea or label
+        if (lv_obj_check_type(obj, &lv_textarea_class)) {
+            const char* text = lv_textarea_get_text(obj);
+            lua_pushstring(L, text ? text : "");
+        } else if (lv_obj_check_type(obj, &lv_label_class)) {
+            const char* text = lv_label_get_text(obj);
+            lua_pushstring(L, text ? text : "");
+        } else {
+            lua_pushstring(L, "");
+        }
+    } else {
+        lua_pushstring(L, "");
+    }
+    return 1;
+}
+
+// textarea:set_placeholder_text(text)
+static int l_textarea_set_placeholder_text(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    const char* text = luaL_checkstring(L, 2);
+    if (obj) lv_textarea_set_placeholder_text(obj, text);
+    return 0;
+}
+
+// textarea:set_one_line(en)
+static int l_textarea_set_one_line(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    bool en = lua_toboolean(L, 2);
+    if (obj) lv_textarea_set_one_line(obj, en);
+    return 0;
+}
+
+// textarea:set_password_mode(en)
+static int l_textarea_set_password_mode(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    bool en = lua_toboolean(L, 2);
+    if (obj) lv_textarea_set_password_mode(obj, en);
+    return 0;
+}
+
+// textarea:set_accepted_chars(list)
+static int l_textarea_set_accepted_chars(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    const char* list = luaL_checkstring(L, 2);
+    if (obj) lv_textarea_set_accepted_chars(obj, list);
+    return 0;
+}
+
+// textarea:set_max_length(num)
+static int l_textarea_set_max_length(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    uint32_t num = (uint32_t)luaL_checkinteger(L, 2);
+    if (obj) lv_textarea_set_max_length(obj, num);
+    return 0;
+}
+
+// textarea:add_char(c)
+static int l_textarea_add_char(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    uint32_t c = (uint32_t)luaL_checkinteger(L, 2);
+    if (obj) lv_textarea_add_char(obj, c);
+    return 0;
+}
+
+// textarea:add_text(text)
+static int l_textarea_add_text(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    const char* text = luaL_checkstring(L, 2);
+    if (obj) lv_textarea_add_text(obj, text);
+    return 0;
+}
+
+// textarea:delete_char()
+static int l_textarea_delete_char(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    if (obj) lv_textarea_delete_char(obj);
+    return 0;
+}
+
+// textarea:set_cursor_pos(pos)
+static int l_textarea_set_cursor_pos(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    int32_t pos = (int32_t)luaL_checkinteger(L, 2);
+    if (obj) lv_textarea_set_cursor_pos(obj, pos);
+    return 0;
+}
+
+// textarea:get_cursor_pos()
+static int l_textarea_get_cursor_pos(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lua_pushinteger(L, obj ? lv_textarea_get_cursor_pos(obj) : 0);
+    return 1;
+}
+
 // ========== Module-level functions ==========
 
 // lv.scr_act()
@@ -572,7 +719,9 @@ static int l_lv_tiny_ttf_create_file(lua_State* L) {
     const char* path = luaL_checkstring(L, 1);
     int32_t font_size = (int32_t)luaL_checkinteger(L, 2);
     
-    lv_font_t* font = lv_tiny_ttf_create_file(path, font_size);
+    // Use lv_tiny_ttf_create_file_ex with kerning disabled for Chinese fonts
+    // This fixes the character spacing issue
+    lv_font_t* font = lv_tiny_ttf_create_file_ex(path, font_size, LV_FONT_KERNING_NONE, LV_TINY_TTF_CACHE_GLYPH_CNT);
     if (font) {
         lv_font_t** ud = (lv_font_t**)lua_newuserdata(L, sizeof(lv_font_t*));
         *ud = font;
@@ -810,6 +959,9 @@ static const luaL_Reg lv_obj_methods[] = {
     {"add_flag", l_obj_add_flag},
     {"remove_flag", l_obj_remove_flag},
     {"has_flag", l_obj_has_flag},
+    {"add_state", l_obj_add_state},
+    {"remove_state", l_obj_remove_state},
+    {"has_state", l_obj_has_state},
     {"set_flex_flow", l_obj_set_flex_flow},
     {"set_flex_grow", l_obj_set_flex_grow},
     {"set_flex_align", l_obj_set_flex_align},
@@ -826,6 +978,18 @@ static const luaL_Reg lv_obj_methods[] = {
     {"set_content_width", l_obj_set_content_width},
     {"set_content_height", l_obj_set_content_height},
     {"scroll_to_view", l_obj_scroll_to_view},
+    // Textarea specific methods
+    {"set_placeholder_text", l_textarea_set_placeholder_text},
+    {"set_one_line", l_textarea_set_one_line},
+    {"set_password_mode", l_textarea_set_password_mode},
+    {"set_accepted_chars", l_textarea_set_accepted_chars},
+    {"set_max_length", l_textarea_set_max_length},
+    {"add_char", l_textarea_add_char},
+    {"add_text", l_textarea_add_text},
+    {"delete_char", l_textarea_delete_char},
+    {"set_cursor_pos", l_textarea_set_cursor_pos},
+    {"get_cursor_pos", l_textarea_get_cursor_pos},
+    {"get_text", l_textarea_get_text},
     {NULL, NULL}
 };
 
@@ -907,6 +1071,17 @@ static int luaopen_lvgl(lua_State* L) {
     lua_pushinteger(L, LV_OBJ_FLAG_GESTURE_BUBBLE); lua_setfield(L, -2, "OBJ_FLAG_GESTURE_BUBBLE");
     lua_pushinteger(L, LV_OBJ_FLAG_PRESS_LOCK); lua_setfield(L, -2, "OBJ_FLAG_PRESS_LOCK");
     lua_pushinteger(L, LV_OBJ_FLAG_EVENT_BUBBLE); lua_setfield(L, -2, "OBJ_FLAG_EVENT_BUBBLE");
+    
+    // State constants
+    lua_pushinteger(L, LV_STATE_DEFAULT); lua_setfield(L, -2, "STATE_DEFAULT");
+    lua_pushinteger(L, LV_STATE_CHECKED); lua_setfield(L, -2, "STATE_CHECKED");
+    lua_pushinteger(L, LV_STATE_FOCUSED); lua_setfield(L, -2, "STATE_FOCUSED");
+    lua_pushinteger(L, LV_STATE_FOCUS_KEY); lua_setfield(L, -2, "STATE_FOCUS_KEY");
+    lua_pushinteger(L, LV_STATE_EDITED); lua_setfield(L, -2, "STATE_EDITED");
+    lua_pushinteger(L, LV_STATE_HOVERED); lua_setfield(L, -2, "STATE_HOVERED");
+    lua_pushinteger(L, LV_STATE_PRESSED); lua_setfield(L, -2, "STATE_PRESSED");
+    lua_pushinteger(L, LV_STATE_SCROLLED); lua_setfield(L, -2, "STATE_SCROLLED");
+    lua_pushinteger(L, LV_STATE_DISABLED); lua_setfield(L, -2, "STATE_DISABLED");
     
     lua_pushinteger(L, LV_EVENT_PRESSED); lua_setfield(L, -2, "EVENT_PRESSED");
     lua_pushinteger(L, LV_EVENT_PRESSING); lua_setfield(L, -2, "EVENT_PRESSING");
