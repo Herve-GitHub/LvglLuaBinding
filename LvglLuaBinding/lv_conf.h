@@ -12,7 +12,13 @@
 #if  0 && defined(__ASSEMBLY__)
 #include "my_include.h"
 #endif
+#ifndef LV_CONF_INCLUDE_SIMPLE
+#define LV_CONF_INCLUDE_SIMPLE
+#endif
 
+#ifndef LV_USE_DEV_VERSION
+#define LV_USE_DEV_VERSION
+#endif
 /*====================
    COLOR SETTINGS
  *====================*/

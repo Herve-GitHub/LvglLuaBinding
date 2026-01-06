@@ -1,4 +1,4 @@
-/*
+﻿/*
 ** $Id: lua.h $
 ** Lua - A Scripting Language
 ** Lua.org, PUC-Rio, Brazil (www.lua.org)
@@ -11,6 +11,9 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#ifndef LUA_BUILD_AS_DLL
+#define LUA_BUILD_AS_DLL
+#endif // !LUA_BUILD_AS_DLL
 
 
 #define LUA_COPYRIGHT	LUA_RELEASE "  Copyright (C) 1994-2025 Lua.org, PUC-Rio"
