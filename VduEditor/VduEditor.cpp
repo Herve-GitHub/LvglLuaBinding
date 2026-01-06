@@ -5,16 +5,6 @@
 #include <iostream>
 #include <string>
 
-// Lua headers (C style)
-extern "C" {
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
-}
-
-// LVGL headers
-#include <lvgl/lvgl.h>
-
 // Lua bindings
 extern "C" {
 #include "lvgl_lua_bindings.h"
@@ -43,15 +33,6 @@ static lua_State* g_L = nullptr;
 
 // Global TTF font
 static lv_font_t* g_chinese_font = nullptr;
-
-/**
- * @brief Get the pre-loaded Chinese font (called from lvgl_lua_bindings.c)
- * @return Pointer to the Chinese font, or NULL if not loaded
- */
-extern "C" lv_font_t* get_chinese_font(void)
-{
-    return g_chinese_font;
-}
 
 /**
  * @brief Get the current executable directory
@@ -109,7 +90,8 @@ static bool init_chinese_font()
         std::cerr << "Failed to create TTF font from: " << full_font_path << std::endl;
         return false;
     }
-
+    // Set as current TTF font
+    set_current_ttf_font(g_chinese_font);
     // Set as default theme font
     lv_display_t* disp = lv_display_get_default();
     if (disp) {

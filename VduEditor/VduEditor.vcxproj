@@ -104,14 +104,16 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;LV_CONF_INCLUDE_SIMPLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\LvglPlatform;$(ProjectDir)..\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\LvglLuaBinding;$(ProjectDir)..\lua;$(ProjectDir)..\LvglPlatform;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>LvglLuaBinding.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)lua" "$(TargetDir)lua" /E /I /Y</Command>
@@ -135,11 +137,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="VduEditor.cpp" />
-    <ClCompile Include="lvgl_lua_bindings.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="lv_conf.h" />
-    <ClInclude Include="lvgl_lua_bindings.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="lua\actions\page_navigation.lua" />
@@ -167,47 +164,4 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <!-- LVGL Source Files -->
-  <Target Name="LvglBuildSource" BeforeTargets="BeforeClCompile">
-    <ItemGroup>
-      <ClCompile Include="$(ProjectDir)..\LvglPlatform\lvgl\src\**\*.c" />
-    </ItemGroup>
-  </Target>
-  <!-- Lua Source Files -->
-  <Target Name="LuaBuildSource" BeforeTargets="BeforeClCompile">
-    <ItemGroup>
-      <ClCompile Include="$(ProjectDir)..\lua\lapi.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lauxlib.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lbaselib.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lcode.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lcorolib.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lctype.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\ldblib.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\ldebug.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\ldo.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\ldump.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lfunc.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lgc.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\linit.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\liolib.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\llex.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lmathlib.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lmem.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\loadlib.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lobject.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lopcodes.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\loslib.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lparser.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lstate.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lstring.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lstrlib.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\ltable.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\ltablib.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\ltm.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lundump.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lutf8lib.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lvm.c" />
-      <ClCompile Include="$(ProjectDir)..\lua\lzio.c" />
-    </ItemGroup>
-  </Target>
 </Project>

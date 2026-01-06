@@ -24,17 +24,6 @@
     <ClCompile Include="VduEditor.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="lvgl_lua_bindings.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="lv_conf.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="lvgl_lua_bindings.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="lua\widgets\button.lua">

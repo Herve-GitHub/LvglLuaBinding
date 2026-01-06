@@ -18,5 +18,18 @@
     <ClInclude Include="lv_conf.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="lvgl_lua_bindings.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="lvgl_lua_bindings.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Output\Objects\Debug\LvglLuaBinding\x64\LvglLuaBinding.def">
+      <Filter>源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>

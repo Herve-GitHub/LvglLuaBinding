@@ -364,7 +364,21 @@
  *==================*/
 
 #define LV_USE_SNAPSHOT 0
-#define LV_USE_SYSMON   0
+#define LV_USE_SYSMON   1
+#if LV_USE_SYSMON
+    #define LV_SYSMON_GET_IDLE lv_os_get_idle_percent
+
+    #define LV_USE_PERF_MONITOR 1
+    #if LV_USE_PERF_MONITOR
+        #define LV_USE_PERF_MONITOR_POS LV_ALIGN_BOTTOM_RIGHT
+        #define LV_USE_PERF_MONITOR_LOG_MODE 0
+    #endif
+
+    #define LV_USE_MEM_MONITOR 1
+    #if LV_USE_MEM_MONITOR
+        #define LV_USE_MEM_MONITOR_POS LV_ALIGN_BOTTOM_LEFT
+    #endif
+#endif
 #define LV_USE_PROFILER 0
 #define LV_USE_MONKEY 0
 #define LV_USE_GRIDNAV 0

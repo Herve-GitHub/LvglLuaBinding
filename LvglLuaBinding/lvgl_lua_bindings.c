@@ -16,7 +16,14 @@ typedef struct {
 
 // Global TTF font storage (for applying to objects)
 static lv_font_t* g_current_ttf_font = NULL;
-
+void set_current_ttf_font(lv_font_t* font)
+{
+    g_current_ttf_font = font;
+}
+lv_font_t* get_current_ttf_font(void)
+{
+    return g_current_ttf_font;
+}
 // Helper: push lv_obj_t* as userdata with metatable
 static void push_lv_obj(lua_State* L, lv_obj_t* obj) {
     if (obj == NULL) {
@@ -777,10 +784,7 @@ static int l_lv_label_create(lua_State* L) {
 #if LV_USE_TINY_TTF
         if (g_current_ttf_font) {
             font_to_use = g_current_ttf_font;
-        } else {
-            // Try to get the pre-loaded Chinese font from VduEditor.cpp
-            font_to_use = get_chinese_font();
-        }
+        } 
 #endif
         if (font_to_use) {
             lv_obj_set_style_text_font(label, font_to_use, 0);

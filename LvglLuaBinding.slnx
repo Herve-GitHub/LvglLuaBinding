@@ -4,16 +4,9 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="lua/lua.vcxproj" Id="ee702ebc-b753-4461-abb3-d3e61aeb01e8">
-    <Platform Solution="*|ARM64" Project="x64" />
-  </Project>
   <Project Path="LvglLuaBinding/LvglLuaBinding.vcxproj" Id="761bfc96-be8a-4949-9007-1ad030b50912">
     <Platform Solution="*|ARM64" Project="x64" />
   </Project>
-  <Project Path="LvglWindows/LvglWindows.vcxproj" Id="d574f328-06da-47ac-9b03-ee01d22c070b">
-    <BuildDependency Project="LvglWindows/LvglWindowsStatic.vcxproj" />
-  </Project>
-  <Project Path="LvglWindows/LvglWindowsStatic.vcxproj" Id="d7a206a8-0825-4e30-8c28-6dcb817917e0" />
   <Project Path="VduEditor/VduEditor.vcxproj" Id="af66d0d6-7b20-459f-8e8c-edaf237290b3">
     <Platform Solution="*|ARM64" Project="x64" />
   </Project>
