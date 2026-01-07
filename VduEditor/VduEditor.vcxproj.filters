@@ -80,6 +80,9 @@
     <None Include="lua\actions\page_navigation.lua">
       <Filter>lua</Filter>
     </None>
+    <None Include="lua\editor\json.lua" />
+    <None Include="lua\editor\FileDialog.lua" />
+    <None Include="lua\editor\ProjectManager.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

@@ -1,4 +1,4 @@
-local lv = require("lvgl")
+﻿local lv = require("lvgl")
 local Valve = require("lua.widgets.valve")
 
 -- Get active screen
@@ -10,7 +10,7 @@ title:set_text("动态阀门图示")
 title:align(lv.ALIGN_TOP_MID, 0, 20)
 
 -- Create Valve using new API (props table)
-local valve = Valve.new(scr, { x = 0, y = 0, size = 150, angle = 0 })
+local valve = Valve.new(scr, { x = 0, y = 0, size = 150, angle = 0 ,design_mode = false})
 valve.container:center()
 
 -- Status Label

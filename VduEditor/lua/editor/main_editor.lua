@@ -10,6 +10,8 @@ local ToolsBox = require("tools_box")
 local PropertyArea = require("PropertyArea")
 local CanvasList = require("CanvasList")
 local StatusBar = require("widgets.status_bar")
+local ProjectManager = require("ProjectManager")
+local FileDialog = require("FileDialog")
 
 -- 获取屏幕
 local scr = lv.scr_act()
@@ -40,6 +42,9 @@ local STATUSBAR_HEIGHT = 28
 -- 状态栏实例（全局，独立于画布）
 local status_bar = nil
 local status_bar_position = "bottom"  -- 默认在底部
+
+-- 工程管理器实例
+local project_manager = ProjectManager.new()
 
 -- 计算画布区域（根据状态栏位置）
 local function get_canvas_bounds()
@@ -309,27 +314,132 @@ menu_bar:set_state("show_toolbox", toolbox:is_visible())
 menu_bar:set_state("show_properties", property_area:is_visible())
 menu_bar:set_state("show_canvas_list", canvas_list:is_visible())
 
+-- ========== 导出编辑器 API（提前定义，供后续使用）==========
+_G.Editor = {
+    -- 状态栏相关
+    create_status_bar = create_status_bar,
+    remove_status_bar = remove_status_bar,
+    set_status_bar_position = set_status_bar_position,
+    get_status_bar = get_status_bar,
+    
+    -- 获取各组件实例
+    get_canvas = function() return canvas end,
+    get_toolbox = function() return toolbox end,
+    get_property_area = function() return property_area end,
+    get_canvas_list = function() return canvas_list end,
+    get_menu_bar = function() return menu_bar end,
+}
+
+-- ========== 工程保存/加载功能 ==========
+
+-- 保存工程
+local function save_project_dialog()
+    -- 先保存当前图页
+    save_canvas_to_page(current_page_index)
+    
+    -- 获取当前工程路径作为默认文件名
+    local current_path = project_manager:get_current_path()
+    local default_filename = "project.json"
+    if current_path then
+        default_filename = current_path:match("([^/\\]+)$") or default_filename
+    end
+    
+    -- 创建保存对话框
+    FileDialog.new(scr, {
+        mode = "save",
+        title = "保存工程",
+        default_filename = default_filename,
+        callback = function(filepath, filename)
+            -- 导出工程数据
+            local project_data = project_manager:export_project_data(_G.Editor)
+            
+            -- 保存到文件
+            local success, err = project_manager:save_project(filepath, project_data)
+            if success then
+                print("[编辑器] 工程已保存: " .. filepath)
+            else
+                print("[编辑器] 保存失败: " .. (err or "未知错误"))
+            end
+        end
+    })
+end
+
+-- 打开工程
+local function open_project_dialog()
+    -- 创建打开对话框
+    FileDialog.new(scr, {
+        mode = "open",
+        title = "打开工程",
+        default_filename = "",
+        callback = function(filepath, filename)
+            -- 加载工程数据
+            local project_data, err = project_manager:load_project(filepath)
+            if project_data then
+                -- 重置当前图页索引，避免导入时触发无效的保存
+                current_page_index = 0
+                
+                -- 导入工程数据到编辑器
+                local success, import_err = project_manager:import_project_data(_G.Editor, project_data)
+                if success then
+                    print("[编辑器] 工程已加载: " .. filepath)
+                    -- 设置当前图页索引（import_project_data 会触发 select_page，
+                    -- 但由于 current_page_index 是 0，不会保存空数据到任何图页）
+                    current_page_index = project_data.current_page_index or 1
+                    
+                    -- 确保画布显示正确的图页内容
+                    load_canvas_from_page(current_page_index)
+                else
+                    print("[编辑器] 导入失败: " .. (import_err or "未知错误"))
+                    current_page_index = 1  -- 恢复默认值
+                end
+            else
+                print("[编辑器] 加载失败: " .. (err or "未知错误"))
+            end
+        end
+    })
+end
+
+-- 快速保存（直接保存到当前路径）
+local function quick_save()
+    local current_path = project_manager:get_current_path()
+    if current_path then
+        -- 先保存当前图页
+        save_canvas_to_page(current_page_index)
+        
+        -- 导出工程数据
+        local project_data = project_manager:export_project_data(_G.Editor)
+        
+        -- 保存到文件
+        local success, err = project_manager:save_project(current_path, project_data)
+        if success then
+            print("[编辑器] 工程已保存: " .. current_path)
+        else
+            print("[编辑器] 保存失败: " .. (err or "未知错误"))
+        end
+    else
+        -- 如果没有当前路径，打开保存对话框
+        save_project_dialog()
+    end
+end
+
 -- 菜单事件处理
 menu_bar:on("menu_action", function(self, menu_key, item_id)
     print("[菜单] " .. menu_key .. " -> " .. item_id)
     
     if item_id == "new" then
-        -- 保存当前图页
-        save_canvas_to_page(current_page_index)
-        -- 新建图页
-        local new_page = canvas_list:add_page()
-        -- 选中新图页（会触发 page_selected 事件）
-        local new_index = canvas_list:get_page_count()
-        canvas_list:select_page(new_index)
-        print("新建图页: " .. new_page.name)
+        -- 新建工程
+        project_manager:new_project(_G.Editor)
+        current_page_index = 1
+        print("新建工程")
+    elseif item_id == "open" then
+        -- 打开工程
+        open_project_dialog()
     elseif item_id == "save" then
-        -- 保存当前图页状态
-        save_canvas_to_page(current_page_index)
-        local state = canvas:export_state()
-        print("保存画布状态:")
-        for i, w in ipairs(state.widgets) do
-            print("  - " .. w.type .. " @ (" .. w.props.x .. ", " .. w.props.y .. ")")
-        end
+        -- 快速保存
+        quick_save()
+    elseif item_id == "save_as" then
+        -- 另存为
+        save_project_dialog()
     elseif item_id == "delete" then
         canvas:delete_selected()
     elseif item_id == "align_left" then
@@ -508,8 +618,8 @@ canvas_list:on("page_selected", function(self, page_data, index)
         return
     end
     
-    -- 保存当前画布状态到之前的图页
-    if current_page_index > 0 then
+    -- 保存当前画布状态到之前的图页（仅当之前有有效图页时）
+    if current_page_index > 0 and current_page_index <= canvas_list:get_page_count() then
         save_canvas_to_page(current_page_index)
     end
     
@@ -541,23 +651,5 @@ canvas_list:on("page_deleted", function(self, page_data, deleted_index)
         current_page_index = current_page_index - 1
     end
 end)
-
--- ========== 导出编辑器 API ==========
--- 可以通过这些函数在外部控制编辑器
-
-_G.Editor = {
-    -- 状态栏相关
-    create_status_bar = create_status_bar,
-    remove_status_bar = remove_status_bar,
-    set_status_bar_position = set_status_bar_position,
-    get_status_bar = get_status_bar,
-    
-    -- 获取各组件实例
-    get_canvas = function() return canvas end,
-    get_toolbox = function() return toolbox end,
-    get_property_area = function() return property_area end,
-    get_canvas_list = function() return canvas_list end,
-    get_menu_bar = function() return menu_bar end,
-}
 
 print("=== 编辑器初始化完成 ===")

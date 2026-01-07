@@ -74,7 +74,7 @@ function Valve.new(parent, props)
     self.container = lv.obj_create(parent)
     self.container:set_pos(self.props.x, self.props.y)
     self.container:set_size(self.props.size, self.props.size)
-    self.container:set_style_radius(math.floor(self.props.size / 2), 0)  -- 圆形
+    self.container:set_style_radius(lv.RADIUS_CIRCLE, 0)
     self.container:set_style_bg_color(0xE0E0E0, 0)
     self.container:set_style_border_width(2, 0)
     self.container:set_style_border_color(0x606060, 0)
@@ -86,7 +86,22 @@ function Valve.new(parent, props)
     local h_h = math.floor(self.props.size * 0.2)
     self.handle:set_size(h_w, h_h)
     self.handle:center()
+    
+    -- Set pivot to center
+    if self.handle.set_style_transform_pivot_x then
+        self.handle:set_style_transform_pivot_x(h_w / 2, 0)
+        self.handle:set_style_transform_pivot_y(h_h / 2, 0)
+    end
 
+    -- 颜色转换：允许编辑器传入 #RRGGBB 或 hex number
+    local function parse_color(c)
+        if type(c) == "string" and c:match("^#%x%x%x%x%x%x$") then
+            return tonumber(c:sub(2), 16)
+        elseif type(c) == "number" then
+            return c
+        end
+        return 0xFF5722
+    end
     self.handle:set_style_bg_color(parse_color(self.props.handle_color), 0)
     self.handle:set_style_radius(4, 0)
     self.handle:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
@@ -95,11 +110,27 @@ function Valve.new(parent, props)
     self.pivot = lv.obj_create(self.container)
     self.pivot:set_size(math.floor(self.props.size * 0.15), math.floor(self.props.size * 0.15))
     self.pivot:center()
-    self.pivot:set_style_radius(math.floor(self.props.size * 0.15 / 2), 0)  -- 圆形
+    self.pivot:set_style_radius(lv.RADIUS_CIRCLE, 0)
     self.pivot:set_style_bg_color(0x333333, 0)
 
     -- 事件监听
     self._event_listeners = { angle_changed = {}, toggled = {} }
+    
+    -- 点击事件处理：弹出确认框
+    local function on_click(e)
+        self:show_confirm_dialog()
+    end
+    
+    -- 注册点击事件
+    -- 注意：这里假设 lv.obj_add_event_cb 可用，或者使用 button.lua 中的封装方式
+    -- 直接使用 lv.obj_add_event_cb
+    if lv.obj_add_event_cb then
+        -- 创建一个简单的回调包装器
+        -- 由于 Lua 绑定限制，这里可能需要一个全局或静态的回调机制，
+        -- 但目前的 lv_lua.c 实现似乎支持直接传递 Lua 函数作为回调 (l_obj_add_event_cb)
+        -- 让我们尝试直接传递
+        self.container:add_event_cb(on_click, lv.EVENT_CLICKED, nil)
+    end
 
     -- 实例方法：属性接口
     function self.get_property(_, name)

@@ -1,6 +1,6 @@
 ﻿-- 带元数据的按钮示例，演示如何将属性暴露给编辑器
 local lv = require("lvgl")
-
+local gen = require("general")
 local Button = {}
 
 Button.__widget_meta = {
@@ -78,9 +78,12 @@ function Button.new(parent, state)
   -- 初始化属性
   self.props = {}
   for _, p in ipairs(Button.__widget_meta.properties) do
-    self.props[p.name] = state[p.name] ~= nil and state[p.name] or p.default
+    if state[p.name] ~= nil then
+	    self.props[p.name] = state[p.name]
+	else
+	    self.props[p.name] = p.default
+	end
   end
-
   -- 创建 lv 按钮与标签
   self.btn = lv.button_create(parent)
   self.btn:set_size(self.props.width, self.props.height)
@@ -89,7 +92,6 @@ function Button.new(parent, state)
   self.label = lv.label_create(self.btn)
   self.label:set_text(self.props.label)
   self.label:center()
-
   -- 保存各事件的动作回调
   self._action_callbacks = {
     clicked = nil,
@@ -161,6 +163,7 @@ function Button.new(parent, state)
   -- 事件订阅：统一接口 on(event_name, callback)
   -- callback(self, ...) 将在事件触发时被调用
   function self.on(self, event_name, callback)
+
     -- 设计模式下不注册事件
     if self.props.design_mode then return end
     
@@ -216,6 +219,8 @@ function Button.new(parent, state)
   end
 
   function self.set_property(self, name, value)
+   gen.print_r(name)
+   gen.print_r(value)
     self.props[name] = value
     if name == "label" then
       if self.label and self.label.set_text then

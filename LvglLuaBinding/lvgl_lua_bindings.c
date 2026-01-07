@@ -14,6 +14,15 @@ typedef struct {
     int func_ref;
 } lua_event_cb_data_t;
 
+// Timer callback data structure
+typedef struct {
+    lua_State* L;
+    int func_ref;
+    lv_timer_t* timer;
+} lua_timer_cb_data_t;
+
+static int luaopen_lvgl(lua_State* L);
+
 // Global TTF font storage (for applying to objects)
 static lv_font_t* g_current_ttf_font = NULL;
 void set_current_ttf_font(lv_font_t* font)
@@ -56,6 +65,29 @@ static lv_font_t* check_lv_font(lua_State* L, int idx) {
     return NULL;
 }
 
+// Helper: push lv_timer_t* as userdata with metatable
+static void push_lv_timer(lua_State* L, lv_timer_t* timer) {
+    if (timer == NULL) {
+        lua_pushnil(L);
+        return;
+    }
+    lv_timer_t** ud = (lv_timer_t**)lua_newuserdata(L, sizeof(lv_timer_t*));
+    *ud = timer;
+    luaL_setmetatable(L, "lv_timer");
+}
+
+// Helper: get lv_timer_t* from userdata
+static lv_timer_t* check_lv_timer(lua_State* L, int idx) {
+    if (lua_isuserdata(L, idx)) {
+        if (lua_islightuserdata(L, idx)) {
+            return (lv_timer_t*)lua_touserdata(L, idx);
+        }
+        lv_timer_t** ud = (lv_timer_t**)lua_touserdata(L, idx);
+        return ud ? *ud : NULL;
+    }
+    return NULL;
+}
+
 // Event callback function
 static void lua_event_cb(lv_event_t* e) {
     lua_event_cb_data_t* cb_data = (lua_event_cb_data_t*)lv_event_get_user_data(e);
@@ -68,6 +100,24 @@ static void lua_event_cb(lv_event_t* e) {
     if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
         const char* err = lua_tostring(L, -1);
         printf("Lua event callback error: %s\n", err ? err : "unknown");
+        lua_pop(L, 1);
+    }
+}
+
+// Timer callback function
+static void lua_timer_cb(lv_timer_t* timer) {
+    lua_timer_cb_data_t* cb_data = (lua_timer_cb_data_t*)lv_timer_get_user_data(timer);
+    if (!cb_data || cb_data->func_ref == LUA_NOREF) return;
+    
+    lua_State* L = cb_data->L;
+    lua_rawgeti(L, LUA_REGISTRYINDEX, cb_data->func_ref);
+    
+    // Push timer userdata as argument
+    push_lv_timer(L, timer);
+    
+    if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
+        const char* err = lua_tostring(L, -1);
+        printf("Lua timer callback error: %s\n", err ? err : "unknown");
         lua_pop(L, 1);
     }
 }
@@ -143,6 +193,17 @@ static int l_obj_align(lua_State* L) {
     int32_t x_ofs = (int32_t)luaL_optinteger(L, 3, 0);
     int32_t y_ofs = (int32_t)luaL_optinteger(L, 4, 0);
     if (obj) lv_obj_align(obj, align, x_ofs, y_ofs);
+    return 0;
+}
+
+// obj:align_to(base, align, x_ofs, y_ofs)
+static int l_obj_align_to(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lv_obj_t* base = check_lv_obj(L, 2);
+    lv_align_t align = (lv_align_t)luaL_checkinteger(L, 3);
+    int32_t x_ofs = (int32_t)luaL_optinteger(L, 4, 0);
+    int32_t y_ofs = (int32_t)luaL_optinteger(L, 5, 0);
+    if (obj && base) lv_obj_align_to(obj, base, align, x_ofs, y_ofs);
     return 0;
 }
 
@@ -540,6 +601,42 @@ static int l_obj_set_style_text_font(lua_State* L) {
     return 0;
 }
 
+// obj:set_style_text_align(align, selector)
+static int l_obj_set_style_text_align(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lv_text_align_t align = (lv_text_align_t)luaL_checkinteger(L, 2);
+    int32_t selector = (int32_t)luaL_optinteger(L, 3, 0);
+    if (obj) lv_obj_set_style_text_align(obj, align, selector);
+    return 0;
+}
+
+// obj:set_style_transform_rotation(angle, selector) - angle in 0.1 degree units
+static int l_obj_set_style_transform_rotation(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    int32_t angle = (int32_t)luaL_checkinteger(L, 2);
+    int32_t selector = (int32_t)luaL_optinteger(L, 3, 0);
+    if (obj) lv_obj_set_style_transform_rotation(obj, angle, selector);
+    return 0;
+}
+
+// obj:set_style_transform_pivot_x(x, selector)
+static int l_obj_set_style_transform_pivot_x(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    int32_t x = (int32_t)luaL_checkinteger(L, 2);
+    int32_t selector = (int32_t)luaL_optinteger(L, 3, 0);
+    if (obj) lv_obj_set_style_transform_pivot_x(obj, x, selector);
+    return 0;
+}
+
+// obj:set_style_transform_pivot_y(y, selector)
+static int l_obj_set_style_transform_pivot_y(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    int32_t y = (int32_t)luaL_checkinteger(L, 2);
+    int32_t selector = (int32_t)luaL_optinteger(L, 3, 0);
+    if (obj) lv_obj_set_style_transform_pivot_y(obj, y, selector);
+    return 0;
+}
+
 // obj:set_style_opa(opa, selector)
 static int l_obj_set_style_opa(lua_State* L) {
     lv_obj_t* obj = check_lv_obj(L, 1);
@@ -709,6 +806,115 @@ static int l_textarea_set_cursor_pos(lua_State* L) {
 static int l_textarea_get_cursor_pos(lua_State* L) {
     lv_obj_t* obj = check_lv_obj(L, 1);
     lua_pushinteger(L, obj ? lv_textarea_get_cursor_pos(obj) : 0);
+    return 1;
+}
+
+// ========== Chart specific methods ==========
+
+// Helper: push lv_chart_series_t* as lightuserdata
+static void push_lv_chart_series(lua_State* L, lv_chart_series_t* series) {
+    if (series == NULL) {
+        lua_pushnil(L);
+        return;
+    }
+    lua_pushlightuserdata(L, series);
+}
+
+// Helper: get lv_chart_series_t* from lightuserdata
+static lv_chart_series_t* check_lv_chart_series(lua_State* L, int idx) {
+    if (lua_islightuserdata(L, idx)) {
+        return (lv_chart_series_t*)lua_touserdata(L, idx);
+    }
+    return NULL;
+}
+
+// chart:set_type(type)
+static int l_chart_set_type(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lv_chart_type_t type = (lv_chart_type_t)luaL_checkinteger(L, 2);
+    if (obj) lv_chart_set_type(obj, type);
+    return 0;
+}
+
+// chart:set_point_count(cnt)
+static int l_chart_set_point_count(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    uint32_t cnt = (uint32_t)luaL_checkinteger(L, 2);
+    if (obj) lv_chart_set_point_count(obj, cnt);
+    return 0;
+}
+
+// chart:set_update_mode(mode)
+static int l_chart_set_update_mode(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lv_chart_update_mode_t mode = (lv_chart_update_mode_t)luaL_checkinteger(L, 2);
+    if (obj) lv_chart_set_update_mode(obj, mode);
+    return 0;
+}
+
+// chart:set_div_line_count(hdiv, vdiv)
+static int l_chart_set_div_line_count(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    uint8_t hdiv = (uint8_t)luaL_checkinteger(L, 2);
+    uint8_t vdiv = (uint8_t)luaL_checkinteger(L, 3);
+    if (obj) lv_chart_set_div_line_count(obj, hdiv, vdiv);
+    return 0;
+}
+
+// chart:add_series(color, axis)
+static int l_chart_add_series(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    uint32_t color_hex = (uint32_t)luaL_checkinteger(L, 2);
+    lv_chart_axis_t axis = (lv_chart_axis_t)luaL_checkinteger(L, 3);
+    if (obj) {
+        lv_chart_series_t* series = lv_chart_add_series(obj, lv_color_hex(color_hex), axis);
+        push_lv_chart_series(L, series);
+        return 1;
+    }
+    lua_pushnil(L);
+    return 1;
+}
+
+// chart:set_range(axis, min, max)
+static int l_chart_set_range(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lv_chart_axis_t axis = (lv_chart_axis_t)luaL_checkinteger(L, 2);
+    int32_t min = (int32_t)luaL_checkinteger(L, 3);
+    int32_t max = (int32_t)luaL_checkinteger(L, 4);
+    if (obj) lv_chart_set_range(obj, axis, min, max);
+    return 0;
+}
+
+// chart:set_next_value(series, value)
+static int l_chart_set_next_value(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lv_chart_series_t* series = check_lv_chart_series(L, 2);
+    int32_t value = (int32_t)luaL_checkinteger(L, 3);
+    if (obj && series) lv_chart_set_next_value(obj, series, value);
+    return 0;
+}
+
+// chart:set_value_by_id(series, id, value)
+static int l_chart_set_value_by_id(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lv_chart_series_t* series = check_lv_chart_series(L, 2);
+    uint32_t id = (uint32_t)luaL_checkinteger(L, 3);
+    int32_t value = (int32_t)luaL_checkinteger(L, 4);
+    if (obj && series) lv_chart_set_value_by_id(obj, series, id, value);
+    return 0;
+}
+
+// chart:refresh()
+static int l_chart_refresh(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    if (obj) lv_chart_refresh(obj);
+    return 0;
+}
+
+// chart:get_point_count()
+static int l_chart_get_point_count(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lua_pushinteger(L, obj ? lv_chart_get_point_count(obj) : 0);
     return 1;
 }
 
@@ -923,6 +1129,13 @@ static int l_lv_get_mouse_y(lua_State* L) {
     return 1;
 }
 
+// lv.pct(value) - Convert percentage to LVGL coordinate
+static int l_lv_pct(lua_State* L) {
+    int32_t value = (int32_t)luaL_checkinteger(L, 1);
+    lua_pushinteger(L, LV_PCT(value));
+    return 1;
+}
+
 // ========== Object Methods Table ==========
 static const luaL_Reg lv_obj_methods[] = {
     {"set_pos", l_obj_set_pos},
@@ -934,6 +1147,7 @@ static const luaL_Reg lv_obj_methods[] = {
     {"get_width", l_obj_get_width},
     {"get_height", l_obj_get_height},
     {"align", l_obj_align},
+    {"align_to", l_obj_align_to},
     {"center", l_obj_center},
     {"set_style_bg_color", l_obj_set_style_bg_color},
     {"set_style_bg_opa", l_obj_set_style_bg_opa},
@@ -960,6 +1174,10 @@ static const luaL_Reg lv_obj_methods[] = {
     {"set_style_outline_opa", l_obj_set_style_outline_opa},
     {"set_style_outline_pad", l_obj_set_style_outline_pad},
     {"set_style_opa", l_obj_set_style_opa},
+    {"set_style_text_align", l_obj_set_style_text_align},
+    {"set_style_transform_rotation", l_obj_set_style_transform_rotation},
+    {"set_style_transform_pivot_x", l_obj_set_style_transform_pivot_x},
+    {"set_style_transform_pivot_y", l_obj_set_style_transform_pivot_y},
     {"add_flag", l_obj_add_flag},
     {"remove_flag", l_obj_remove_flag},
     {"has_flag", l_obj_has_flag},
@@ -993,9 +1211,111 @@ static const luaL_Reg lv_obj_methods[] = {
     {"delete_char", l_textarea_delete_char},
     {"set_cursor_pos", l_textarea_set_cursor_pos},
     {"get_cursor_pos", l_textarea_get_cursor_pos},
-    {"get_text", l_textarea_get_text},
+    // Chart specific methods
+    {"set_type", l_chart_set_type},
+    {"set_point_count", l_chart_set_point_count},
+    {"set_update_mode", l_chart_set_update_mode},
+    {"set_div_line_count", l_chart_set_div_line_count},
+    {"add_series", l_chart_add_series},
+    {"set_range", l_chart_set_range},
+    {"set_next_value", l_chart_set_next_value},
+    {"set_value_by_id", l_chart_set_value_by_id},
+    {"refresh", l_chart_refresh},
+    {"get_point_count", l_chart_get_point_count},
     {NULL, NULL}
 };
+
+// ========== Timer Methods ==========
+
+// timer:delete()
+static int l_timer_delete(lua_State* L) {
+    lv_timer_t* timer = check_lv_timer(L, 1);
+    if (timer) {
+        // Free the callback data
+        lua_timer_cb_data_t* cb_data = (lua_timer_cb_data_t*)lv_timer_get_user_data(timer);
+        if (cb_data) {
+            if (cb_data->func_ref != LUA_NOREF) {
+                luaL_unref(L, LUA_REGISTRYINDEX, cb_data->func_ref);
+            }
+            free(cb_data);
+        }
+        lv_timer_delete(timer);
+    }
+    lv_timer_t** ud = (lv_timer_t**)lua_touserdata(L, 1);
+    if (ud) *ud = NULL;
+    return 0;
+}
+
+// timer:pause()
+static int l_timer_pause(lua_State* L) {
+    lv_timer_t* timer = check_lv_timer(L, 1);
+    if (timer) lv_timer_pause(timer);
+    return 0;
+}
+
+// timer:resume()
+static int l_timer_resume(lua_State* L) {
+    lv_timer_t* timer = check_lv_timer(L, 1);
+    if (timer) lv_timer_resume(timer);
+    return 0;
+}
+
+// timer:set_period(period_ms)
+static int l_timer_set_period(lua_State* L) {
+    lv_timer_t* timer = check_lv_timer(L, 1);
+    uint32_t period = (uint32_t)luaL_checkinteger(L, 2);
+    if (timer) lv_timer_set_period(timer, period);
+    return 0;
+}
+
+// timer:ready()
+static int l_timer_ready(lua_State* L) {
+    lv_timer_t* timer = check_lv_timer(L, 1);
+    if (timer) lv_timer_ready(timer);
+    return 0;
+}
+
+// timer:reset()
+static int l_timer_reset(lua_State* L) {
+    lv_timer_t* timer = check_lv_timer(L, 1);
+    if (timer) lv_timer_reset(timer);
+    return 0;
+}
+
+// lv.timer_create(callback, period_ms)
+static int l_lv_timer_create(lua_State* L) {
+    luaL_checktype(L, 1, LUA_TFUNCTION);
+    uint32_t period = (uint32_t)luaL_checkinteger(L, 2);
+    
+    // Create callback data
+    lua_timer_cb_data_t* cb_data = (lua_timer_cb_data_t*)malloc(sizeof(lua_timer_cb_data_t));
+    if (!cb_data) {
+        lua_pushnil(L);
+        return 1;
+    }
+    
+    cb_data->L = L;
+    lua_pushvalue(L, 1);  // Push callback function
+    cb_data->func_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    
+    // Create timer
+    lv_timer_t* timer = lv_timer_create(lua_timer_cb, period, cb_data);
+    if (!timer) {
+        luaL_unref(L, LUA_REGISTRYINDEX, cb_data->func_ref);
+        free(cb_data);
+        lua_pushnil(L);
+        return 1;
+    }
+    
+    cb_data->timer = timer;
+    push_lv_timer(L, timer);
+    return 1;
+}
+
+// lv.timer_delete(timer) - module level function
+static int l_lv_timer_delete(lua_State* L) {
+    return l_timer_delete(L);
+}
 
 // ========== Module Functions Table ==========
 static const luaL_Reg lvgl_funcs[] = {
@@ -1003,6 +1323,7 @@ static const luaL_Reg lvgl_funcs[] = {
     {"obj_create", l_lv_obj_create},
     {"label_create", l_lv_label_create},
     {"button_create", l_lv_button_create},
+    {"btn_create", l_lv_button_create},  // Alias for button_create
     {"list_create", l_lv_list_create},
     {"win_create", l_lv_win_create},
     {"menu_create", l_lv_menu_create},
@@ -1020,11 +1341,14 @@ static const luaL_Reg lvgl_funcs[] = {
     {"display_get_ver_res", l_lv_display_get_ver_res},
     {"get_mouse_x", l_lv_get_mouse_x},
     {"get_mouse_y", l_lv_get_mouse_y},
+    {"pct", l_lv_pct},
 #if LV_USE_TINY_TTF
     {"tiny_ttf_create_file", l_lv_tiny_ttf_create_file},
     {"tiny_ttf_destroy", l_lv_tiny_ttf_destroy},
     {"set_default_font", l_lv_set_default_font},
 #endif
+    {"timer_create", l_lv_timer_create},
+    {"timer_delete", l_lv_timer_delete},
     {NULL, NULL}
 };
 
@@ -1038,6 +1362,10 @@ static int luaopen_lvgl(lua_State* L) {
     
     // Create lv_font metatable
     luaL_newmetatable(L, "lv_font");
+    lua_pop(L, 1);
+    
+    // Create lv_timer metatable
+    luaL_newmetatable(L, "lv_timer");
     lua_pop(L, 1);
     
     // Create module table
@@ -1054,6 +1382,20 @@ static int luaopen_lvgl(lua_State* L) {
     lua_pushinteger(L, LV_ALIGN_LEFT_MID); lua_setfield(L, -2, "ALIGN_LEFT_MID");
     lua_pushinteger(L, LV_ALIGN_RIGHT_MID); lua_setfield(L, -2, "ALIGN_RIGHT_MID");
     lua_pushinteger(L, LV_ALIGN_CENTER); lua_setfield(L, -2, "ALIGN_CENTER");
+    
+    // Align out constants (for align_to)
+    lua_pushinteger(L, LV_ALIGN_OUT_TOP_LEFT); lua_setfield(L, -2, "ALIGN_OUT_TOP_LEFT");
+    lua_pushinteger(L, LV_ALIGN_OUT_TOP_MID); lua_setfield(L, -2, "ALIGN_OUT_TOP_MID");
+    lua_pushinteger(L, LV_ALIGN_OUT_TOP_RIGHT); lua_setfield(L, -2, "ALIGN_OUT_TOP_RIGHT");
+    lua_pushinteger(L, LV_ALIGN_OUT_BOTTOM_LEFT); lua_setfield(L, -2, "ALIGN_OUT_BOTTOM_LEFT");
+    lua_pushinteger(L, LV_ALIGN_OUT_BOTTOM_MID); lua_setfield(L, -2, "ALIGN_OUT_BOTTOM_MID");
+    lua_pushinteger(L, LV_ALIGN_OUT_BOTTOM_RIGHT); lua_setfield(L, -2, "ALIGN_OUT_BOTTOM_RIGHT");
+    lua_pushinteger(L, LV_ALIGN_OUT_LEFT_TOP); lua_setfield(L, -2, "ALIGN_OUT_LEFT_TOP");
+    lua_pushinteger(L, LV_ALIGN_OUT_LEFT_MID); lua_setfield(L, -2, "ALIGN_OUT_LEFT_MID");
+    lua_pushinteger(L, LV_ALIGN_OUT_LEFT_BOTTOM); lua_setfield(L, -2, "ALIGN_OUT_LEFT_BOTTOM");
+    lua_pushinteger(L, LV_ALIGN_OUT_RIGHT_TOP); lua_setfield(L, -2, "ALIGN_OUT_RIGHT_TOP");
+    lua_pushinteger(L, LV_ALIGN_OUT_RIGHT_MID); lua_setfield(L, -2, "ALIGN_OUT_RIGHT_MID");
+    lua_pushinteger(L, LV_ALIGN_OUT_RIGHT_BOTTOM); lua_setfield(L, -2, "ALIGN_OUT_RIGHT_BOTTOM");
     
     lua_pushinteger(L, LV_FLEX_FLOW_ROW); lua_setfield(L, -2, "FLEX_FLOW_ROW");
     lua_pushinteger(L, LV_FLEX_FLOW_COLUMN); lua_setfield(L, -2, "FLEX_FLOW_COLUMN");
@@ -1107,6 +1449,31 @@ static int luaopen_lvgl(lua_State* L) {
     lua_pushinteger(L, LV_SIZE_CONTENT); lua_setfield(L, -2, "SIZE_CONTENT");
     lua_pushinteger(L, LV_PCT(100)); lua_setfield(L, -2, "PCT_100");
     lua_pushinteger(L, LV_PCT(50)); lua_setfield(L, -2, "PCT_50");
+    
+    // Chart type constants
+    lua_pushinteger(L, LV_CHART_TYPE_NONE); lua_setfield(L, -2, "CHART_TYPE_NONE");
+    lua_pushinteger(L, LV_CHART_TYPE_LINE); lua_setfield(L, -2, "CHART_TYPE_LINE");
+    lua_pushinteger(L, LV_CHART_TYPE_BAR); lua_setfield(L, -2, "CHART_TYPE_BAR");
+    lua_pushinteger(L, LV_CHART_TYPE_SCATTER); lua_setfield(L, -2, "CHART_TYPE_SCATTER");
+    
+    // Chart update mode constants
+    lua_pushinteger(L, LV_CHART_UPDATE_MODE_SHIFT); lua_setfield(L, -2, "CHART_UPDATE_MODE_SHIFT");
+    lua_pushinteger(L, LV_CHART_UPDATE_MODE_CIRCULAR); lua_setfield(L, -2, "CHART_UPDATE_MODE_CIRCULAR");
+    
+    // Chart axis constants
+    lua_pushinteger(L, LV_CHART_AXIS_PRIMARY_Y); lua_setfield(L, -2, "CHART_AXIS_PRIMARY_Y");
+    lua_pushinteger(L, LV_CHART_AXIS_SECONDARY_Y); lua_setfield(L, -2, "CHART_AXIS_SECONDARY_Y");
+    lua_pushinteger(L, LV_CHART_AXIS_PRIMARY_X); lua_setfield(L, -2, "CHART_AXIS_PRIMARY_X");
+    lua_pushinteger(L, LV_CHART_AXIS_SECONDARY_X); lua_setfield(L, -2, "CHART_AXIS_SECONDARY_X");
+    
+    // Radius constants
+    lua_pushinteger(L, LV_RADIUS_CIRCLE); lua_setfield(L, -2, "RADIUS_CIRCLE");
+    
+    // Text align constants
+    lua_pushinteger(L, LV_TEXT_ALIGN_LEFT); lua_setfield(L, -2, "TEXT_ALIGN_LEFT");
+    lua_pushinteger(L, LV_TEXT_ALIGN_CENTER); lua_setfield(L, -2, "TEXT_ALIGN_CENTER");
+    lua_pushinteger(L, LV_TEXT_ALIGN_RIGHT); lua_setfield(L, -2, "TEXT_ALIGN_RIGHT");
+    lua_pushinteger(L, LV_TEXT_ALIGN_AUTO); lua_setfield(L, -2, "TEXT_ALIGN_AUTO");
     
     return 1;
 }

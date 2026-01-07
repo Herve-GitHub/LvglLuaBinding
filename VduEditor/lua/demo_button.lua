@@ -1,12 +1,12 @@
-local lv = require("lvgl")
+﻿local lv = require("lvgl")
 local Button = require("lua.widgets.button")
 
 -- 获取当前活动屏幕
 local scr = lv.scr_act()
 
 -- 使用新的 Button.new(parent, props) 接口
-local btn1 = Button.new(scr, { x = 100, y = 100, width = 200, height = 60, label = "点击我" })
-local btn2 = Button.new(scr, { x = 100, y = 200, width = 200, height = 60, label = "重置" })
+local btn1 = Button.new(scr, { x = 100, y = 100, width = 200, height = 60, label = "点击我" ,design_mode = false})
+local btn2 = Button.new(scr, { x = 100, y = 200, width = 200, height = 60, label = "重置" ,design_mode = false})
 
 -- 注册点击事件（使用规范化的 on(event, cb)）
 btn1:on("single_clicked", function(self)

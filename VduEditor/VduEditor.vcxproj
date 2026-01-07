@@ -43,7 +43,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v145</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -147,8 +147,11 @@
     <None Include="lua\editor\CanvasArea.lua" />
     <None Include="lua\editor\CanvasList.lua" />
     <None Include="lua\editor\ColorDialog.lua" />
+    <None Include="lua\editor\FileDialog.lua" />
+    <None Include="lua\editor\json.lua" />
     <None Include="lua\editor\main_editor.lua" />
     <None Include="lua\editor\MenuBar.lua" />
+    <None Include="lua\editor\ProjectManager.lua" />
     <None Include="lua\editor\PropertyArea.lua" />
     <None Include="lua\editor\tools_box.lua" />
     <None Include="lua\general.lua" />

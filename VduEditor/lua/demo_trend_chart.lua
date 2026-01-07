@@ -1,4 +1,4 @@
-local lv = require("lvgl")
+﻿local lv = require("lvgl")
 local TrendChart = require("lua.widgets.trend_chart")
 
 -- Get active screen
@@ -7,7 +7,7 @@ local scr = lv.scr_act()
 -- Create TrendChart using new API
 local chart = TrendChart.new(scr, {
     x = 50, y = 50, width = 700, height = 300,
-    point_count = 300, update_interval = 1000, range_min = 0, range_max = 100, auto_update = true
+    point_count = 300, update_interval = 1000, range_min = 0, range_max = 100, auto_update = true,design_mode = false
 })
 
 -- Create a label

@@ -11,13 +11,13 @@ TrendChart.__widget_meta = {
     properties = {
         { name = "x", type = "number", default = 0, label = "X" },
         { name = "y", type = "number", default = 0, label = "Y" },
-        { name = "width", type = "number", default = 200, label = "宽度" },
-        { name = "height", type = "number", default = 100, label = "高度" },
-        { name = "point_count", type = "number", default = 100, label = "点数", min = 1, max = 5000 },
+        { name = "width", type = "number", default = 300, label = "宽度" },
+        { name = "height", type = "number", default = 120, label = "高度" },
+        { name = "point_count", type = "number", default = 300, label = "点数", min = 1, max = 5000 },
         { name = "update_interval", type = "number", default = 1000, label = "刷新间隔(ms)", min = 10 },
         { name = "range_min", type = "number", default = 0, label = "最小值" },
         { name = "range_max", type = "number", default = 100, label = "最大值" },
-        { name = "auto_update", type = "boolean", default = false, label = "自动更新" },
+        { name = "auto_update", type = "boolean", default = true, label = "自动更新" },
         { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
     },
     events = { "updated" },
@@ -37,40 +37,39 @@ function TrendChart.new(parent, props)
         end
     end
 
-    -- 创建一个简单的容器作为占位符（因为 chart 相关 API 尚未完全实现）
-    self.container = lv.obj_create(parent)
-    self.container:set_pos(self.props.x, self.props.y)
-    self.container:set_size(self.props.width, self.props.height)
-    self.container:set_style_bg_color(0x2D3436, 0)
-    self.container:set_style_border_width(1, 0)
-    self.container:set_style_border_color(0x636E72, 0)
-    self.container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
-    
-    -- 添加标签显示控件名称
-    self.label = lv.label_create(self.container)
-    self.label:set_text("Trend Chart")
-    self.label:set_style_text_color(0xB2BEC3, 0)
-    self.label:center()
+    -- create chart
+    self.chart = lv.chart_create(parent)
+    self.chart:set_pos(self.props.x, self.props.y)
+    self.chart:set_size(self.props.width, self.props.height)
+    self.chart:set_type(lv.CHART_TYPE_LINE)
+    self.chart:set_point_count(self.props.point_count)
+    self.chart:set_update_mode(lv.CHART_UPDATE_MODE_SHIFT)
+    self.chart:set_div_line_count(3, 0)
+    self.series = self.chart:add_series(0x2196F3, lv.CHART_AXIS_PRIMARY_Y)
+    self.chart:set_range(lv.CHART_AXIS_PRIMARY_Y, self.props.range_min, self.props.range_max)
 
     -- event listeners
     self._event_listeners = { updated = {} }
-    self._timer_running = false
 
     function self.update(self)
-        -- placeholder: generate random value
-        local val = 50 + math.random(0, 20)
+        -- placeholder: generate random value; editor/host can push real data by calling set_property or chart API
+        local val = 50 + math.random(self.props.range_min, self.props.range_max)%20
+        self.chart:set_next_value(self.series, val)
         for _, cb in ipairs(self._event_listeners.updated) do cb(self, val) end
     end
 
     function self.start(self)
-        -- 设计模式下不启动定时器
-        if self.props.design_mode then return end
-        -- 注意：lv.timer_create 尚未实现，暂时只设置标志
-        self._timer_running = true
+        if self.timer then return end
+        self.timer = lv.timer_create(function()
+            self:update()
+        end, self.props.update_interval)
     end
 
     function self.stop(self)
-        self._timer_running = false
+        if self.timer then
+            lv.timer_delete(self.timer)
+            self.timer = nil
+        end
     end
 
     function self.get_property(self, name)
@@ -80,21 +79,20 @@ function TrendChart.new(parent, props)
     function self.set_property(self, name, value)
         self.props[name] = value
         if name == "x" or name == "y" then
-            self.container:set_pos(self.props.x, self.props.y)
+            self.chart:set_pos(self.props.x, self.props.y)
         elseif name == "width" or name == "height" then
-            self.container:set_size(self.props.width, self.props.height)
-        elseif name == "auto_update" then
-            if value and not self.props.design_mode then 
-                self:start() 
-            else 
-                self:stop() 
-            end
-        elseif name == "design_mode" then
-            if value then
+            self.chart:set_size(self.props.width, self.props.height)
+        elseif name == "point_count" then
+            self.chart:set_point_count(value)
+        elseif name == "update_interval" then
+            if self.timer then
                 self:stop()
-            elseif self.props.auto_update then
                 self:start()
             end
+        elseif name == "range_min" or name == "range_max" then
+            self.chart:set_range(0, self.props.range_min, self.props.range_max)
+        elseif name == "auto_update" then
+            if value then self:start() else self:stop() end
         end
         return true
     end
@@ -118,6 +116,9 @@ function TrendChart.new(parent, props)
         if not self._event_listeners[event_name] then self._event_listeners[event_name] = {} end
         table.insert(self._event_listeners[event_name], callback)
     end
+
+    -- auto start if requested
+    if self.props.auto_update then self:start() end
 
     return self
 end
