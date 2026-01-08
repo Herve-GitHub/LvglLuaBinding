@@ -11,8 +11,8 @@ extern "C" {
 }
 
 // 窗口尺寸
-static const int WINDOW_WIDTH = 1024;
-static const int WINDOW_HEIGHT = 768;
+static const int WINDOW_WIDTH = 1280;
+static const int WINDOW_HEIGHT = 960;
 
 // 默认脚本路径
 static const char* DEFAULT_SCRIPT_PATH = "lua\\editor\\main_editor.lua";
@@ -224,7 +224,6 @@ int main(int argc, char* argv[])
     // 将控制台设置为 UTF-8 以支持中文输出
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
-
     std::cout << "VduEditor - LVGL Lua Configuration Editor" << std::endl;
     std::cout << "Window size: " << WINDOW_WIDTH << "x" << WINDOW_HEIGHT << std::endl;
 
@@ -244,7 +243,7 @@ int main(int argc, char* argv[])
     // 创建显示
     int32_t zoom_level = 100;
     bool allow_dpi_override = false;
-    bool simulator_mode = true;
+    bool simulator_mode = false;
     
     lv_display_t* display = lv_windows_create_display(
         L"VduEditor",

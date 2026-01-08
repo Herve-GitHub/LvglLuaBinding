@@ -66,10 +66,6 @@ MenuBar.MENU_ITEMS = {
             { id = "separator" },
             { id = "show_grid", label = "显示网格", shortcut = "" },
             { id = "snap_to_grid", label = "对齐到网格", shortcut = "" },
-            { id = "separator" },
-            { id = "show_toolbox", label = "显示工具箱", shortcut = "" },
-            { id = "show_properties", label = "属性面板", shortcut = "" },
-            { id = "show_canvas_list", label = "图页列表", shortcut = "" },
         }
     },
 }
@@ -118,6 +114,9 @@ function MenuBar.new(parent, props)
     self._open_dropdown = nil
     self._open_menu_key = nil
     
+    -- 记录上次屏幕宽度（用于检测变化）
+    self._last_screen_width = self.props.width
+    
     -- 创建菜单栏容器
     self.container = lv.obj_create(parent)
     self.container:set_pos(self.props.x, self.props.y)
@@ -129,7 +128,6 @@ function MenuBar.new(parent, props)
     self.container:set_style_text_color(self.props.text_color, 0)
     self.container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     self.container:remove_flag(lv.OBJ_FLAG_GESTURE_BUBBLE)
-    -- 清除默认布局
     self.container:clear_layout()
     
     -- 菜单按钮存储
@@ -145,8 +143,56 @@ function MenuBar.new(parent, props)
         self._menu_buttons[menu_key] = btn_info
         x_offset = x_offset + btn_info.width + 8
     end
-    
+
+    -- 使用定时器轮询屏幕大小变化
+    self:_setup_resize_timer()
+
     return self
+end
+
+-- 设置窗口大小变化定时器
+function MenuBar:_setup_resize_timer()
+    local this = self
+    -- 创建定时器，每200毫秒检查一次屏幕大小
+    self._resize_timer = lv.timer_create(function(timer)
+        this:_check_screen_resize()
+    end, 200)
+    print("[MenuBar] 已启动屏幕大小变化检测定时器")
+end
+
+-- 检查屏幕大小变化
+function MenuBar:_check_screen_resize()
+    local scr = lv.scr_act()
+    if scr and scr.get_width then
+        local ok, new_width = pcall(function() return scr:get_width() end)
+        if ok and type(new_width) == "number" and new_width > 0 then
+            if new_width ~= self._last_screen_width then
+                self._last_screen_width = new_width
+                self:set_width(new_width)
+                print("[MenuBar] 检测到窗口大小变化，新宽度: " .. new_width)
+            end
+        end
+    end
+end
+
+-- 设置菜单栏宽度
+function MenuBar:set_width(width)
+    if width and width > 0 then
+        self.props.width = width
+        self.container:set_width(width)
+    end
+end
+
+-- 销毁定时器（清理资源）
+function MenuBar:destroy()
+    if self._resize_timer then
+        lv.timer_delete(self._resize_timer)
+        self._resize_timer = nil
+    end
+    if self.container then
+        self.container:delete()
+        self.container = nil
+    end
 end
 
 -- 事件订阅

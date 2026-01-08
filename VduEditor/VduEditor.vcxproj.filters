@@ -83,6 +83,7 @@
     <None Include="lua\editor\json.lua" />
     <None Include="lua\editor\FileDialog.lua" />
     <None Include="lua\editor\ProjectManager.lua" />
+    <None Include="lua\editor\LeftPanel.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

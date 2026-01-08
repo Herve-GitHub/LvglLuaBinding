@@ -116,7 +116,7 @@
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)lua" "$(TargetDir)lua" /E /I /Y</Command>
+      <Command>xcopy "$(ProjectDir)lua" "$(TargetDir)lua" /S /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -149,6 +149,7 @@
     <None Include="lua\editor\ColorDialog.lua" />
     <None Include="lua\editor\FileDialog.lua" />
     <None Include="lua\editor\json.lua" />
+    <None Include="lua\editor\LeftPanel.lua" />
     <None Include="lua\editor\main_editor.lua" />
     <None Include="lua\editor\MenuBar.lua" />
     <None Include="lua\editor\ProjectManager.lua" />

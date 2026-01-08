@@ -1,4 +1,4 @@
--- 多图页选择窗口组件
+﻿-- 多图页选择窗口组件
 local lv = require("lvgl")
 
 local CanvasList = {}
@@ -10,6 +10,21 @@ CanvasList.__widget_meta = {
     description = "多图页窗口",
     schema_version = "1.0",
     version = "1.0",
+}
+
+-- 图页属性元数据（用于属性窗口显示）
+CanvasList.__page_meta = {
+    id = "canvas_page",
+    name = "图页",
+    description = "图页属性设置",
+    schema_version = "1.0",
+    version = "1.0",
+    properties = {
+        { name = "name", label = "名称", type = "string", default = "图页" },
+        { name = "width", label = "宽度", type = "number", default = 800, min = 100, max = 4096 },
+        { name = "height", label = "高度", type = "number", default = 600, min = 100, max = 4096 },
+        { name = "bg_color", label = "背景颜色", type = "color", default = 0x1E1E1E },
+    },
 }
 
 -- 构造函数
@@ -252,14 +267,20 @@ function CanvasList:_create_content_area()
 end
 
 -- 添加新图页
-function CanvasList:add_page(name)
+function CanvasList:add_page(name, page_props)
     self._page_counter = self._page_counter + 1
     local page_id = "page_" .. self._page_counter
     local page_name = name or ("图页 " .. self._page_counter)
     
+    -- 合并默认属性和传入的属性
+    page_props = page_props or {}
+    
     local page_data = {
         id = page_id,
         name = page_name,
+        width = page_props.width or 800,
+        height = page_props.height or 600,
+        bg_color = page_props.bg_color or 0x1E1E1E,
         widgets = {},  -- 存储该图页的控件数据
     }
     
@@ -475,6 +496,30 @@ function CanvasList:rename_page(index, new_name)
         print("[图页列表] 重命名图页: " .. new_name)
         self:_emit("page_renamed", page, index)
     end
+end
+
+-- 更新图页属性
+function CanvasList:update_page_property(index, prop_name, prop_value)
+    if index >= 1 and index <= #self._pages then
+        local page = self._pages[index]
+        page[prop_name] = prop_value
+        
+        -- 如果是名称变更，更新UI显示
+        if prop_name == "name" then
+            local item = self._page_items[page.id]
+            if item and item.label then
+                item.label:set_text(prop_value)
+            end
+        end
+        
+        print("[图页列表] 更新图页属性: " .. prop_name .. " = " .. tostring(prop_value))
+        self:_emit("page_property_changed", page, index, prop_name, prop_value)
+    end
+end
+
+-- 获取图页属性元数据
+function CanvasList:get_page_meta()
+    return CanvasList.__page_meta
 end
 
 -- 标题栏按下事件
