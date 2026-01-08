@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file lv_windows_context.c
  *
  */
@@ -554,6 +554,16 @@ static bool lv_windows_window_message_callback_nolock(
                             context->display_resolution_changed = true;
                             context->requested_display_resolution.x = LOWORD(lParam);
                             context->requested_display_resolution.y = HIWORD(lParam);
+                            
+                            // 重置指针位置到新的有效范围内，避免坐标超出边界警告
+                            int32_t new_hor_res = LOWORD(lParam);
+                            int32_t new_ver_res = HIWORD(lParam);
+                            if(context->pointer.point.x >= new_hor_res) {
+                                context->pointer.point.x = new_hor_res > 0 ? new_hor_res - 1 : 0;
+                            }
+                            if(context->pointer.point.y >= new_ver_res) {
+                                context->pointer.point.y = new_ver_res > 0 ? new_ver_res - 1 : 0;
+                            }
                         }
                         else {
                             int32_t window_width = lv_windows_dpi_to_physical(

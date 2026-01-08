@@ -47,11 +47,18 @@ static void push_lv_obj(lua_State* L, lv_obj_t* obj) {
 // Helper: get lv_obj_t* from userdata
 static lv_obj_t* check_lv_obj(lua_State* L, int idx) {
     if (lua_isuserdata(L, idx)) {
+        lv_obj_t* obj = NULL;
         if (lua_islightuserdata(L, idx)) {
-            return (lv_obj_t*)lua_touserdata(L, idx);
+            obj = (lv_obj_t*)lua_touserdata(L, idx);
+        } else {
+            lv_obj_t** ud = (lv_obj_t**)lua_touserdata(L, idx);
+            obj = ud ? *ud : NULL;
         }
-        lv_obj_t** ud = (lv_obj_t**)lua_touserdata(L, idx);
-        return ud ? *ud : NULL;
+        // Validate object is still valid before returning
+        if (obj && !lv_obj_is_valid(obj)) {
+            return NULL;
+        }
+        return obj;
     }
     return NULL;
 }
@@ -1136,6 +1143,26 @@ static int l_lv_pct(lua_State* L) {
     return 1;
 }
 
+// lv.textarea_get_text(obj) - Module level function to get textarea text
+static int l_lv_textarea_get_text(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    if (obj) {
+        // Check if it's a textarea or label
+        if (lv_obj_check_type(obj, &lv_textarea_class)) {
+            const char* text = lv_textarea_get_text(obj);
+            lua_pushstring(L, text ? text : "");
+        } else if (lv_obj_check_type(obj, &lv_label_class)) {
+            const char* text = lv_label_get_text(obj);
+            lua_pushstring(L, text ? text : "");
+        } else {
+            lua_pushstring(L, "");
+        }
+    } else {
+        lua_pushstring(L, "");
+    }
+    return 1;
+}
+
 // ========== Object Methods Table ==========
 static const luaL_Reg lv_obj_methods[] = {
     {"set_pos", l_obj_set_pos},
@@ -1196,6 +1223,7 @@ static const luaL_Reg lv_obj_methods[] = {
     {"move_background", l_obj_move_background},
     {"add_event_cb", l_obj_add_event_cb},
     {"set_text", l_obj_set_text},
+    {"get_text", l_textarea_get_text},  // Get text from textarea or label
     {"invalidate", l_obj_invalidate},
     {"set_content_width", l_obj_set_content_width},
     {"set_content_height", l_obj_set_content_height},
@@ -1329,6 +1357,7 @@ static const luaL_Reg lvgl_funcs[] = {
     {"menu_create", l_lv_menu_create},
     {"tabview_create", l_lv_tabview_create},
     {"textarea_create", l_lv_textarea_create},
+    {"textarea_get_text", l_lv_textarea_get_text},  // Module level textarea_get_text
     {"checkbox_create", l_lv_checkbox_create},
     {"dropdown_create", l_lv_dropdown_create},
     {"slider_create", l_lv_slider_create},

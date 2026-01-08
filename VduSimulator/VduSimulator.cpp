@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
     // 创建显示
     int32_t zoom_level = 100;
     bool allow_dpi_override = false;
-    bool simulator_mode = true;
+    bool simulator_mode = false;
 
     lv_display_t* display = lv_windows_create_display(
         L"VduSimulator",
@@ -266,7 +266,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    // 创建输入设备
+    // 创建 输入设备
     lv_indev_t* pointer_indev = lv_windows_acquire_pointer_indev(display);
     if (!pointer_indev) {
         std::cerr << "Failed to create pointer input device" << std::endl;
