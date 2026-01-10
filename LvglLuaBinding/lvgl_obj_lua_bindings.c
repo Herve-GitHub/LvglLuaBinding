@@ -142,6 +142,26 @@ static int l_obj_set_style_border_color(lua_State* L) {
     return 0;
 }
 
+// obj:set_style_border_side(side, selector)
+// side: LV_BORDER_SIDE_NONE, LV_BORDER_SIDE_BOTTOM, LV_BORDER_SIDE_TOP, 
+//       LV_BORDER_SIDE_LEFT, LV_BORDER_SIDE_RIGHT, LV_BORDER_SIDE_FULL, etc.
+static int l_obj_set_style_border_side(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lv_border_side_t side = (lv_border_side_t)luaL_checkinteger(L, 2);
+    int32_t selector = (int32_t)luaL_optinteger(L, 3, 0);
+    if (obj) lv_obj_set_style_border_side(obj, side, selector);
+    return 0;
+}
+
+// obj:set_style_border_opa(opa, selector)
+static int l_obj_set_style_border_opa(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lv_opa_t opa = (lv_opa_t)luaL_checkinteger(L, 2);
+    int32_t selector = (int32_t)luaL_optinteger(L, 3, 0);
+    if (obj) lv_obj_set_style_border_opa(obj, opa, selector);
+    return 0;
+}
+
 // obj:set_style_pad_all(pad, selector)
 static int l_obj_set_style_pad_all(lua_State* L) {
     lv_obj_t* obj = check_lv_obj(L, 1);
@@ -587,6 +607,92 @@ static int l_obj_scroll_to_view(lua_State* L) {
     return 0;
 }
 
+// obj:set_src(src) - for image objects
+static int l_obj_set_src(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    const char* src = luaL_checkstring(L, 2);
+    if (obj && src) {
+        // Check if the object is an image
+        if (lv_obj_check_type(obj, &lv_image_class)) {
+            lv_image_set_src(obj, src);
+        }
+    }
+    return 0;
+}
+
+// obj:set_rotation(angle) - for image objects (angle in 0.1 degree units)
+static int l_obj_set_rotation(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    int32_t angle = (int32_t)luaL_checkinteger(L, 2);
+    if (obj) {
+        if (lv_obj_check_type(obj, &lv_image_class)) {
+            lv_image_set_rotation(obj, angle);
+        }
+    }
+    return 0;
+}
+
+// obj:set_scale(scale) - for image objects (256 = 100%)
+static int l_obj_set_scale(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    uint32_t scale = (uint32_t)luaL_checkinteger(L, 2);
+    if (obj) {
+        if (lv_obj_check_type(obj, &lv_image_class)) {
+            lv_image_set_scale(obj, scale);
+        }
+    }
+    return 0;
+}
+
+// obj:set_scale_x(scale) - for image objects (256 = 100%)
+static int l_obj_set_scale_x(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    uint32_t scale = (uint32_t)luaL_checkinteger(L, 2);
+    if (obj) {
+        if (lv_obj_check_type(obj, &lv_image_class)) {
+            lv_image_set_scale_x(obj, scale);
+        }
+    }
+    return 0;
+}
+
+// obj:set_scale_y(scale) - for image objects (256 = 100%)
+static int l_obj_set_scale_y(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    uint32_t scale = (uint32_t)luaL_checkinteger(L, 2);
+    if (obj) {
+        if (lv_obj_check_type(obj, &lv_image_class)) {
+            lv_image_set_scale_y(obj, scale);
+        }
+    }
+    return 0;
+}
+
+// obj:set_pivot(x, y) - for image objects
+static int l_obj_set_pivot(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    int32_t x = (int32_t)luaL_checkinteger(L, 2);
+    int32_t y = (int32_t)luaL_checkinteger(L, 3);
+    if (obj) {
+        if (lv_obj_check_type(obj, &lv_image_class)) {
+            lv_image_set_pivot(obj, x, y);
+        }
+    }
+    return 0;
+}
+
+// obj:set_inner_align(align) - for image objects
+static int l_obj_set_inner_align(lua_State* L) {
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    lv_image_align_t align = (lv_image_align_t)luaL_checkinteger(L, 2);
+    if (obj) {
+        if (lv_obj_check_type(obj, &lv_image_class)) {
+            lv_image_set_inner_align(obj, align);
+        }
+    }
+    return 0;
+}
+
 // obj:add_state(state)
 static int l_obj_add_state(lua_State* L) {
     lv_obj_t* obj = check_lv_obj(L, 1);
@@ -630,6 +736,8 @@ static const luaL_Reg lv_obj_methods[] = {
     {"set_style_text_font", l_obj_set_style_text_font},
     {"set_style_border_width", l_obj_set_style_border_width},
     {"set_style_border_color", l_obj_set_style_border_color},
+    {"set_style_border_side", l_obj_set_style_border_side},
+    {"set_style_border_opa", l_obj_set_style_border_opa},
     {"set_style_pad_all", l_obj_set_style_pad_all},
     {"set_style_pad_top", l_obj_set_style_pad_top},
     {"set_style_pad_bottom", l_obj_set_style_pad_bottom},
@@ -676,6 +784,14 @@ static const luaL_Reg lv_obj_methods[] = {
     {"set_content_width", l_obj_set_content_width},
     {"set_content_height", l_obj_set_content_height},
     {"scroll_to_view", l_obj_scroll_to_view},
+    // Image methods
+    {"set_src", l_obj_set_src},
+    {"set_rotation", l_obj_set_rotation},
+    {"set_scale", l_obj_set_scale},
+    {"set_scale_x", l_obj_set_scale_x},
+    {"set_scale_y", l_obj_set_scale_y},
+    {"set_pivot", l_obj_set_pivot},
+    {"set_inner_align", l_obj_set_inner_align},
     {NULL, NULL}
 };
 

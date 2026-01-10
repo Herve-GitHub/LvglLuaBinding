@@ -606,12 +606,40 @@ static int luaopen_lvgl(lua_State* L) {
     lua_pushinteger(L, LV_PART_INDICATOR); lua_setfield(L, -2, "PART_INDICATOR");
     lua_pushinteger(L, LV_PART_KNOB); lua_setfield(L, -2, "PART_KNOB");
     
+    // Border side constants
+    lua_pushinteger(L, LV_BORDER_SIDE_NONE); lua_setfield(L, -2, "BORDER_SIDE_NONE");
+    lua_pushinteger(L, LV_BORDER_SIDE_BOTTOM); lua_setfield(L, -2, "BORDER_SIDE_BOTTOM");
+    lua_pushinteger(L, LV_BORDER_SIDE_TOP); lua_setfield(L, -2, "BORDER_SIDE_TOP");
+    lua_pushinteger(L, LV_BORDER_SIDE_LEFT); lua_setfield(L, -2, "BORDER_SIDE_LEFT");
+    lua_pushinteger(L, LV_BORDER_SIDE_RIGHT); lua_setfield(L, -2, "BORDER_SIDE_RIGHT");
+    lua_pushinteger(L, LV_BORDER_SIDE_FULL); lua_setfield(L, -2, "BORDER_SIDE_FULL");
+    lua_pushinteger(L, LV_BORDER_SIDE_INTERNAL); lua_setfield(L, -2, "BORDER_SIDE_INTERNAL");
+    
     // Other constants
     lua_pushinteger(L, LV_RADIUS_CIRCLE); lua_setfield(L, -2, "RADIUS_CIRCLE");
     lua_pushinteger(L, LV_TEXT_ALIGN_LEFT); lua_setfield(L, -2, "TEXT_ALIGN_LEFT");
     lua_pushinteger(L, LV_TEXT_ALIGN_CENTER); lua_setfield(L, -2, "TEXT_ALIGN_CENTER");
     lua_pushinteger(L, LV_TEXT_ALIGN_RIGHT); lua_setfield(L, -2, "TEXT_ALIGN_RIGHT");
     lua_pushinteger(L, LV_TEXT_ALIGN_AUTO); lua_setfield(L, -2, "TEXT_ALIGN_AUTO");
+    
+    // Image align constants (for image scaling/fitting)
+    lua_pushinteger(L, LV_IMAGE_ALIGN_DEFAULT); lua_setfield(L, -2, "IMAGE_ALIGN_DEFAULT");
+    lua_pushinteger(L, LV_IMAGE_ALIGN_TOP_LEFT); lua_setfield(L, -2, "IMAGE_ALIGN_TOP_LEFT");
+    lua_pushinteger(L, LV_IMAGE_ALIGN_TOP_MID); lua_setfield(L, -2, "IMAGE_ALIGN_TOP_MID");
+    lua_pushinteger(L, LV_IMAGE_ALIGN_TOP_RIGHT); lua_setfield(L, -2, "IMAGE_ALIGN_TOP_RIGHT");
+    lua_pushinteger(L, LV_IMAGE_ALIGN_BOTTOM_LEFT); lua_setfield(L, -2, "IMAGE_ALIGN_BOTTOM_LEFT");
+    lua_pushinteger(L, LV_IMAGE_ALIGN_BOTTOM_MID); lua_setfield(L, -2, "IMAGE_ALIGN_BOTTOM_MID");
+    lua_pushinteger(L, LV_IMAGE_ALIGN_BOTTOM_RIGHT); lua_setfield(L, -2, "IMAGE_ALIGN_BOTTOM_RIGHT");
+    lua_pushinteger(L, LV_IMAGE_ALIGN_LEFT_MID); lua_setfield(L, -2, "IMAGE_ALIGN_LEFT_MID");
+    lua_pushinteger(L, LV_IMAGE_ALIGN_RIGHT_MID); lua_setfield(L, -2, "IMAGE_ALIGN_RIGHT_MID");
+    lua_pushinteger(L, LV_IMAGE_ALIGN_CENTER); lua_setfield(L, -2, "IMAGE_ALIGN_CENTER");
+    lua_pushinteger(L, LV_IMAGE_ALIGN_STRETCH); lua_setfield(L, -2, "IMAGE_ALIGN_STRETCH");
+    lua_pushinteger(L, LV_IMAGE_ALIGN_TILE); lua_setfield(L, -2, "IMAGE_ALIGN_TILE");
+    lua_pushinteger(L, LV_IMAGE_ALIGN_CONTAIN); lua_setfield(L, -2, "IMAGE_ALIGN_CONTAIN");
+    lua_pushinteger(L, LV_IMAGE_ALIGN_COVER); lua_setfield(L, -2, "IMAGE_ALIGN_COVER");
+    
+    // Image scale constant (256 = 100%, no scale)
+    lua_pushinteger(L, LV_SCALE_NONE); lua_setfield(L, -2, "SCALE_NONE");
     
     return 1;
 }

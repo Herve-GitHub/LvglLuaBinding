@@ -148,6 +148,7 @@
     <None Include="lua\editor\CanvasList.lua" />
     <None Include="lua\editor\ColorDialog.lua" />
     <None Include="lua\editor\FileDialog.lua" />
+    <None Include="lua\editor\icons.lua" />
     <None Include="lua\editor\json.lua" />
     <None Include="lua\editor\LeftPanel.lua" />
     <None Include="lua\editor\main_editor.lua" />
@@ -167,6 +168,8 @@
     <None Include="lua\widgets\valve.lua" />
   </ItemGroup>
   <ItemGroup>
+    <Font Include="fonts\fa-regular-400.ttf" />
+    <Font Include="fonts\fa-solid-900.ttf" />
     <Font Include="fonts\simhei.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

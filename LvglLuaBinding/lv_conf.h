@@ -338,7 +338,7 @@
 #define LV_USE_FS_ARDUINO_ESP_LITTLEFS 0
 #define LV_USE_FS_ARDUINO_SD 0
 #define LV_USE_FS_UEFI 0
-#define LV_USE_LODEPNG 0
+#define LV_USE_LODEPNG 1
 #define LV_USE_LIBPNG 0
 #define LV_USE_BMP 0
 #define LV_USE_TJPGD 0

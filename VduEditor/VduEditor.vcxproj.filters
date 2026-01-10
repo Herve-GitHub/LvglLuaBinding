@@ -88,10 +88,13 @@
     <None Include="lua\editor\PropertyPageEditor.lua" />
     <None Include="lua\editor\PropertyWidgetEditor.lua" />
     <None Include="lua\editor\PropertyEventEditor.lua" />
+    <None Include="lua\editor\icons.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">
       <Filter>fonts</Filter>
     </Font>
+    <Font Include="fonts\fa-regular-400.ttf" />
+    <Font Include="fonts\fa-solid-900.ttf" />
   </ItemGroup>
 </Project>

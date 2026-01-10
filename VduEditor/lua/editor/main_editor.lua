@@ -3,6 +3,53 @@
 local lv = require("lvgl")
 local gen = require("general")
 
+-- 获取应用程序目录（由 C++ 设置的全局变量）
+local APP_DIR = _G.APP_DIR or ""
+
+-- 辅助函数：构建完整路径
+local function build_path(relative_path)
+    if APP_DIR and APP_DIR ~= "" then
+        -- 将正斜杠转换为反斜杠（Windows）
+        local path = APP_DIR .. relative_path:gsub("/", "\\")
+        return path
+    end
+    return relative_path
+end
+
+-- 加载图标模块
+local Icons = require("icons")
+
+-- 尝试加载图标字体（Font Awesome），如果失败则使用中文图标
+local icon_font = nil
+local icon_font_loaded = false
+
+-- 尝试加载 Font Awesome 字体
+local function try_load_icon_font()
+    local font_path = build_path("fonts/fa-solid-900.ttf")
+    print("[图标] 尝试加载字体: " .. font_path)
+    
+    local ok, font = pcall(function()
+        return lv.tiny_ttf_create_file(font_path, 16)
+    end)
+    if ok and font then
+        icon_font = font
+        icon_font_loaded = true
+        Icons.use("fa")
+        print("[图标] Font Awesome 字体加载成功")
+        return true
+    else
+        print("[图标] Font Awesome 字体未找到，使用中文图标")
+        Icons.use("cn")
+        return false
+    end
+end
+
+-- 延迟加载图标字体（避免阻塞启动）
+--try_load_icon_font()  -- 暂时禁用，直接使用中文图标
+
+-- 默认使用中文图标（兼容 SimHei 字体）
+Icons.use("cn")
+
 -- 加载编辑器组件
 local MenuBar = require("MenuBar")
 local CanvasArea = require("CanvasArea")
@@ -31,9 +78,9 @@ scr:set_style_pad_all(0, 0)
 scr:set_style_text_color(0xFFFFFF, 0)
 
 print("=== VDU 编辑器启动 ===")
+print("[编辑器] 应用目录: " .. (APP_DIR or "(未设置)"))
 
 -- 布局常量
-local MENUBAR_HEIGHT = 36
 local STATUSBAR_HEIGHT = 28
 local LEFT_PANEL_WIDTH = 250
 local RIGHT_PANEL_WIDTH = 280
@@ -89,6 +136,16 @@ local function load_module(module_path)
     end
 end
 
+-- ========== 创建菜单栏 (Ribbon 风格) ==========
+local menu_bar = MenuBar.new(scr, {
+    x = 0,
+    y = 0,
+    width = WINDOW_WIDTH,
+})
+
+-- 从菜单栏获取实际高度
+local MENUBAR_HEIGHT = menu_bar:get_height()
+
 -- 计算画布区域
 local function get_canvas_bounds()
     local canvas_x = LEFT_PANEL_WIDTH
@@ -102,14 +159,6 @@ local function get_canvas_bounds()
     
     return canvas_x, canvas_y, canvas_width, canvas_height
 end
-
--- ========== 创建菜单栏 ==========
-local menu_bar = MenuBar.new(scr, {
-    x = 0,
-    y = 0,
-    width = WINDOW_WIDTH,
-    height = MENUBAR_HEIGHT,
-})
 
 -- ========== 创建左侧面板（工具箱+图页列表）==========
 local left_panel = LeftPanel.new(scr, {
@@ -377,7 +426,7 @@ end
 
 -- ========== 菜单事件处理 ==========
 menu_bar:on("menu_action", function(self, menu_key, item_id)
-    print("[菜单] " .. menu_key .. " -> " .. item_id)
+    print("[Ribbon] 按钮点击: " .. tostring(item_id))
     
     if item_id == "new" then
         project_manager:new_project(_G.Editor)
@@ -389,8 +438,18 @@ menu_bar:on("menu_action", function(self, menu_key, item_id)
         quick_save()
     elseif item_id == "save_as" then
         save_project_dialog()
+    elseif item_id == "cut" then
+        canvas:cut_selected()
+    elseif item_id == "copy" then
+        canvas:copy_selected()
+    elseif item_id == "paste" then
+        canvas:paste()
     elseif item_id == "delete" then
         canvas:delete_selected()
+    elseif item_id == "undo" then
+        canvas:undo()
+    elseif item_id == "redo" then
+        canvas:redo()
     elseif item_id == "align_left" then
         canvas:align_selected("left")
     elseif item_id == "align_center" then
@@ -403,12 +462,32 @@ menu_bar:on("menu_action", function(self, menu_key, item_id)
         canvas:align_selected("center_v")
     elseif item_id == "align_bottom" then
         canvas:align_selected("bottom")
+    elseif item_id == "distribute_h" then
+        canvas:distribute_selected("horizontal")
+    elseif item_id == "distribute_v" then
+        canvas:distribute_selected("vertical")
+    elseif item_id == "zoom_in" then
+        canvas:zoom_in()
+    elseif item_id == "zoom_out" then
+        canvas:zoom_out()
+    elseif item_id == "zoom_reset" then
+        canvas:zoom_reset()
     elseif item_id == "show_grid" then
         local new_state = canvas:toggle_grid()
         menu_bar:set_state("show_grid", new_state)
     elseif item_id == "snap_to_grid" then
         local new_state = canvas:toggle_snap_to_grid()
         menu_bar:set_state("snap_to_grid", new_state)
+    elseif item_id == "show_toolbox" then
+        left_panel:toggle_toolbox()
+    elseif item_id == "show_properties" then
+        property_area:toggle_visible()
+    elseif item_id == "show_canvas_list" then
+        left_panel:toggle_canvas_list()
+    elseif item_id == "export" then
+        print("导出工程")
+    elseif item_id == "export_image" then
+        print("导出图片")
     elseif item_id == "exit" then
         print("退出编辑器")
     end
