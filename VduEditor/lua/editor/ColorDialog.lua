@@ -1,6 +1,6 @@
--- ColorDialog.lua
--- ÑÕÉ«Ñ¡Ôñ¶Ô»°¿ò£ºÓÃÓÚÔÚÊôĞÔ±à¼­ÖĞÑ¡ÔñÑÕÉ«
--- ×¢Òâ£ºÒÆ³ıÁËÕÚÕÖ²ãÒÔ±ÜÃâ³ÌĞò¿¨×¡
+ï»¿-- ColorDialog.lua
+-- é¢œè‰²é€‰æ‹©å¯¹è¯æ¡†ï¼šç”¨äºåœ¨å±æ€§ç¼–è¾‘ä¸­é€‰æ‹©é¢œè‰²
+-- æ³¨æ„ï¼šç§»é™¤äº†é®ç½©å±‚ä»¥é¿å…ç¨‹åºå¡ä½
 local lv = require("lvgl")
 
 local ColorDialog = {}
@@ -8,18 +8,18 @@ ColorDialog.__index = ColorDialog
 
 ColorDialog.__widget_meta = {
     id = "color_dialog",
-    name = "ÑÕÉ«Ñ¡Ôñ¶Ô»°¿ò",
-    description = "ÓÃÓÚÑ¡ÔñÑÕÉ«µÄ¶Ô»°¿ò£¨·ÇÄ£Ì¬£©",
+    name = "é¢œè‰²é€‰æ‹©å¯¹è¯æ¡†",
+    description = "ç”¨äºé€‰æ‹©é¢œè‰²çš„å¯¹è¯æ¡†ï¼ˆéæ¨¡æ€ï¼‰",
     schema_version = "1.0",
     version = "1.0",
 }
 
--- ¹¹Ôìº¯Êı
+-- æ„é€ å‡½æ•°
 function ColorDialog.new(parent, props)
     props = props or {}
     local self = setmetatable({}, ColorDialog)
     
-    -- ÊôĞÔ
+    -- å±æ€§
     self.props = {
         x = props.x or 400,
         y = props.y or 150,
@@ -33,21 +33,21 @@ function ColorDialog.new(parent, props)
         initial_color = props.initial_color or 0x007ACC,
     }
     
-    -- ±£´æ¸¸ÔªËØÒıÓÃ
+    -- ä¿å­˜çˆ¶å…ƒç´ å¼•ç”¨
     self._parent = parent
     
-    -- µ±Ç°Ñ¡ÖĞµÄÑÕÉ« (RGB ·ÖÁ¿)
+    -- å½“å‰é€‰ä¸­çš„é¢œè‰² (RGB åˆ†é‡)
     self._red = 0
     self._green = 122
     self._blue = 204
     
-    -- ½âÎö³õÊ¼ÑÕÉ«
+    -- è§£æåˆå§‹é¢œè‰²
     self:_parse_color(self.props.initial_color)
     
-    -- ÊÂ¼ş¼àÌıÆ÷
+    -- äº‹ä»¶ç›‘å¬å™¨
     self._event_listeners = {}
     
-    -- ±êÌâÀ¸ÍÏ×§×´Ì¬
+    -- æ ‡é¢˜æ æ‹–æ‹½çŠ¶æ€
     self._drag_state = {
         is_dragging = false,
         start_x = 0,
@@ -56,10 +56,10 @@ function ColorDialog.new(parent, props)
         start_mouse_y = 0,
     }
     
-    -- ²»Ê¹ÓÃÕÚÕÖ²ã£¨»áµ¼ÖÂ³ÌĞò¿¨×¡£©
+    -- ä¸ä½¿ç”¨é®ç½©å±‚ï¼ˆä¼šå¯¼è‡´ç¨‹åºå¡ä½ï¼‰
     self.overlay = nil
     
-    -- ´´½¨Ö÷ÈİÆ÷£¨¶Ô»°¿ò´°¿Ú£©
+    -- åˆ›å»ºä¸»å®¹å™¨ï¼ˆå¯¹è¯æ¡†çª—å£ï¼‰
     self.container = lv.obj_create(parent)
     self.container:set_pos(self.props.x, self.props.y)
     self.container:set_size(self.props.width, self.props.height)
@@ -77,19 +77,19 @@ function ColorDialog.new(parent, props)
     self.container:remove_flag(lv.OBJ_FLAG_GESTURE_BUBBLE)
     self.container:clear_layout()
     
-    -- ´´½¨±êÌâÀ¸
+    -- åˆ›å»ºæ ‡é¢˜æ 
     self:_create_title_bar()
     
-    -- ´´½¨ÄÚÈİÇøÓò
+    -- åˆ›å»ºå†…å®¹åŒºåŸŸ
     self:_create_content_area()
     
-    -- ´´½¨°´Å¥ÇøÓò
+    -- åˆ›å»ºæŒ‰é’®åŒºåŸŸ
     self:_create_button_area()
     
     return self
 end
 
--- ½âÎöÑÕÉ«Öµ
+-- è§£æé¢œè‰²å€¼
 function ColorDialog:_parse_color(color)
     if type(color) == "number" then
         self._red = math.floor(color / 65536) % 256
@@ -103,17 +103,17 @@ function ColorDialog:_parse_color(color)
     end
 end
 
--- »ñÈ¡µ±Ç°ÑÕÉ«Öµ£¨Êı×Ö¸ñÊ½£©
+-- è·å–å½“å‰é¢œè‰²å€¼ï¼ˆæ•°å­—æ ¼å¼ï¼‰
 function ColorDialog:_get_color_value()
     return self._red * 65536 + self._green * 256 + self._blue
 end
 
--- »ñÈ¡µ±Ç°ÑÕÉ«Öµ£¨Ê®Áù½øÖÆ×Ö·û´®¸ñÊ½£©
+-- è·å–å½“å‰é¢œè‰²å€¼ï¼ˆåå…­è¿›åˆ¶å­—ç¬¦ä¸²æ ¼å¼ï¼‰
 function ColorDialog:_get_color_hex()
     return string.format("#%02X%02X%02X", self._red, self._green, self._blue)
 end
 
--- ´´½¨±êÌâÀ¸
+-- åˆ›å»ºæ ‡é¢˜æ 
 function ColorDialog:_create_title_bar()
     local this = self
     
@@ -128,13 +128,13 @@ function ColorDialog:_create_title_bar()
     self.title_bar:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     self.title_bar:clear_layout()
     
-    -- ±êÌâÎÄ±¾
+    -- æ ‡é¢˜æ–‡æœ¬
     self.title_label = lv.label_create(self.title_bar)
-    self.title_label:set_text("Ñ¡ÔñÑÕÉ«")
+    self.title_label:set_text("é€‰æ‹©é¢œè‰²")
     self.title_label:set_style_text_color(self.props.text_color, 0)
     self.title_label:align(lv.ALIGN_LEFT_MID, 10, 0)
     
-    -- ¹Ø±Õ°´Å¥ (X)
+    -- å…³é—­æŒ‰é’® (X)
     self.close_btn = lv.obj_create(self.title_bar)
     self.close_btn:set_size(20, 20)
     self.close_btn:align(lv.ALIGN_RIGHT_MID, -4, 0)
@@ -149,12 +149,12 @@ function ColorDialog:_create_title_bar()
     close_label:set_style_text_color(self.props.text_color, 0)
     close_label:center()
     
-    -- ¹Ø±Õ°´Å¥ÊÂ¼ş
+    -- å…³é—­æŒ‰é’®äº‹ä»¶
     self.close_btn:add_event_cb(function(e)
         this:cancel()
     end, lv.EVENT_CLICKED, nil)
     
-    -- ±êÌâÀ¸ÍÏ×§ÊÂ¼ş
+    -- æ ‡é¢˜æ æ‹–æ‹½äº‹ä»¶
     self.title_bar:add_event_cb(function(e)
         this:_on_title_pressed()
     end, lv.EVENT_PRESSED, nil)
@@ -168,7 +168,7 @@ function ColorDialog:_create_title_bar()
     end, lv.EVENT_RELEASED, nil)
 end
 
--- ´´½¨ÄÚÈİÇøÓò
+-- åˆ›å»ºå†…å®¹åŒºåŸŸ
 function ColorDialog:_create_content_area()
     local this = self
     local content_y = self.props.title_height + 10
@@ -185,14 +185,14 @@ function ColorDialog:_create_content_area()
     
     local y_pos = 0
     
-    -- ÑÕÉ«Ô¤ÀÀÇøÓò
+    -- é¢œè‰²é¢„è§ˆåŒºåŸŸ
     local preview_label = lv.label_create(self.content)
-    preview_label:set_text("ÑÕÉ«Ô¤ÀÀ:")
+    preview_label:set_text("é¢œè‰²é¢„è§ˆ:")
     preview_label:set_style_text_color(self.props.text_color, 0)
     preview_label:set_pos(0, y_pos)
     y_pos = y_pos + 20
     
-    -- Ô¤ÀÀ¿òÈİÆ÷£¨°üº¬ĞÂÑÕÉ«ºÍÔ­ÑÕÉ«£©
+    -- é¢„è§ˆæ¡†å®¹å™¨ï¼ˆåŒ…å«æ–°é¢œè‰²å’ŒåŸé¢œè‰²ï¼‰
     local preview_container = lv.obj_create(self.content)
     preview_container:set_pos(0, y_pos)
     preview_container:set_size(self.props.width - 20, 60)
@@ -202,9 +202,9 @@ function ColorDialog:_create_content_area()
     preview_container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     preview_container:clear_layout()
     
-    -- ĞÂÑÕÉ«Ô¤ÀÀ
+    -- æ–°é¢œè‰²é¢„è§ˆ
     local new_label = lv.label_create(preview_container)
-    new_label:set_text("ĞÂ")
+    new_label:set_text("æ–°")
     new_label:set_style_text_color(0xAAAAAA, 0)
     new_label:set_pos(0, 0)
     
@@ -218,9 +218,9 @@ function ColorDialog:_create_content_area()
     self.preview_new:set_style_pad_all(0, 0)
     self.preview_new:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     
-    -- Ô­ÑÕÉ«Ô¤ÀÀ
+    -- åŸé¢œè‰²é¢„è§ˆ
     local old_label = lv.label_create(preview_container)
-    old_label:set_text("Ô­")
+    old_label:set_text("åŸ")
     old_label:set_style_text_color(0xAAAAAA, 0)
     old_label:set_pos(150, 0)
     
@@ -236,7 +236,7 @@ function ColorDialog:_create_content_area()
     
     y_pos = y_pos + 70
     
-    -- RGB »¬¿é
+    -- RGB æ»‘å—
     self:_create_color_slider("R", "red", 0xFF0000, y_pos)
     y_pos = y_pos + 50
     
@@ -246,7 +246,7 @@ function ColorDialog:_create_content_area()
     self:_create_color_slider("B", "blue", 0x0000FF, y_pos)
     y_pos = y_pos + 50
     
-    -- Ê®Áù½øÖÆÑÕÉ«ÖµÏÔÊ¾
+    -- åå…­è¿›åˆ¶é¢œè‰²å€¼æ˜¾ç¤º
     local hex_label = lv.label_create(self.content)
     hex_label:set_text("HEX:")
     hex_label:set_style_text_color(self.props.text_color, 0)
@@ -265,7 +265,7 @@ function ColorDialog:_create_content_area()
     self.hex_input:set_text(self:_get_color_hex())
     self.hex_input:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     
-    -- HEX ÊäÈë±ä¸üÊÂ¼ş
+    -- HEX è¾“å…¥å˜æ›´äº‹ä»¶
     self.hex_input:add_event_cb(function(e)
         local hex_text = this.hex_input:get_text()
         if hex_text:match("^#%x%x%x%x%x%x$") then
@@ -275,38 +275,38 @@ function ColorDialog:_create_content_area()
         end
     end, lv.EVENT_VALUE_CHANGED, nil)
     
-    -- RGB ÊıÖµÏÔÊ¾
+    -- RGB æ•°å€¼æ˜¾ç¤º
     self.rgb_label = lv.label_create(self.content)
     self.rgb_label:set_text(string.format("RGB(%d, %d, %d)", self._red, self._green, self._blue))
     self.rgb_label:set_style_text_color(0xAAAAAA, 0)
     self.rgb_label:set_pos(150, y_pos + 5)
 end
 
--- ´´½¨ÑÕÉ«»¬¿é
+-- åˆ›å»ºé¢œè‰²æ»‘å—
 function ColorDialog:_create_color_slider(label_text, color_name, indicator_color, y_pos)
     local this = self
     
-    -- ±êÇ©
+    -- æ ‡ç­¾
     local label = lv.label_create(self.content)
     label:set_text(label_text .. ":")
     label:set_style_text_color(self.props.text_color, 0)
     label:set_pos(0, y_pos + 8)
     
-    -- »¬¿é
+    -- æ»‘å—
     local slider = lv.slider_create(self.content)
     slider:set_pos(25, y_pos + 5)
     slider:set_size(200, 20)
     slider:set_range(0, 255)
     
-    -- ÉèÖÃ»¬¿éÑùÊ½
-    slider:set_style_bg_color(0x404040, 0)  -- ¹ìµÀ±³¾°
-    slider:set_style_bg_color(indicator_color, lv.PART_INDICATOR)  -- Ö¸Ê¾Æ÷ÑÕÉ«
-    slider:set_style_bg_color(0xFFFFFF, lv.PART_KNOB)  -- »¬¿éÑÕÉ«
+    -- è®¾ç½®æ»‘å—æ ·å¼
+    slider:set_style_bg_color(0x404040, 0)  -- è½¨é“èƒŒæ™¯
+    slider:set_style_bg_color(indicator_color, lv.PART_INDICATOR)  -- æŒ‡ç¤ºå™¨é¢œè‰²
+    slider:set_style_bg_color(0xFFFFFF, lv.PART_KNOB)  -- æ»‘å—é¢œè‰²
     slider:set_style_radius(5, 0)
     slider:set_style_radius(5, lv.PART_INDICATOR)
     slider:set_style_radius(10, lv.PART_KNOB)
     
-    -- ÉèÖÃ³õÊ¼Öµ
+    -- è®¾ç½®åˆå§‹å€¼
     local initial_value = 0
     if color_name == "red" then
         initial_value = self._red
@@ -317,14 +317,14 @@ function ColorDialog:_create_color_slider(label_text, color_name, indicator_colo
     end
     slider:set_value(initial_value, lv.ANIM_OFF)
     
-    -- ÊıÖµÏÔÊ¾
+    -- æ•°å€¼æ˜¾ç¤º
     local value_label = lv.label_create(self.content)
     value_label:set_text(tostring(initial_value))
     value_label:set_style_text_color(self.props.text_color, 0)
     value_label:set_pos(235, y_pos + 8)
     value_label:set_width(35)
     
-    -- ±£´æÒıÓÃ
+    -- ä¿å­˜å¼•ç”¨
     if color_name == "red" then
         self.slider_red = slider
         self.label_red = value_label
@@ -336,7 +336,7 @@ function ColorDialog:_create_color_slider(label_text, color_name, indicator_colo
         self.label_blue = value_label
     end
     
-    -- »¬¿éÖµ±ä¸üÊÂ¼ş
+    -- æ»‘å—å€¼å˜æ›´äº‹ä»¶
     slider:add_event_cb(function(e)
         local value = slider:get_value()
         value_label:set_text(tostring(value))
@@ -354,19 +354,19 @@ function ColorDialog:_create_color_slider(label_text, color_name, indicator_colo
     end, lv.EVENT_VALUE_CHANGED, nil)
 end
 
--- ¸üĞÂÔ¤ÀÀ
+-- æ›´æ–°é¢„è§ˆ
 function ColorDialog:_update_preview()
     local color = self:_get_color_value()
     self.preview_new:set_style_bg_color(color, 0)
     self.rgb_label:set_text(string.format("RGB(%d, %d, %d)", self._red, self._green, self._blue))
 end
 
--- ¸üĞÂÊ®Áù½øÖÆÏÔÊ¾
+-- æ›´æ–°åå…­è¿›åˆ¶æ˜¾ç¤º
 function ColorDialog:_update_hex_display()
     self.hex_input:set_text(self:_get_color_hex())
 end
 
--- ¸üĞÂ»¬¿é
+-- æ›´æ–°æ»‘å—
 function ColorDialog:_update_sliders()
     if self.slider_red then
         self.slider_red:set_value(self._red, lv.ANIM_OFF)
@@ -382,14 +382,14 @@ function ColorDialog:_update_sliders()
     end
 end
 
--- ´´½¨°´Å¥ÇøÓò
+-- åˆ›å»ºæŒ‰é’®åŒºåŸŸ
 function ColorDialog:_create_button_area()
     local this = self
     local btn_y = self.props.height - 45
     local btn_width = 80
     local btn_height = 32
     
-    -- È·¶¨°´Å¥
+    -- ç¡®å®šæŒ‰é’®
     self.ok_btn = lv.btn_create(self.container)
     self.ok_btn:set_pos(self.props.width - btn_width * 2 - 30, btn_y)
     self.ok_btn:set_size(btn_width, btn_height)
@@ -397,7 +397,7 @@ function ColorDialog:_create_button_area()
     self.ok_btn:set_style_radius(4, 0)
     
     local ok_label = lv.label_create(self.ok_btn)
-    ok_label:set_text("È·¶¨")
+    ok_label:set_text("ç¡®å®š")
     ok_label:set_style_text_color(0xFFFFFF, 0)
     ok_label:center()
     
@@ -405,7 +405,7 @@ function ColorDialog:_create_button_area()
         this:confirm()
     end, lv.EVENT_CLICKED, nil)
     
-    -- È¡Ïû°´Å¥
+    -- å–æ¶ˆæŒ‰é’®
     self.cancel_btn = lv.btn_create(self.container)
     self.cancel_btn:set_pos(self.props.width - btn_width - 15, btn_y)
     self.cancel_btn:set_size(btn_width, btn_height)
@@ -413,7 +413,7 @@ function ColorDialog:_create_button_area()
     self.cancel_btn:set_style_radius(4, 0)
     
     local cancel_label = lv.label_create(self.cancel_btn)
-    cancel_label:set_text("È¡Ïû")
+    cancel_label:set_text("å–æ¶ˆ")
     cancel_label:set_style_text_color(0xFFFFFF, 0)
     cancel_label:center()
     
@@ -422,7 +422,7 @@ function ColorDialog:_create_button_area()
     end, lv.EVENT_CLICKED, nil)
 end
 
--- ±êÌâÀ¸°´ÏÂÊÂ¼ş
+-- æ ‡é¢˜æ æŒ‰ä¸‹äº‹ä»¶
 function ColorDialog:_on_title_pressed()
     local mouse_x = lv.get_mouse_x()
     local mouse_y = lv.get_mouse_y()
@@ -434,7 +434,7 @@ function ColorDialog:_on_title_pressed()
     self._drag_state.start_mouse_y = mouse_y
 end
 
--- ±êÌâÀ¸ÍÏ¶¯ÊÂ¼ş
+-- æ ‡é¢˜æ æ‹–åŠ¨äº‹ä»¶
 function ColorDialog:_on_title_pressing()
     local mouse_x = lv.get_mouse_x()
     local mouse_y = lv.get_mouse_y()
@@ -442,7 +442,7 @@ function ColorDialog:_on_title_pressing()
     local delta_x = mouse_x - self._drag_state.start_mouse_x
     local delta_y = mouse_y - self._drag_state.start_mouse_y
     
-    -- ¼ì²éÊÇ·ñ¿ªÊ¼ÍÏ×§
+    -- æ£€æŸ¥æ˜¯å¦å¼€å§‹æ‹–æ‹½
     if not self._drag_state.is_dragging then
         if math.abs(delta_x) > 3 or math.abs(delta_y) > 3 then
             self._drag_state.is_dragging = true
@@ -451,26 +451,26 @@ function ColorDialog:_on_title_pressing()
         end
     end
     
-    -- ¼ÆËãĞÂÎ»ÖÃ
+    -- è®¡ç®—æ–°ä½ç½®
     local new_x = self._drag_state.start_x + delta_x
     local new_y = self._drag_state.start_y + delta_y
     
-    -- ÏŞÖÆÔÚÆÁÄ»·¶Î§ÄÚ
+    -- é™åˆ¶åœ¨å±å¹•èŒƒå›´å†…
     new_x = math.max(0, new_x)
     new_y = math.max(0, new_y)
     
-    -- ¸üĞÂÎ»ÖÃ
+    -- æ›´æ–°ä½ç½®
     self.props.x = new_x
     self.props.y = new_y
     self.container:set_pos(math.floor(new_x), math.floor(new_y))
 end
 
--- ±êÌâÀ¸ÊÍ·ÅÊÂ¼ş
+-- æ ‡é¢˜æ é‡Šæ”¾äº‹ä»¶
 function ColorDialog:_on_title_released()
     self._drag_state.is_dragging = false
 end
 
--- ÊÂ¼ş¶©ÔÄ
+-- äº‹ä»¶è®¢é˜…
 function ColorDialog:on(event_name, callback)
     if not self._event_listeners[event_name] then
         self._event_listeners[event_name] = {}
@@ -478,39 +478,39 @@ function ColorDialog:on(event_name, callback)
     table.insert(self._event_listeners[event_name], callback)
 end
 
--- ´¥·¢ÊÂ¼ş
+-- è§¦å‘äº‹ä»¶
 function ColorDialog:_emit(event_name, ...)
     local listeners = self._event_listeners[event_name]
     if listeners then
         for _, cb in ipairs(listeners) do
             local ok, err = pcall(cb, self, ...)
             if not ok then
-                print("[ÑÕÉ«¶Ô»°¿ò] ÊÂ¼ş»Øµ÷´íÎó:", err)
+                print("[é¢œè‰²å¯¹è¯æ¡†] äº‹ä»¶å›è°ƒé”™è¯¯:", err)
             end
         end
     end
 end
 
--- È·ÈÏÑ¡Ôñ
+-- ç¡®è®¤é€‰æ‹©
 function ColorDialog:confirm()
     local color_value = self:_get_color_value()
     local color_hex = self:_get_color_hex()
     
-    print("[ÑÕÉ«¶Ô»°¿ò] È·ÈÏÑ¡ÔñÑÕÉ«: " .. color_hex)
+    print("[é¢œè‰²å¯¹è¯æ¡†] ç¡®è®¤é€‰æ‹©é¢œè‰²: " .. color_hex)
     
     self:_emit("color_selected", color_value, color_hex)
     self:close()
 end
 
--- È¡ÏûÑ¡Ôñ
+-- å–æ¶ˆé€‰æ‹©
 function ColorDialog:cancel()
-    print("[ÑÕÉ«¶Ô»°¿ò] È¡ÏûÑ¡Ôñ")
+    print("[é¢œè‰²å¯¹è¯æ¡†] å–æ¶ˆé€‰æ‹©")
     
     self:_emit("cancelled")
     self:close()
 end
 
--- ¹Ø±Õ¶Ô»°¿ò
+-- å…³é—­å¯¹è¯æ¡†
 function ColorDialog:close()
     if self.overlay then
         self.overlay:delete()
@@ -524,7 +524,7 @@ function ColorDialog:close()
     self:_emit("closed")
 end
 
--- ÉèÖÃÑÕÉ«
+-- è®¾ç½®é¢œè‰²
 function ColorDialog:set_color(color)
     self:_parse_color(color)
     self:_update_sliders()
@@ -532,17 +532,17 @@ function ColorDialog:set_color(color)
     self:_update_hex_display()
 end
 
--- »ñÈ¡µ±Ç°Ñ¡ÖĞµÄÑÕÉ«
+-- è·å–å½“å‰é€‰ä¸­çš„é¢œè‰²
 function ColorDialog:get_color()
     return self:_get_color_value()
 end
 
--- »ñÈ¡µ±Ç°Ñ¡ÖĞµÄÑÕÉ«£¨Ê®Áù½øÖÆ×Ö·û´®£©
+-- è·å–å½“å‰é€‰ä¸­çš„é¢œè‰²ï¼ˆåå…­è¿›åˆ¶å­—ç¬¦ä¸²ï¼‰
 function ColorDialog:get_color_hex()
     return self:_get_color_hex()
 end
 
--- ¾²Ì¬·½·¨£ºÏÔÊ¾ÑÕÉ«Ñ¡Ôñ¶Ô»°¿ò
+-- é™æ€æ–¹æ³•ï¼šæ˜¾ç¤ºé¢œè‰²é€‰æ‹©å¯¹è¯æ¡†
 function ColorDialog.show(parent, initial_color, callback)
     local dialog = ColorDialog.new(parent, {
         initial_color = initial_color or 0x007ACC,

@@ -2,7 +2,7 @@
  * @file lvgl_lua_bindings.h
  * @brief LVGL Lua bindings for VduEditor
  */
-
+//公共头文件
 #ifndef LVGL_LUA_BINDINGS_H
 #define LVGL_LUA_BINDINGS_H
 #ifndef LVGLLUABINDING_EXPORTS

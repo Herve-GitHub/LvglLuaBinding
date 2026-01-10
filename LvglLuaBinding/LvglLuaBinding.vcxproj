@@ -647,6 +647,7 @@
     <ClInclude Include="lvgl\src\widgets\win\lv_win.h" />
     <ClInclude Include="lvgl\src\widgets\win\lv_win_private.h" />
     <ClInclude Include="lvgl_lua_bindings.h" />
+    <ClInclude Include="lvgl_lua_bindings_internal.h" />
     <ClInclude Include="lv_conf.h" />
   </ItemGroup>
   <ItemGroup>
@@ -1211,7 +1212,11 @@
     <ClCompile Include="lvgl\src\widgets\textarea\lv_textarea.c" />
     <ClCompile Include="lvgl\src\widgets\tileview\lv_tileview.c" />
     <ClCompile Include="lvgl\src\widgets\win\lv_win.c" />
+    <ClCompile Include="lvgl_chart_lua_bindings.c" />
     <ClCompile Include="lvgl_lua_bindings.c" />
+    <ClCompile Include="lvgl_obj_lua_bindings.c" />
+    <ClCompile Include="lvgl_slider_lua_bindings.c" />
+    <ClCompile Include="lvgl_textarea_lua_bindings.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="LvglLuaBinding.def" />

@@ -1902,6 +1902,9 @@
     <ClInclude Include="lvgl\lv_version.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="lvgl_lua_bindings_internal.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lvgl_lua_bindings.c">
@@ -3588,6 +3591,18 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="lvgl\src\lv_init.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="lvgl_obj_lua_bindings.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="lvgl_textarea_lua_bindings.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="lvgl_chart_lua_bindings.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="lvgl_slider_lua_bindings.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

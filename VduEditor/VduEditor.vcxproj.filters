@@ -84,6 +84,10 @@
     <None Include="lua\editor\FileDialog.lua" />
     <None Include="lua\editor\ProjectManager.lua" />
     <None Include="lua\editor\LeftPanel.lua" />
+    <None Include="lua\editor\PropertyInputs.lua" />
+    <None Include="lua\editor\PropertyPageEditor.lua" />
+    <None Include="lua\editor\PropertyWidgetEditor.lua" />
+    <None Include="lua\editor\PropertyEventEditor.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

@@ -101,7 +101,7 @@ end
 function StatusBar:_create_status_lamp()
   local lamp_size = self.props.lamp_size
   local container_height = self.props.height
-  local y_offset = math.floor((container_height - lamp_size) / 2)
+  local y_offset = 0--math.floor((container_height - lamp_size) / 2)
   
   -- 状态灯（圆形）
   self.lamp = lv.obj_create(self.container)
