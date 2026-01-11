@@ -116,7 +116,9 @@
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)lua" "$(TargetDir)lua" /S /Y</Command>
+      <Command>xcopy "$(ProjectDir)lua" "$(TargetDir)lua" /S /Y
+xcopy "$(ProjectDir)fonts" "$(TargetDir)fonts" /S /Y
+xcopy "$(ProjectDir)icons" "$(TargetDir)icons" /S /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -171,6 +173,31 @@
     <Font Include="fonts\fa-regular-400.ttf" />
     <Font Include="fonts\fa-solid-900.ttf" />
     <Font Include="fonts\simhei.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icons\ribbon\align_bottom.png" />
+    <Image Include="icons\ribbon\align_center.png" />
+    <Image Include="icons\ribbon\align_left.png" />
+    <Image Include="icons\ribbon\align_middle.png" />
+    <Image Include="icons\ribbon\align_right.png" />
+    <Image Include="icons\ribbon\align_top.png" />
+    <Image Include="icons\ribbon\copy.png" />
+    <Image Include="icons\ribbon\cut.png" />
+    <Image Include="icons\ribbon\delete.png" />
+    <Image Include="icons\ribbon\distribute_h.png" />
+    <Image Include="icons\ribbon\distribute_v.png" />
+    <Image Include="icons\ribbon\grid.png" />
+    <Image Include="icons\ribbon\new.png" />
+    <Image Include="icons\ribbon\open.png" />
+    <Image Include="icons\ribbon\paste.png" />
+    <Image Include="icons\ribbon\redo.png" />
+    <Image Include="icons\ribbon\save.png" />
+    <Image Include="icons\ribbon\save_as.png" />
+    <Image Include="icons\ribbon\snap.png" />
+    <Image Include="icons\ribbon\undo.png" />
+    <Image Include="icons\ribbon\zoom_in.png" />
+    <Image Include="icons\ribbon\zoom_out.png" />
+    <Image Include="icons\ribbon\zoom_reset.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

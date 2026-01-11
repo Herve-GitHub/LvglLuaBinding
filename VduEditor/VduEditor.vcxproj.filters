@@ -97,4 +97,75 @@
     <Font Include="fonts\fa-regular-400.ttf" />
     <Font Include="fonts\fa-solid-900.ttf" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="icons\ribbon\align_bottom.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\align_center.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\align_left.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\align_middle.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\align_right.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\align_top.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\copy.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\cut.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\delete.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\distribute_h.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\distribute_v.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\grid.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\new.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\open.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\paste.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\redo.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\save.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\save_as.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\snap.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\undo.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\zoom_in.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\zoom_out.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\zoom_reset.png">
+      <Filter>资源文件</Filter>
+    </Image>
+  </ItemGroup>
 </Project>

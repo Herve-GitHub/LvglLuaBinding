@@ -37,7 +37,33 @@ static lv_font_t* g_chinese_font = nullptr;
 
 // 全局可执行文件目录
 static std::string g_exe_directory;
+/**
+ * @brief 将窗口居中显示在屏幕上
+ * @param hwnd 窗口句柄
+ */
+static void center_window(HWND hwnd)
+{
+    if (!hwnd) return;
 
+    // 获取窗口当前大小
+    RECT window_rect;
+    GetWindowRect(hwnd, &window_rect);
+    int window_width = window_rect.right - window_rect.left;
+    int window_height = window_rect.bottom - window_rect.top;
+
+    // 获取屏幕工作区大小（排除任务栏）
+    RECT work_area;
+    SystemParametersInfo(SPI_GETWORKAREA, 0, &work_area, 0);
+    int screen_width = work_area.right - work_area.left;
+    int screen_height = work_area.bottom - work_area.top;
+
+    // 计算居中位置
+    int x = work_area.left + (screen_width - window_width) / 2;
+    int y = work_area.top + (screen_height - window_height) / 2;
+
+    // 设置窗口位置
+    SetWindowPos(hwnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+}
 /**
  * @brief 获取当前可执行文件所在目录
  * @return 以反斜杠结尾的目录路径，失败时返回空字符串
@@ -311,7 +337,8 @@ int main(int argc, char* argv[])
         std::cerr << "Failed to get window handle" << std::endl;
         return -1;
     }
-
+    // 将窗口居中显示
+    center_window(window_handle);
     // 创建输入设备
     lv_indev_t* pointer_indev = lv_windows_acquire_pointer_indev(display);
     if (!pointer_indev) {
