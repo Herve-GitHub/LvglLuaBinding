@@ -116,9 +116,9 @@
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)lua" "$(TargetDir)lua" /S /Y
-xcopy "$(ProjectDir)fonts" "$(TargetDir)fonts" /S /Y
-xcopy "$(ProjectDir)icons" "$(TargetDir)icons" /S /Y</Command>
+      <Command>xcopy "$(ProjectDir)lua" "$(TargetDir)lua\" /S /Y
+xcopy "$(ProjectDir)fonts" "$(TargetDir)fonts\" /S /Y
+xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -136,6 +136,11 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons" /S /Y</Command>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)lua" "$(TargetDir)lua\" /S /Y
+xcopy "$(ProjectDir)fonts" "$(TargetDir)fonts\" /S /Y
+xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="VduEditor.cpp" />
@@ -194,6 +199,9 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons" /S /Y</Command>
     <Image Include="icons\ribbon\save.png" />
     <Image Include="icons\ribbon\save_as.png" />
     <Image Include="icons\ribbon\snap.png" />
+    <Image Include="icons\ribbon\start_sim.png" />
+    <Image Include="icons\ribbon\stop_install.png" />
+    <Image Include="icons\ribbon\stop_sim.png" />
     <Image Include="icons\ribbon\undo.png" />
     <Image Include="icons\ribbon\zoom_in.png" />
     <Image Include="icons\ribbon\zoom_out.png" />

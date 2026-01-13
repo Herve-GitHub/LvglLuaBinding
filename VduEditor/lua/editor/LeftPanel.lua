@@ -658,6 +658,27 @@ function LeftPanel:get_page_meta()
     return LeftPanel.__page_meta
 end
 
+-- 重命名图页（兼容性方法）
+function LeftPanel:rename_page(index, new_name)
+    self:update_page_property(index, "name", new_name)
+end
+
+-- 删除指定索引的图页（兼容性方法）
+function LeftPanel:delete_page(index)
+    if index < 1 or index > #self._pages then
+        return
+    end
+    
+    -- 保存当前选中索引
+    local prev_selected = self._selected_page_index
+    
+    -- 选中要删除的图页
+    self._selected_page_index = index
+    
+    -- 调用删除方法
+    self:delete_selected_page()
+end
+
 -- 事件订阅
 function LeftPanel:on(event_name, callback)
     if not self._event_listeners[event_name] then

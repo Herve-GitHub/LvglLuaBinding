@@ -167,5 +167,14 @@
     <Image Include="icons\ribbon\zoom_reset.png">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="icons\ribbon\start_sim.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\stop_sim.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\stop_install.png">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

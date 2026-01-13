@@ -9,7 +9,7 @@ local PropertyPageEditor = {}
 function PropertyPageEditor.create_text_input(ctx, prop_name, value, is_read_only, page_index, y_pos)
     local textarea = lv.textarea_create(ctx.content)
     textarea:set_pos(95, y_pos + 2)
-    textarea:set_size(ctx.props.width - 150, 22)
+    textarea:set_size(ctx.props.width - 105, 22)  -- 扩大宽度，去除按钮空间
     textarea:set_style_bg_color(0x1E1E1E, 0)
     textarea:set_style_border_width(1, 0)
     textarea:set_style_border_color(0x555555, 0)
@@ -24,26 +24,12 @@ function PropertyPageEditor.create_text_input(ctx, prop_name, value, is_read_onl
     if is_read_only then
         textarea:add_state(lv.STATE_DISABLED)
     else
-        local set_btn = lv.obj_create(ctx.content)
-        set_btn:set_pos(ctx.props.width - 50, y_pos + 2)
-        set_btn:set_size(36, 22)
-        set_btn:set_style_bg_color(0x007ACC, 0)
-        set_btn:set_style_radius(2, 0)
-        set_btn:set_style_border_width(0, 0)
-        set_btn:set_style_pad_all(0, 0)
-        set_btn:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
-        set_btn:add_flag(lv.OBJ_FLAG_CLICKABLE)
-        
-        local btn_label = lv.label_create(set_btn)
-        btn_label:set_text("设置")
-        btn_label:set_style_text_color(0xFFFFFF, 0)
-        btn_label:center()
-        
+        -- 按回车键时触发设置
         local ta = textarea
-        set_btn:add_event_cb(function(e)
+        textarea:add_event_cb(function(e)
             local new_value = lv.textarea_get_text(ta)
             ctx:_emit("page_property_changed", prop_name, new_value, page_index)
-        end, lv.EVENT_CLICKED, nil)
+        end, lv.EVENT_READY, nil)
     end
 end
 
@@ -51,7 +37,7 @@ end
 function PropertyPageEditor.create_number_input(ctx, prop_name, value, min_val, max_val, is_read_only, page_index, y_pos)
     local textarea = lv.textarea_create(ctx.content)
     textarea:set_pos(95, y_pos + 2)
-    textarea:set_size(ctx.props.width - 150, 22)
+    textarea:set_size(ctx.props.width - 105, 22)  -- 扩大宽度，去除按钮空间
     textarea:set_style_bg_color(0x1E1E1E, 0)
     textarea:set_style_border_width(1, 0)
     textarea:set_style_border_color(0x555555, 0)
@@ -67,28 +53,14 @@ function PropertyPageEditor.create_number_input(ctx, prop_name, value, min_val, 
     if is_read_only then
         textarea:add_state(lv.STATE_DISABLED)
     else
-        local set_btn = lv.obj_create(ctx.content)
-        set_btn:set_pos(ctx.props.width - 50, y_pos + 2)
-        set_btn:set_size(36, 22)
-        set_btn:set_style_bg_color(0x007ACC, 0)
-        set_btn:set_style_radius(2, 0)
-        set_btn:set_style_border_width(0, 0)
-        set_btn:set_style_pad_all(0, 0)
-        set_btn:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
-        set_btn:add_flag(lv.OBJ_FLAG_CLICKABLE)
-        
-        local btn_label = lv.label_create(set_btn)
-        btn_label:set_text("设置")
-        btn_label:set_style_text_color(0xFFFFFF, 0)
-        btn_label:center()
-        
+        -- 按回车键时触发设置
         local ta = textarea
-        set_btn:add_event_cb(function(e)
+        textarea:add_event_cb(function(e)
             local new_value = tonumber(lv.textarea_get_text(ta)) or 0
             if min_val and new_value < min_val then new_value = min_val end
             if max_val and new_value > max_val then new_value = max_val end
             ctx:_emit("page_property_changed", prop_name, new_value, page_index)
-        end, lv.EVENT_CLICKED, nil)
+        end, lv.EVENT_READY, nil)
     end
 end
 
@@ -116,7 +88,7 @@ function PropertyPageEditor.create_color_input(ctx, prop_name, value, is_read_on
     
     local textarea = lv.textarea_create(ctx.content)
     textarea:set_pos(120, y_pos + 2)
-    textarea:set_size(ctx.props.width - 175, 22)
+    textarea:set_size(ctx.props.width - 130, 22)  -- 扩大宽度，去除按钮空间
     textarea:set_style_bg_color(0x1E1E1E, 0)
     textarea:set_style_border_width(1, 0)
     textarea:set_style_border_color(0x555555, 0)
@@ -157,23 +129,8 @@ function PropertyPageEditor.create_color_input(ctx, prop_name, value, is_read_on
             end)
         end, lv.EVENT_CLICKED, nil)
         
-        -- 创建设置按钮
-        local set_btn = lv.obj_create(ctx.content)
-        set_btn:set_pos(ctx.props.width - 50, y_pos + 2)
-        set_btn:set_size(36, 22)
-        set_btn:set_style_bg_color(0x007ACC, 0)
-        set_btn:set_style_radius(2, 0)
-        set_btn:set_style_border_width(0, 0)
-        set_btn:set_style_pad_all(0, 0)
-        set_btn:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
-        set_btn:add_flag(lv.OBJ_FLAG_CLICKABLE)
-        
-        local btn_label = lv.label_create(set_btn)
-        btn_label:set_text("设置")
-        btn_label:set_style_text_color(0xFFFFFF, 0)
-        btn_label:center()
-        
-        set_btn:add_event_cb(function(e)
+        -- 按回车键时触发设置
+        textarea:add_event_cb(function(e)
             local new_value = lv.textarea_get_text(ta)
             if new_value then
                 new_value = new_value:upper()
@@ -185,7 +142,7 @@ function PropertyPageEditor.create_color_input(ctx, prop_name, value, is_read_on
                     ctx:_emit("page_property_changed", prop_name, new_color_num, page_index)
                 end
             end
-        end, lv.EVENT_CLICKED, nil)
+        end, lv.EVENT_READY, nil)
         
         -- 输入时实时更新颜色预览
         textarea:add_event_cb(function(e)

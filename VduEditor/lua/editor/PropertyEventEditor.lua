@@ -213,7 +213,7 @@ function PropertyEventEditor.create_params_input(ctx, container, prop_name, curr
     
     local textarea = lv.textarea_create(container)
     textarea:set_pos(95, 2)
-    textarea:set_size(ctx.props.width - 155, 22)
+    textarea:set_size(ctx.props.width - 115, 22)  -- 扩大宽度，去除按钮空间
     textarea:set_style_bg_color(0x1E1E1E, 0)
     textarea:set_style_border_width(1, 0)
     textarea:set_style_border_color(0x555555, 0)
@@ -225,29 +225,15 @@ function PropertyEventEditor.create_params_input(ctx, container, prop_name, curr
     textarea:set_text(current_value ~= "" and current_value ~= "{}" and current_value or param_hint)
     textarea:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     
-    local set_btn = lv.obj_create(container)
-    set_btn:set_pos(ctx.props.width - 55, 2)
-    set_btn:set_size(36, 22)
-    set_btn:set_style_bg_color(0x007ACC, 0)
-    set_btn:set_style_radius(2, 0)
-    set_btn:set_style_border_width(0, 0)
-    set_btn:set_style_pad_all(0, 0)
-    set_btn:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
-    set_btn:add_flag(lv.OBJ_FLAG_CLICKABLE)
-    
-    local btn_label = lv.label_create(set_btn)
-    btn_label:set_text("设置")
-    btn_label:set_style_text_color(0xFFFFFF, 0)
-    btn_label:center()
-    
+    -- 按回车键时触发设置
     local ta = textarea
-    set_btn:add_event_cb(function(e)
+    textarea:add_event_cb(function(e)
         local new_value = lv.textarea_get_text(ta)
         if widget_entry.instance and widget_entry.instance.set_property then
             widget_entry.instance:set_property(prop_name, new_value)
         end
         ctx:_emit("property_changed", prop_name, new_value, widget_entry)
-    end, lv.EVENT_CLICKED, nil)
+    end, lv.EVENT_READY, nil)
 end
 
 -- 创建事件绑定表

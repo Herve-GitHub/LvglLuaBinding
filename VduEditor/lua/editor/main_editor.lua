@@ -354,6 +354,7 @@ _G.Editor = {
     get_left_panel = function() return left_panel end,
     get_property_area = function() return property_area end,
     get_menu_bar = function() return menu_bar end,
+    get_canvas_list = function() return left_panel end,  -- LeftPanel includes canvas list functionality
 }
 
 -- ========== 工程保存/加载功能 ==========

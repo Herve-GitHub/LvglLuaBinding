@@ -62,7 +62,7 @@ MenuBar.RIBBON_TABS = {
                     { id = "new", label = "新建", icon = "new.png", size = "large", shortcut = "Ctrl+N" },
                     { id = "open", label = "打开", icon = "open.png", size = "large", shortcut = "Ctrl+O" },
                     { id = "save", label = "保存", icon = "save.png", size = "large", shortcut = "Ctrl+S" },
-                    { id = "save_as", label = "另存为", icon = "save_as.png", size = "small" },
+                    { id = "save_as", label = "另存为", icon = "save_as.png", size = "large" },
                 }
             },
             {
@@ -70,9 +70,9 @@ MenuBar.RIBBON_TABS = {
                 label = "剪贴板",
                 buttons = {
                     { id = "paste", label = "粘贴", icon = "paste.png", size = "large", shortcut = "Ctrl+V" },
-                    { id = "cut", label = "剪切", icon = "cut.png", size = "small", shortcut = "Ctrl+X" },
-                    { id = "copy", label = "复制", icon = "copy.png", size = "small", shortcut = "Ctrl+C" },
-                    { id = "delete", label = "删除", icon = "delete.png", size = "small", shortcut = "Del" },
+                    { id = "cut", label = "剪切", icon = "cut.png", size = "large", shortcut = "Ctrl+X" },
+                    { id = "copy", label = "复制", icon = "copy.png", size = "large", shortcut = "Ctrl+C" },
+                    { id = "delete", label = "删除", icon = "delete.png", size = "large", shortcut = "Del" },
                 }
             },
             {
@@ -93,18 +93,18 @@ MenuBar.RIBBON_TABS = {
                 id = "horizontal",
                 label = "水平对齐",
                 buttons = {
-                    { id = "align_left", label = "左对齐", icon = "align_left.png", size = "medium" },
-                    { id = "align_center", label = "居中", icon = "align_center.png", size = "medium" },
-                    { id = "align_right", label = "右对齐", icon = "align_right.png", size = "medium" },
+                    { id = "align_left", label = "左对齐", icon = "align_left.png", size = "large" },
+                    { id = "align_center", label = "居中", icon = "align_center.png", size = "large" },
+                    { id = "align_right", label = "右对齐", icon = "align_right.png", size = "large" },
                 }
             },
             {
                 id = "vertical",
                 label = "垂直对齐",
                 buttons = {
-                    { id = "align_top", label = "顶部", icon = "align_top.png", size = "medium" },
-                    { id = "align_middle", label = "居中", icon = "align_middle.png", size = "medium" },
-                    { id = "align_bottom", label = "底部", icon = "align_bottom.png", size = "medium" },
+                    { id = "align_top", label = "顶部", icon = "align_top.png", size = "large" },
+                    { id = "align_middle", label = "居中", icon = "align_middle.png", size = "large" },
+                    { id = "align_bottom", label = "底部", icon = "align_bottom.png", size = "large" },
                 }
             },
             {
@@ -125,20 +125,48 @@ MenuBar.RIBBON_TABS = {
                 id = "zoom",
                 label = "缩放",
                 buttons = {
-                    { id = "zoom_in", label = "放大", icon = "zoom_in.png", size = "medium", shortcut = "Ctrl++" },
-                    { id = "zoom_out", label = "缩小", icon = "zoom_out.png", size = "medium", shortcut = "Ctrl+-" },
-                    { id = "zoom_reset", label = "重置", icon = "zoom_reset.png", size = "medium", shortcut = "Ctrl+0" },
+                    { id = "zoom_in", label = "放大", icon = "zoom_in.png", size = "large", shortcut = "Ctrl++" },
+                    { id = "zoom_out", label = "缩小", icon = "zoom_out.png", size = "large", shortcut = "Ctrl+-" },
+                    { id = "zoom_reset", label = "重置", icon = "zoom_reset.png", size = "large", shortcut = "Ctrl+0" },
                 }
             },
             {
                 id = "display",
                 label = "显示",
                 buttons = {
-                    { id = "show_grid", label = "网格", icon = "grid.png", size = "medium", toggle = true },
-                    { id = "snap_to_grid", label = "对齐网格", icon = "snap.png", size = "medium", toggle = true },
+                    { id = "show_grid", label = "网格", icon = "grid.png", size = "large", toggle = true },
+                    { id = "snap_to_grid", label = "对齐网格", icon = "snap.png", size = "large", toggle = true },
                 }
             },
         }
+    },
+    {
+        id ="sim",
+        label ="仿真",
+        groups ={
+            {
+                id = "SimCtrl",
+                label = "仿真操作",
+                buttons ={
+                    { id = "startSim", label = "启动", icon = "start_sim.png", size = "large" },
+                    { id = "stopSim", label = "停止", icon = "stop_sim.png", size = "large" },
+                }
+            },
+        },
+    },
+    {
+        id="install",
+        label ="下装",
+        groups = {
+            {
+                id = "installCtrl",
+                label = "下装操作",
+                buttons ={
+                    { id = "startInstall", label = "启动下装", icon = "install.png", size = "large" },
+                    { id = "stopInstall", label = "停止下装", icon = "stop_install.png", size = "large" },
+                }
+            },
+        },
     },
 }
 
@@ -628,6 +656,7 @@ function MenuBar:_bind_button_event(btn, btn_def)
     local btn_id = btn_def.id
     local is_toggle = btn_def.toggle
     
+    -- 点击事件
     btn:add_event_cb(function(e)
         print("[Ribbon] 点击按钮: " .. btn_id)
         
@@ -640,6 +669,42 @@ function MenuBar:_bind_button_event(btn, btn_def)
         -- 触发菜单动作事件
         this:_emit("menu_action", nil, btn_id)
     end, lv.EVENT_CLICKED, nil)
+    
+    -- 鼠标按下事件 - 显示按下颜色
+    btn:add_event_cb(function(e)
+        btn:set_style_bg_opa(255, 0)
+        btn:set_style_bg_color(MenuBar.COLORS.btn_pressed, 0)
+    end, lv.EVENT_PRESSED, nil)
+    
+    -- 鼠标释放事件 - 恢复原始颜色
+    btn:add_event_cb(function(e)
+        if is_toggle and this._states[btn_id] then
+            -- 切换按钮保持激活状态颜色
+            btn:set_style_bg_opa(255, 0)
+            btn:set_style_bg_color(MenuBar.COLORS.accent, 0)
+        else
+            -- 非切换按钮或未激活状态，恢复透明
+            btn:set_style_bg_opa(0, 0)
+        end
+    end, lv.EVENT_RELEASED, nil)
+    
+    -- 鼠标进入事件 - 显示悬停颜色
+    btn:add_event_cb(function(e)
+        if not (is_toggle and this._states[btn_id]) then
+            btn:set_style_bg_opa(255, 0)
+            btn:set_style_bg_color(MenuBar.COLORS.btn_hover, 0)
+        end
+    end, lv.EVENT_FOCUSED, nil)
+    
+    -- 鼠标离开事件 - 恢复原始颜色
+    btn:add_event_cb(function(e)
+        if is_toggle and this._states[btn_id] then
+            btn:set_style_bg_opa(255, 0)
+            btn:set_style_bg_color(MenuBar.COLORS.accent, 0)
+        else
+            btn:set_style_bg_opa(0, 0)
+        end
+    end, lv.EVENT_DEFOCUSED, nil)
 end
 
 -- 更新切换按钮视觉状态

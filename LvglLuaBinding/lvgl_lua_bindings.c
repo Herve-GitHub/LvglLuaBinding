@@ -569,6 +569,12 @@ static int luaopen_lvgl(lua_State* L) {
     lua_pushinteger(L, LV_EVENT_VALUE_CHANGED); lua_setfield(L, -2, "EVENT_VALUE_CHANGED");
     lua_pushinteger(L, LV_EVENT_FOCUSED); lua_setfield(L, -2, "EVENT_FOCUSED");
     lua_pushinteger(L, LV_EVENT_DEFOCUSED); lua_setfield(L, -2, "EVENT_DEFOCUSED");
+    lua_pushinteger(L, LV_EVENT_READY); lua_setfield(L, -2, "EVENT_READY");
+    lua_pushinteger(L, LV_EVENT_CANCEL); lua_setfield(L, -2, "EVENT_CANCEL");
+    lua_pushinteger(L, LV_EVENT_KEY); lua_setfield(L, -2, "EVENT_KEY");
+    lua_pushinteger(L, LV_EVENT_INSERT); lua_setfield(L, -2, "EVENT_INSERT");
+    lua_pushinteger(L, LV_EVENT_REFRESH); lua_setfield(L, -2, "EVENT_REFRESH");
+    lua_pushinteger(L, LV_EVENT_DELETE); lua_setfield(L, -2, "EVENT_DELETE");
     
     // Opacity constants
     lua_pushinteger(L, LV_OPA_TRANSP); lua_setfield(L, -2, "OPA_TRANSP");

@@ -662,10 +662,45 @@ function CanvasArea:_create_selection_box(widget_entry)
     local main_obj = instance.btn or instance.container or instance.obj or instance.chart
     if not main_obj then return end
     
-    local x = main_obj:get_x()
-    local y = main_obj:get_y()
-    local w = main_obj:get_width()
-    local h = main_obj:get_height()
+    -- 始终优先使用 props 中的值（在控件创建时已正确设置）
+    -- 这样可以避免 LVGL 位置更新延迟导致获取到错误的值
+    local x, y, w, h
+    
+    -- 首先尝试从 widget_entry.props 获取位置
+    if widget_entry.props and widget_entry.props.x ~= nil then
+        x = widget_entry.props.x
+    elseif instance.props and instance.props.x ~= nil then
+        x = instance.props.x
+    else
+        x = main_obj:get_x()
+    end
+    
+    if widget_entry.props and widget_entry.props.y ~= nil then
+        y = widget_entry.props.y
+    elseif instance.props and instance.props.y ~= nil then
+        y = instance.props.y
+    else
+        y = main_obj:get_y()
+    end
+    
+    -- 获取尺寸（优先从 props，因为 main_obj 可能还未更新）
+    if widget_entry.props and widget_entry.props.width ~= nil then
+        w = widget_entry.props.width
+    elseif instance.props and instance.props.width ~= nil then
+        w = instance.props.width
+    else
+        w = main_obj:get_width()
+    end
+    
+    if widget_entry.props and widget_entry.props.height ~= nil then
+        h = widget_entry.props.height
+    elseif instance.props and instance.props.height ~= nil then
+        h = instance.props.height
+    else
+        h = main_obj:get_height()
+    end
+    
+    print("[选中框] 创建选中框: x=" .. tostring(x) .. ", y=" .. tostring(y) .. ", w=" .. tostring(w) .. ", h=" .. tostring(h))
     
     local box = lv.obj_create(self.container)
     box:set_pos(x - 2, y - 2)
@@ -717,6 +752,7 @@ function CanvasArea:_update_all_selection_boxes()
             local instance = widget_entry.instance
             local main_obj = instance.btn or instance.container or instance.obj or instance.chart
             if main_obj then
+                -- 拖动时使用 main_obj 的实时位置
                 local x = main_obj:get_x()
                 local y = main_obj:get_y()
                 local w = main_obj:get_width()
