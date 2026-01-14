@@ -102,7 +102,8 @@ function PropertyArea:_create_content_area()
     self.content:set_style_text_color(self.props.text_color, 0)
     self.content:set_style_pad_all(5, 0)
     self.content:set_style_pad_right(10, 0)
-    self.content:add_flag(lv.OBJ_FLAG_SCROLLABLE)
+    -- 禁用滚动
+    self.content:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     self.content:remove_flag(lv.OBJ_FLAG_GESTURE_BUBBLE)
     self.content:clear_layout()
 end

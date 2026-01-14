@@ -1,4 +1,4 @@
-﻿local lv = require("lvgl")
+local lv = require("lvgl")
 
 local TrendChart = {}
 

@@ -10,6 +10,9 @@ Button.__widget_meta = {
   schema_version = "1.0",
   version = "1.0",
   properties = {
+    -- 实例名称（用于编译时变量命名）
+    { name = "instance_name", type = "string", default = "", label = "实例名称",
+      description = "用于编译时的变量名，留空则自动生成" },
     { name = "label", type = "string", default = "OK", label = "文本" },
     { name = "x", type = "number", default = 0, label = "X" },
     { name = "y", type = "number", default = 0, label = "Y" },
@@ -21,24 +24,13 @@ Button.__widget_meta = {
     { name = "bg_color", type = "color", default = "#007acc", label = "背景色" },
     { name = "enabled", type = "boolean", default = true, label = "启用" },
     { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
-    -- clicked 事件绑定
-    { name = "on_clicked_action", type = "action", default = "", label = "点击动作", 
-      action_module = "actions.page_navigation", event = "clicked",
-      description = "点击按钮时执行的动作" },
-    { name = "on_clicked_params", type = "action_params", default = "{}", label = "点击参数",
-      event = "clicked", description = "点击动作的参数" },
-    -- single_clicked 事件绑定
-    { name = "on_single_clicked_action", type = "action", default = "", label = "单击动作", 
-      action_module = "actions.page_navigation", event = "single_clicked",
-      description = "单击按钮时执行的动作" },
-    { name = "on_single_clicked_params", type = "action_params", default = "{}", label = "单击参数",
-      event = "single_clicked", description = "单击动作的参数" },
-    -- double_clicked 事件绑定
-    { name = "on_double_clicked_action", type = "action", default = "", label = "双击动作", 
-      action_module = "actions.page_navigation", event = "double_clicked",
-      description = "双击按钮时执行的动作" },
-    { name = "on_double_clicked_params", type = "action_params", default = "{}", label = "双击参数",
-      event = "double_clicked", description = "双击动作的参数" },
+    -- 事件处理代码属性
+    { name = "on_clicked_handler", type = "code", default = "", label = "点击处理代码",
+      event = "clicked", description = "点击按钮时执行的Lua代码" },
+    { name = "on_single_clicked_handler", type = "code", default = "", label = "单击处理代码",
+      event = "single_clicked", description = "单击按钮时执行的Lua代码" },
+    { name = "on_double_clicked_handler", type = "code", default = "", label = "双击处理代码",
+      event = "double_clicked", description = "双击按钮时执行的Lua代码" },
   },
   events = { "clicked", "single_clicked", "double_clicked" },
 }
@@ -92,12 +84,48 @@ function Button.new(parent, state)
   self.label = lv.label_create(self.btn)
   self.label:set_text(self.props.label)
   self.label:center()
+  
   -- 保存各事件的动作回调
   self._action_callbacks = {
     clicked = nil,
     single_clicked = nil,
     double_clicked = nil,
   }
+  
+  -- 保存各事件的处理代码回调
+  self._handler_callbacks = {
+    clicked = nil,
+    single_clicked = nil,
+    double_clicked = nil,
+  }
+
+  -- 执行事件处理代码
+  function self._execute_handler(self, event_name)
+    local handler_prop = "on_" .. event_name .. "_handler"
+    local code = self.props[handler_prop]
+    
+    if code and code ~= "" then
+      -- 创建执行环境
+      local env = setmetatable({
+        self = self,
+        btn = self.btn,
+        label = self.label,
+        props = self.props,
+        print = print,
+        lv = lv,
+      }, { __index = _G })
+      
+      local func, err = load(code, "event_handler", "t", env)
+      if func then
+        local ok, exec_err = pcall(func)
+        if not ok then
+          print("[button] 事件处理代码执行错误 [" .. event_name .. "]: " .. tostring(exec_err))
+        end
+      else
+        print("[button] 事件处理代码编译错误 [" .. event_name .. "]: " .. tostring(err))
+      end
+    end
+  end
 
   -- 绑定单个事件的动作
   function self._bind_event_action(self, event_name)
@@ -150,24 +178,54 @@ function Button.new(parent, state)
       end
     end
   end
+  
+  -- 绑定事件处理代码
+  function self._bind_event_handler(self, event_name)
+    if self.props.design_mode then return end
+    
+    local handler_prop = "on_" .. event_name .. "_handler"
+    local code = self.props[handler_prop]
+    
+    if not code or code == "" then return end
+    
+    local evt_cb = function(e)
+      if not self.props.enabled then return end
+      if self.props.design_mode then return end
+      self:_execute_handler(event_name)
+    end
+    
+    local ev_code
+    if event_name == "clicked" then
+      ev_code = lv.EVENT_CLICKED
+    elseif event_name == "single_clicked" then
+      ev_code = lv.EVENT_SINGLE_CLICKED
+    elseif event_name == "double_clicked" then
+      ev_code = lv.EVENT_DOUBLE_CLICKED
+    end
+    
+    if ev_code then
+      if self.btn.add_event_cb then
+        self.btn:add_event_cb(evt_cb, ev_code, nil)
+      elseif lv.obj_add_event_cb then
+        lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
+      end
+    end
+  end
 
   -- 绑定所有事件动作
   function self._bind_all_actions(self)
     for _, event_name in ipairs(Button.__widget_meta.events) do
       self:_bind_event_action(event_name)
+      self:_bind_event_handler(event_name)
     end
   end
 
   self:_bind_all_actions()
   
   -- 事件订阅：统一接口 on(event_name, callback)
-  -- callback(self, ...) 将在事件触发时被调用
   function self.on(self, event_name, callback)
-
-    -- 设计模式下不注册事件
     if self.props.design_mode then return end
     
-    -- 定义通用的内部回调处理逻辑
     local function create_safe_callback()
       return function(e)
           if not self.props.enabled then return end
@@ -177,7 +235,6 @@ function Button.new(parent, state)
       end
     end
 
-    -- 处理普通点击 (Clicked)
     if event_name == "clicked" then
       local evt_cb = create_safe_callback()
       local ev_code = lv.EVENT_CLICKED
@@ -188,7 +245,6 @@ function Button.new(parent, state)
       end
     end
 
-    -- 处理单次点击 (Single Clicked - 兼容双击)
     if event_name == "single_clicked" then
       local evt_cb = create_safe_callback()
       local ev_code = lv.EVENT_SINGLE_CLICKED
@@ -199,19 +255,15 @@ function Button.new(parent, state)
       end
     end
 
-    -- 处理双击事件
     if event_name == "double_clicked" then
       local evt_cb = create_safe_callback()
       local ev_code = lv.EVENT_DOUBLE_CLICKED
-      
-      -- 优先使用对象方法注册（Lua 绑定通常提供 obj:add_event_cb）
       if self.btn.add_event_cb then
         self.btn:add_event_cb(evt_cb, ev_code, nil)
       elseif lv.obj_add_event_cb then
         lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
       end
     end
-
   end
 
   function self.get_property(self, name)
@@ -219,8 +271,6 @@ function Button.new(parent, state)
   end
 
   function self.set_property(self, name, value)
-   gen.print_r(name)
-   gen.print_r(value)
     self.props[name] = value
     if name == "label" then
       if self.label and self.label.set_text then
@@ -248,6 +298,12 @@ function Button.new(parent, state)
       if event_name then
         self:_bind_event_action(event_name)
       end
+    elseif name:match("^on_.*_handler$") then
+      -- 事件处理代码更新，不需要立即重新绑定（运行时会读取最新值）
+      local event_name = name:match("^on_(.*)_handler$")
+      if event_name then
+        print("[button] 事件处理代码已更新: " .. event_name)
+      end
     elseif name == "enabled" then
       if not value then
         if self.btn and self.btn.set_style_bg_color then
@@ -255,7 +311,6 @@ function Button.new(parent, state)
         end
       else
         if self.btn and self.btn.set_style_bg_color then
-          -- restore to configured bg_color
           local col = 0x007acc
           if self.props.bg_color then
             if type(self.props.bg_color) == "string" then

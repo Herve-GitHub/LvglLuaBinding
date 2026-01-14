@@ -370,7 +370,24 @@ function CanvasArea:add_widget(widget_module, props)
     props.x = x
     props.y = y
     props.design_mode = true
-    props.auto_update = false
+    -- 不再强制设置 auto_update 为 false，保留用户配置的值或使用默认值
+    -- 设计模式下 trend_chart 和其他控件的 start() 函数会自行检查 design_mode
+    if props.auto_update == nil then
+        -- 如果没有明确指定，使用控件的默认值（大多数控件默认为 true）
+        -- 获取默认值
+        if widget_module.__widget_meta and widget_module.__widget_meta.properties then
+            for _, p in ipairs(widget_module.__widget_meta.properties) do
+                if p.name == "auto_update" then
+                    props.auto_update = p.default
+                    break
+                end
+            end
+        end
+        -- 如果仍然没有，默认为 true
+        if props.auto_update == nil then
+            props.auto_update = true
+        end
+    end
     
     local widget_instance = widget_module.new(self.container, props)
     local main_obj = widget_instance.btn or widget_instance.container or widget_instance.obj or widget_instance.chart

@@ -118,7 +118,9 @@
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)lua" "$(TargetDir)lua\" /S /Y
 xcopy "$(ProjectDir)fonts" "$(TargetDir)fonts\" /S /Y
-xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
+xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y
+xcopy "$(ProjectDir)projects" "$(TargetDir)projects\" /S /Y
+xcopy "$(ProjectDir)projects\*.lua" "$(TargetDir)lua\" /S /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -147,6 +149,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <None Include="lua\actions\page_navigation.lua" />
+    <None Include="lua\editor\clipboard.lua" />
     <None Include="lua\demo_button.lua" />
     <None Include="lua\demo_trend_chart.lua" />
     <None Include="lua\demo_valve.lua" />
@@ -160,6 +163,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\editor\LeftPanel.lua" />
     <None Include="lua\editor\main_editor.lua" />
     <None Include="lua\editor\MenuBar.lua" />
+    <None Include="lua\editor\ProjectCompiler.lua" />
     <None Include="lua\editor\ProjectManager.lua" />
     <None Include="lua\editor\PropertyArea.lua" />
     <None Include="lua\editor\PropertyEventEditor.lua" />
@@ -173,6 +177,8 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\widgets\status_bar.lua" />
     <None Include="lua\widgets\trend_chart.lua" />
     <None Include="lua\widgets\valve.lua" />
+    <None Include="projects\project.json" />
+    <None Include="projects\project.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\fa-regular-400.ttf" />
@@ -192,6 +198,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <Image Include="icons\ribbon\distribute_h.png" />
     <Image Include="icons\ribbon\distribute_v.png" />
     <Image Include="icons\ribbon\grid.png" />
+    <Image Include="icons\ribbon\install.png" />
     <Image Include="icons\ribbon\new.png" />
     <Image Include="icons\ribbon\open.png" />
     <Image Include="icons\ribbon\paste.png" />

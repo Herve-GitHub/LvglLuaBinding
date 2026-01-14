@@ -141,13 +141,13 @@ MenuBar.RIBBON_TABS = {
         }
     },
     {
-        id ="sim",
-        label ="仿真",
-        groups ={
+        id = "sim",
+        label = "仿真",
+        groups = {
             {
                 id = "SimCtrl",
                 label = "仿真操作",
-                buttons ={
+                buttons = {
                     { id = "startSim", label = "启动", icon = "start_sim.png", size = "large" },
                     { id = "stopSim", label = "停止", icon = "stop_sim.png", size = "large" },
                 }
@@ -155,13 +155,20 @@ MenuBar.RIBBON_TABS = {
         },
     },
     {
-        id="install",
-        label ="下装",
+        id = "install",
+        label = "下装",
         groups = {
+            {
+                id = "compileCtrl",
+                label = "编译",
+                buttons = {
+                    { id = "compile", label = "编译", icon = "compile.png", size = "large" },
+                }
+            },
             {
                 id = "installCtrl",
                 label = "下装操作",
-                buttons ={
+                buttons = {
                     { id = "startInstall", label = "启动下装", icon = "install.png", size = "large" },
                     { id = "stopInstall", label = "停止下装", icon = "stop_install.png", size = "large" },
                 }

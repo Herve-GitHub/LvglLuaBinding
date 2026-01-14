@@ -10,6 +10,9 @@ Valve.__widget_meta = {
     schema_version = "1.0",
     version = "1.0",
     properties = {
+        -- 实例名称（用于编译时变量命名）
+        { name = "instance_name", type = "string", default = "", label = "实例名称",
+          description = "用于编译时的变量名，留空则自动生成" },
         { name = "x", type = "number", default = 0, label = "X" },
         { name = "y", type = "number", default = 0, label = "Y" },
         { name = "size", type = "number", default = 80, label = "尺寸", min = 8, max = 1024 },
@@ -18,6 +21,11 @@ Valve.__widget_meta = {
         { name = "close_angle", type = "number", default = 0, label = "关闭角度", min = 0, max = 360 },
         { name = "handle_color", type = "color", default = "#FF5722", label = "把手颜色" },
         { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
+        -- 事件处理代码属性
+        { name = "on_angle_changed_handler", type = "code", default = "", label = "角度变化处理代码",
+          event = "angle_changed", description = "角度变化时执行的Lua代码" },
+        { name = "on_toggled_handler", type = "code", default = "", label = "切换处理代码",
+          event = "toggled", description = "阀门开关切换时执行的Lua代码" },
     },
     events = { "angle_changed", "toggled" },
 }
@@ -94,7 +102,7 @@ function Valve.new(parent, props)
     end
 
     -- 颜色转换：允许编辑器传入 #RRGGBB 或 hex number
-    local function parse_color(c)
+    local function parse_color_local(c)
         if type(c) == "string" and c:match("^#%x%x%x%x%x%x$") then
             return tonumber(c:sub(2), 16)
         elseif type(c) == "number" then
@@ -102,7 +110,7 @@ function Valve.new(parent, props)
         end
         return 0xFF5722
     end
-    self.handle:set_style_bg_color(parse_color(self.props.handle_color), 0)
+    self.handle:set_style_bg_color(parse_color_local(self.props.handle_color), 0)
     self.handle:set_style_radius(4, 0)
     self.handle:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
 
@@ -116,19 +124,42 @@ function Valve.new(parent, props)
     -- 事件监听
     self._event_listeners = { angle_changed = {}, toggled = {} }
     
+    -- 执行事件处理代码
+    function self._execute_handler(self, event_name, ...)
+        local handler_prop = "on_" .. event_name .. "_handler"
+        local code = self.props[handler_prop]
+        
+        if code and code ~= "" then
+            -- 创建执行环境
+            local env = setmetatable({
+                self = self,
+                container = self.container,
+                handle = self.handle,
+                props = self.props,
+                is_open = self.is_open,
+                print = print,
+                lv = lv,
+            }, { __index = _G })
+            
+            local func, err = load(code, "event_handler", "t", env)
+            if func then
+                local ok, exec_err = pcall(func, ...)
+                if not ok then
+                    print("[valve] 事件处理代码执行错误 [" .. event_name .. "]: " .. tostring(exec_err))
+                end
+            else
+                print("[valve] 事件处理代码编译错误 [" .. event_name .. "]: " .. tostring(err))
+            end
+        end
+    end
+    
     -- 点击事件处理：弹出确认框
     local function on_click(e)
         self:show_confirm_dialog()
     end
     
     -- 注册点击事件
-    -- 注意：这里假设 lv.obj_add_event_cb 可用，或者使用 button.lua 中的封装方式
-    -- 直接使用 lv.obj_add_event_cb
     if lv.obj_add_event_cb then
-        -- 创建一个简单的回调包装器
-        -- 由于 Lua 绑定限制，这里可能需要一个全局或静态的回调机制，
-        -- 但目前的 lv_lua.c 实现似乎支持直接传递 Lua 函数作为回调 (l_obj_add_event_cb)
-        -- 让我们尝试直接传递
         self.container:add_event_cb(on_click, lv.EVENT_CLICKED, nil)
     end
 
@@ -163,6 +194,12 @@ function Valve.new(parent, props)
             self.handle:set_style_bg_color(c, 0)
         elseif name == "open_angle" or name == "close_angle" then
             -- just update prop
+        elseif name:match("^on_.*_handler$") then
+            -- 事件处理代码更新
+            local event_name = name:match("^on_(.*)_handler$")
+            if event_name then
+                print("[valve] 事件处理代码已更新: " .. event_name)
+            end
         end
         return true
     end
@@ -206,8 +243,10 @@ function Valve.new(parent, props)
         if self.props.design_mode then return end
         self:set_angle(self.props.open_angle)
         self.is_open = true
-        -- notify
+        -- notify listeners
         for _, cb in ipairs(self._event_listeners.toggled) do cb(self, true) end
+        -- execute handler code
+        self:_execute_handler("toggled", true)
     end
     
     -- 关闭阀门
@@ -215,8 +254,10 @@ function Valve.new(parent, props)
         if self.props.design_mode then return end
         self:set_angle(self.props.close_angle)
         self.is_open = false
-        -- notify
+        -- notify listeners
         for _, cb in ipairs(self._event_listeners.toggled) do cb(self, false) end
+        -- execute handler code
+        self:_execute_handler("toggled", false)
     end
     
     -- 切换状态

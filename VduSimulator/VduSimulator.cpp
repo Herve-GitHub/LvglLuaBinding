@@ -358,6 +358,11 @@ int main(int argc, char* argv[])
     // 主循环
     while (1) {
         uint32_t time_till_next = lv_timer_handler();
+        // 处理 LV_NO_TIMER_READY 的情况，避免等待过长时间
+        // LV_NO_TIMER_READY = 0xFFFFFFFF，表示没有定时器准备好
+        if (time_till_next == LV_NO_TIMER_READY) {
+            time_till_next = LV_DEF_REFR_PERIOD;  // 使用默认刷新周期（通常是 33ms）
+        }
         lv_delay_ms(time_till_next);
     }
 

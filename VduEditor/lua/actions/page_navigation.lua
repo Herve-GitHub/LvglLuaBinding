@@ -1,6 +1,7 @@
 ﻿-- page_navigation.lua
 -- 图页跳转动作函数模块
 -- 此模块定义了可用于按钮等控件的图页跳转函数
+-- 用于编译后的运行时环境
 
 local PageNavigation = {}
 
@@ -56,19 +57,10 @@ PageNavigation.available_actions = {
     },
 }
 
--- 获取编辑器实例（延迟获取，避免循环依赖）
-local function get_editor()
-    if _G.Editor then
-        return _G.Editor
-    end
-    return nil
-end
-
--- 获取图页列表组件
-local function get_canvas_list()
-    local editor = get_editor()
-    if editor and editor.get_canvas_list then
-        return editor.get_canvas_list()
+-- 获取 PageManager（运行时由编译器生成）
+local function get_page_manager()
+    if _G.PageManager then
+        return _G.PageManager
     end
     return nil
 end
@@ -76,19 +68,23 @@ end
 -- 跳转到指定索引的图页
 -- @param page_index: 图页索引（从1开始）
 function PageNavigation.goto_page(page_index)
-    local canvas_list = get_canvas_list()
-    if not canvas_list then
-        print("[PageNavigation] 错误: 无法获取图页列表组件")
+    local pm = get_page_manager()
+    if not pm then
+        print("[PageNavigation] 错误: 无法获取 PageManager")
         return false
     end
     
-    local page_count = canvas_list:get_page_count()
+    local page_count = pm.get_page_count and pm.get_page_count() or #pm.pages
     if page_index < 1 or page_index > page_count then
         print("[PageNavigation] 错误: 无效的图页索引 " .. tostring(page_index) .. "，有效范围: 1-" .. page_count)
         return false
     end
     
-    canvas_list:select_page(page_index)
+    if pm.goto_page then
+        pm.goto_page(page_index)
+    elseif pm.select_page then
+        pm.select_page(page_index)
+    end
     print("[PageNavigation] 跳转到图页 " .. page_index)
     return true
 end
@@ -96,16 +92,20 @@ end
 -- 按名称跳转到图页
 -- @param page_name: 图页名称
 function PageNavigation.goto_page_by_name(page_name)
-    local canvas_list = get_canvas_list()
-    if not canvas_list then
-        print("[PageNavigation] 错误: 无法获取图页列表组件")
+    local pm = get_page_manager()
+    if not pm then
+        print("[PageNavigation] 错误: 无法获取 PageManager")
         return false
     end
     
-    local pages = canvas_list:get_pages()
+    local pages = pm.pages or {}
     for i, page in ipairs(pages) do
         if page.name == page_name then
-            canvas_list:select_page(i)
+            if pm.goto_page then
+                pm.goto_page(i)
+            elseif pm.select_page then
+                pm.select_page(i)
+            end
             print("[PageNavigation] 跳转到图页 '" .. page_name .. "' (索引: " .. i .. ")")
             return true
         end
@@ -117,18 +117,23 @@ end
 
 -- 跳转到下一页
 function PageNavigation.goto_next_page()
-    local canvas_list = get_canvas_list()
-    if not canvas_list then
-        print("[PageNavigation] 错误: 无法获取图页列表组件")
+    local pm = get_page_manager()
+    if not pm then
+        print("[PageNavigation] 错误: 无法获取 PageManager")
         return false
     end
     
-    local current_page, current_index = canvas_list:get_selected_page()
-    local page_count = canvas_list:get_page_count()
+    local current_index = pm.current_index or 0
+    local page_count = pm.get_page_count and pm.get_page_count() or #pm.pages
     
     if current_index < page_count then
-        canvas_list:select_page(current_index + 1)
-        print("[PageNavigation] 跳转到下一页: " .. (current_index + 1))
+        local next_index = current_index + 1
+        if pm.goto_page then
+            pm.goto_page(next_index)
+        elseif pm.select_page then
+            pm.select_page(next_index)
+        end
+        print("[PageNavigation] 跳转到下一页: " .. next_index)
         return true
     else
         print("[PageNavigation] 已经是最后一页")
@@ -138,17 +143,22 @@ end
 
 -- 跳转到上一页
 function PageNavigation.goto_prev_page()
-    local canvas_list = get_canvas_list()
-    if not canvas_list then
-        print("[PageNavigation] 错误: 无法获取图页列表组件")
+    local pm = get_page_manager()
+    if not pm then
+        print("[PageNavigation] 错误: 无法获取 PageManager")
         return false
     end
     
-    local current_page, current_index = canvas_list:get_selected_page()
+    local current_index = pm.current_index or 0
     
     if current_index > 1 then
-        canvas_list:select_page(current_index - 1)
-        print("[PageNavigation] 跳转到上一页: " .. (current_index - 1))
+        local prev_index = current_index - 1
+        if pm.goto_page then
+            pm.goto_page(prev_index)
+        elseif pm.select_page then
+            pm.select_page(prev_index)
+        end
+        print("[PageNavigation] 跳转到上一页: " .. prev_index)
         return true
     else
         print("[PageNavigation] 已经是第一页")
@@ -158,29 +168,55 @@ end
 
 -- 跳转到第一页
 function PageNavigation.goto_first_page()
-    local canvas_list = get_canvas_list()
-    if not canvas_list then
-        print("[PageNavigation] 错误: 无法获取图页列表组件")
+    local pm = get_page_manager()
+    if not pm then
+        print("[PageNavigation] 错误: 无法获取 PageManager")
         return false
     end
     
-    canvas_list:select_page(1)
+    if pm.goto_page then
+        pm.goto_page(1)
+    elseif pm.select_page then
+        pm.select_page(1)
+    end
     print("[PageNavigation] 跳转到第一页")
     return true
 end
 
 -- 跳转到最后一页
 function PageNavigation.goto_last_page()
-    local canvas_list = get_canvas_list()
-    if not canvas_list then
-        print("[PageNavigation] 错误: 无法获取图页列表组件")
+    local pm = get_page_manager()
+    if not pm then
+        print("[PageNavigation] 错误: 无法获取 PageManager")
         return false
     end
     
-    local page_count = canvas_list:get_page_count()
-    canvas_list:select_page(page_count)
+    local page_count = pm.get_page_count and pm.get_page_count() or #pm.pages
+    if pm.goto_page then
+        pm.goto_page(page_count)
+    elseif pm.select_page then
+        pm.select_page(page_count)
+    end
     print("[PageNavigation] 跳转到最后一页: " .. page_count)
     return true
+end
+
+-- 获取当前页面索引
+function PageNavigation.get_current_page_index()
+    local pm = get_page_manager()
+    if not pm then
+        return 0
+    end
+    return pm.current_index or 0
+end
+
+-- 获取总页数
+function PageNavigation.get_page_count()
+    local pm = get_page_manager()
+    if not pm then
+        return 0
+    end
+    return pm.get_page_count and pm.get_page_count() or #pm.pages
 end
 
 -- 创建动作回调函数（用于绑定到控件事件）

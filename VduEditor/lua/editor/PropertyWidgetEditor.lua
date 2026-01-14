@@ -5,23 +5,21 @@ local PropertyInputs = require("editor.PropertyInputs")
 
 local PropertyWidgetEditor = {}
 
--- 创建元数据表（不可修改）
+-- 创建元数据表（控件类型信息，只读）
 function PropertyWidgetEditor.create_metadata_table(ctx, meta)
     local y_pos = 0
     local table_title_height = 20
     
     local title = lv.label_create(ctx.content)
-    title:set_text("基本信息")
+    title:set_text("控件类型")
     title:set_style_text_color(0x007ACC, 0)
     title:set_pos(5, y_pos)
     y_pos = y_pos + table_title_height
     
+    -- 只显示控件类型的基本信息（只读）
     local meta_fields = {
-        { key = "id", label = "ID: " },
-        { key = "name", label = "名称: " },
-        { key = "description", label = "描述: " },
-        { key = "schema_version", label = "Schema: " },
-        { key = "version", label = "版本: " },
+        { key = "id", label = "类型ID: " },
+        { key = "name", label = "类型名称: " },
     }
     
     for _, field in ipairs(meta_fields) do
@@ -35,6 +33,42 @@ function PropertyWidgetEditor.create_metadata_table(ctx, meta)
     
     y_pos = y_pos + 10
     return y_pos
+end
+
+-- 创建实例名称编辑区域
+function PropertyWidgetEditor.create_instance_name_editor(ctx, y_pos, widget_entry)
+    local instance = widget_entry.instance
+    local item_height = 24
+    
+    local title = lv.label_create(ctx.content)
+    title:set_text("实例标识")
+    title:set_style_text_color(0xFF6600, 0)
+    title:set_pos(0, y_pos)
+    y_pos = y_pos + 20 + 5
+    
+    -- 实例名称输入
+    local label = lv.label_create(ctx.content)
+    label:set_text("实例名称:")
+    label:set_style_text_color(0xCCCCCC, 0)
+    label:set_pos(5, y_pos)
+    label:set_width(80)
+    
+    local current_name = ""
+    if instance and instance.get_property then
+        current_name = instance:get_property("instance_name") or ""
+    end
+    
+    PropertyInputs.create_text_input(ctx, "instance_name", current_name, false, widget_entry, y_pos)
+    y_pos = y_pos + item_height
+    
+    -- 提示文字
+    local hint = lv.label_create(ctx.content)
+    hint:set_text("(用于编译时的变量名)")
+    hint:set_style_text_color(0x888888, 0)
+    hint:set_pos(95, y_pos)
+    y_pos = y_pos + 18
+    
+    return y_pos + 10
 end
 
 -- 创建属性编辑表（可修改）
@@ -62,11 +96,14 @@ function PropertyWidgetEditor.create_properties_table(ctx, y_pos, widget_entry, 
     
     for _, prop_def in ipairs(meta.properties) do
         local prop_name = prop_def.name
-        if prop_name == "design_mode" then
+        
+        -- 跳过设计模式和实例名称（已在上方单独显示）
+        if prop_name == "design_mode" or prop_name == "instance_name" then
             goto continue
         end
         
-        if prop_def.type == "action" or prop_def.type == "action_params" then
+        -- 跳过事件相关属性（在事件编辑器中显示）
+        if prop_def.type == "action" or prop_def.type == "action_params" or prop_def.type == "code" then
             goto continue
         end
         
@@ -122,10 +159,16 @@ function PropertyWidgetEditor.display_properties(ctx, widget_entry)
         return
     end
     
+    -- 1. 显示控件类型信息（只读）
     local y_pos = PropertyWidgetEditor.create_metadata_table(ctx, meta)
+    
+    -- 2. 显示实例名称编辑器
+    y_pos = PropertyWidgetEditor.create_instance_name_editor(ctx, y_pos, widget_entry)
+    
+    -- 3. 显示属性编辑
     y_pos = PropertyWidgetEditor.create_properties_table(ctx, y_pos, widget_entry, meta)
     
-    -- 事件编辑器需要单独引入以避免循环依赖
+    -- 4. 显示事件编辑器
     local PropertyEventEditor = require("editor.PropertyEventEditor")
     PropertyEventEditor.create_events_table(ctx, y_pos, widget_entry, meta)
 end

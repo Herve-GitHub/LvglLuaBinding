@@ -153,8 +153,10 @@ function ProjectManager:load_project(filepath)
         return nil, "无效的文件路径"
     end
     
-    -- 读取文件
-    local file, err = io.open(filepath, "r")
+    print("[ProjectManager] 尝试加载文件: " .. filepath)
+    
+    -- 读取文件（使用二进制模式避免换行符转换问题）
+    local file, err = io.open(filepath, "rb")
     if not file then
         return nil, "无法打开文件: " .. (err or "未知错误")
     end
@@ -162,9 +164,17 @@ function ProjectManager:load_project(filepath)
     local content = file:read("*all")
     file:close()
     
-    if not content or #content == 0 then
+    if not content then
+        return nil, "无法读取文件内容"
+    end
+    
+    if #content == 0 then
         return nil, "文件为空"
     end
+    
+    print("[ProjectManager] 文件大小: " .. #content .. " 字节")
+    print("[ProjectManager] 文件开头: " .. string.format("%02X %02X %02X", 
+        content:byte(1) or 0, content:byte(2) or 0, content:byte(3) or 0))
     
     -- 解码 JSON
     local ok, project_data = pcall(json.decode, content)

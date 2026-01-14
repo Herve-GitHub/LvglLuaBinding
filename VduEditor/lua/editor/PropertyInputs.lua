@@ -5,11 +5,53 @@ local ColorDialog = require("editor.ColorDialog")
 
 local PropertyInputs = {}
 
+-- ========== 剪贴板功能实现 ==========
+
+-- 使用 Windows 命令行实现剪贴板操作
+local function clipboard_get_text()
+    -- 尝试使用 lv 模块的剪贴板函数（如果已编译）
+    if lv.clipboard_get_text then
+        return lv.clipboard_get_text()
+    end
+    
+    -- 回退方案：使用 PowerShell 获取剪贴板内容
+    local handle = io.popen('powershell -command "Get-Clipboard"', 'r')
+    if handle then
+        local result = handle:read('*a')
+        handle:close()
+        -- 去除末尾的换行符
+        if result then
+            result = result:gsub("[\r\n]+$", "")
+        end
+        return result
+    end
+    return nil
+end
+
+local function clipboard_set_text(text)
+    -- 尝试使用 lv 模块的剪贴板函数（如果已编译）
+    if lv.clipboard_set_text then
+        return lv.clipboard_set_text(text)
+    end
+    
+    -- 回退方案：使用 PowerShell 设置剪贴板内容
+    if text and text ~= "" then
+        -- 转义特殊字符
+        local escaped = text:gsub('"', '`"'):gsub("'", "`'")
+        local cmd = 'powershell -command "Set-Clipboard -Value \'' .. escaped .. '\'"'
+        local result = os.execute(cmd)
+        return result == 0 or result == true
+    end
+    return false
+end
+
+-- ========== 输入控件创建函数 ==========
+
 -- 创建文本输入框
 function PropertyInputs.create_text_input(ctx, prop_name, value, is_read_only, widget_entry, y_pos)
     local textarea = lv.textarea_create(ctx.content)
     textarea:set_pos(95, y_pos + 2)
-    textarea:set_size(ctx.props.width - 105, 22)  -- 扩大宽度，去除按钮空间
+    textarea:set_size(ctx.props.width - 105, 22)
     textarea:set_style_bg_color(0x1E1E1E, 0)
     textarea:set_style_border_width(1, 0)
     textarea:set_style_border_color(0x555555, 0)
@@ -19,6 +61,9 @@ function PropertyInputs.create_text_input(ctx, prop_name, value, is_read_only, w
     textarea:set_style_pad_left(4, 0)
     textarea:set_one_line(true)
     textarea:set_text(value)
+    
+    -- 设置基本属性
+    textarea:add_flag(lv.OBJ_FLAG_CLICKABLE)
     textarea:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     
     if is_read_only then
@@ -40,7 +85,7 @@ end
 function PropertyInputs.create_number_input(ctx, prop_name, value, min_val, max_val, is_read_only, widget_entry, y_pos)
     local textarea = lv.textarea_create(ctx.content)
     textarea:set_pos(95, y_pos + 2)
-    textarea:set_size(ctx.props.width - 105, 22)  -- 扩大宽度，去除按钮空间
+    textarea:set_size(ctx.props.width - 105, 22)
     textarea:set_style_bg_color(0x1E1E1E, 0)
     textarea:set_style_border_width(1, 0)
     textarea:set_style_border_color(0x555555, 0)
@@ -51,6 +96,9 @@ function PropertyInputs.create_number_input(ctx, prop_name, value, min_val, max_
     textarea:set_one_line(true)
     textarea:set_text(tostring(math.floor(value)))
     textarea:set_accepted_chars("0123456789-")
+    
+    -- 设置基本属性
+    textarea:add_flag(lv.OBJ_FLAG_CLICKABLE)
     textarea:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     
     if is_read_only then
@@ -123,7 +171,7 @@ function PropertyInputs.create_color_input(ctx, prop_name, value, is_read_only, 
     
     local textarea = lv.textarea_create(ctx.content)
     textarea:set_pos(120, y_pos + 2)
-    textarea:set_size(ctx.props.width - 130, 22)  -- 扩大宽度，去除按钮空间
+    textarea:set_size(ctx.props.width - 130, 22)
     textarea:set_style_bg_color(0x1E1E1E, 0)
     textarea:set_style_border_width(1, 0)
     textarea:set_style_border_color(0x555555, 0)
@@ -135,6 +183,9 @@ function PropertyInputs.create_color_input(ctx, prop_name, value, is_read_only, 
     textarea:set_text(color_hex)
     textarea:set_accepted_chars("#0123456789ABCDEFabcdef")
     textarea:set_max_length(7)
+    
+    -- 设置基本属性
+    textarea:add_flag(lv.OBJ_FLAG_CLICKABLE)
     textarea:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     
     if is_read_only then
@@ -218,5 +269,9 @@ function PropertyInputs.create_enum_dropdown(ctx, prop_name, value, options, is_
         dropdown:add_flag(lv.OBJ_FLAG_CLICKABLE)
     end
 end
+
+-- 导出剪贴板函数供其他模块使用
+PropertyInputs.clipboard_get_text = clipboard_get_text
+PropertyInputs.clipboard_set_text = clipboard_set_text
 
 return PropertyInputs

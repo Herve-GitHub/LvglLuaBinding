@@ -1,0 +1,40 @@
+{
+  "created_at": "2026-01-14 21:57:00",
+  "current_page_index": 1,
+  "modified_at": "2026-01-14 21:57:00",
+  "pages": [
+    {
+      "id": "page_1",
+      "name": "图页 1",
+      "widgets": [
+        {
+          "module_path": "widgets.trend_chart",
+          "props": {
+            "auto_update": true,
+            "design_mode": true,
+            "height": 120,
+            "instance_name": "chart1",
+            "on_updated_handler": "print(\"TrendChart updated value:\", value)",
+            "on_updated_params": "print(\"TrendChart updated value:\", value)",
+            "point_count": 300,
+            "range_max": 100,
+            "range_min": 0,
+            "update_interval": 1000,
+            "width": 300,
+            "x": 211,
+            "y": 101
+          },
+          "type": "trend_chart"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "grid_size": 20,
+    "show_grid": false,
+    "snap_to_grid": false,
+    "window_height": 768,
+    "window_width": 1024
+  },
+  "version": "1.0"
+}

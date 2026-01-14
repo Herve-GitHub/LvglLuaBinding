@@ -64,6 +64,7 @@ static int l_chart_add_series(lua_State* L) {
     lv_chart_axis_t axis = (lv_chart_axis_t)luaL_checkinteger(L, 3);
     if (obj) {
         lv_chart_series_t* series = lv_chart_add_series(obj, lv_color_hex(color_hex), axis);
+        printf("l_chart_add_series: obj=%p, series=%p\n", (void*)obj, (void*)series);
         push_lv_chart_series(L, series);
         return 1;
     }
@@ -77,7 +78,7 @@ static int l_chart_set_range(lua_State* L) {
     lv_chart_axis_t axis = (lv_chart_axis_t)luaL_checkinteger(L, 2);
     int32_t min = (int32_t)luaL_checkinteger(L, 3);
     int32_t max = (int32_t)luaL_checkinteger(L, 4);
-    if (obj) lv_chart_set_range(obj, axis, min, max);
+    if (obj) lv_chart_set_axis_range(obj, axis, min, max);
     return 0;
 }
 
@@ -86,7 +87,23 @@ static int l_chart_set_next_value(lua_State* L) {
     lv_obj_t* obj = check_lv_obj(L, 1);
     lv_chart_series_t* series = check_lv_chart_series(L, 2);
     int32_t value = (int32_t)luaL_checkinteger(L, 3);
-    if (obj && series) lv_chart_set_next_value(obj, series, value);
+    
+    if (obj && series) {
+        // Debug: print chart state
+        lv_chart_type_t type = lv_chart_get_type(obj);
+        uint32_t point_cnt = lv_chart_get_point_count(obj);
+        
+        // Check if chart is on active screen
+        lv_obj_t* scr = lv_obj_get_screen(obj);
+        lv_obj_t* active_scr = lv_screen_active();
+        bool on_active_screen = (scr == active_scr);
+        bool is_visible = lv_obj_is_visible(obj);
+        
+        printf("l_chart_set_next_value: type=%d, point_cnt=%u, value=%d, on_active_screen=%d, is_visible=%d\n", 
+               (int)type, point_cnt, value, on_active_screen, is_visible);
+        
+        lv_chart_set_next_value(obj, series, value);
+    }
     return 0;
 }
 

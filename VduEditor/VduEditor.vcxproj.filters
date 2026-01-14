@@ -89,6 +89,10 @@
     <None Include="lua\editor\PropertyWidgetEditor.lua" />
     <None Include="lua\editor\PropertyEventEditor.lua" />
     <None Include="lua\editor\icons.lua" />
+    <None Include="lua\editor\ProjectCompiler.lua" />
+    <None Include="lua\editor\clipboard.lua" />
+    <None Include="projects\project.json" />
+    <None Include="projects\project.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">
@@ -174,6 +178,9 @@
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="icons\ribbon\stop_install.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icons\ribbon\install.png">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>

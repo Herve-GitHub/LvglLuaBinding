@@ -14,6 +14,9 @@ StatusBar.__widget_meta = {
   -- 标记为全局组件，不绘制在画布中
   is_global = true,
   properties = {
+    -- 实例名称（用于编译时变量命名）
+    { name = "instance_name", type = "string", default = "", label = "实例名称",
+      description = "用于编译时的变量名，留空则自动生成" },
     { name = "x", type = "number", default = 0, label = "X" },
     { name = "y", type = "number", default = 0, label = "Y" },
     { name = "width", type = "number", default = 800, label = "宽度" },
@@ -26,6 +29,11 @@ StatusBar.__widget_meta = {
     { name = "lamp_status", type = "color", default = "#00FF00", label = "通道状态" },
     { name = "lamp_text", type = "string", default = "CH1", label = "通道名称" },
     { name = "lamp_size", type = "number", default = 14, label = "状态灯大小" },
+    -- 事件处理代码属性
+    { name = "on_updated_handler", type = "code", default = "", label = "更新处理代码",
+      event = "updated", description = "状态更新时执行的Lua代码" },
+    { name = "on_time_tick_handler", type = "code", default = "", label = "时间变化处理代码",
+      event = "time_tick", description = "时间变化时执行的Lua代码" },
   },
   events = { "updated", "time_tick" },
 }
@@ -95,6 +103,37 @@ function StatusBar.new(parent, state)
   self:_create_time_display()
   
   return self
+end
+
+-- 执行事件处理代码
+function StatusBar:_execute_handler(event_name, ...)
+  local handler_prop = "on_" .. event_name .. "_handler"
+  local code = self.props[handler_prop]
+  
+  if code and code ~= "" then
+    -- 创建执行环境
+    local env = setmetatable({
+      self = self,
+      container = self.container,
+      lamp = self.lamp,
+      lamp_label = self.lamp_label,
+      time_label = self.time_label,
+      date_label = self.date_label,
+      props = self.props,
+      print = print,
+      lv = lv,
+    }, { __index = _G })
+    
+    local func, err = load(code, "event_handler", "t", env)
+    if func then
+      local ok, exec_err = pcall(func, ...)
+      if not ok then
+        print("[StatusBar] 事件处理代码执行错误 [" .. event_name .. "]: " .. tostring(exec_err))
+      end
+    else
+      print("[StatusBar] 事件处理代码编译错误 [" .. event_name .. "]: " .. tostring(err))
+    end
+  end
 end
 
 -- 创建通道状态灯
@@ -301,6 +340,7 @@ end
 
 -- 触发事件
 function StatusBar:_emit(event_name, ...)
+  -- 通知事件监听器
   local listeners = self._event_listeners[event_name]
   if listeners then
     for _, cb in ipairs(listeners) do
@@ -310,6 +350,8 @@ function StatusBar:_emit(event_name, ...)
       end
     end
   end
+  -- 执行事件处理代码
+  self:_execute_handler(event_name, ...)
 end
 
 -- 获取属性
@@ -350,6 +392,12 @@ function StatusBar:set_property(name, value)
     self:set_position(value)
   elseif name == "design_mode" then
     self:set_design_mode(value)
+  elseif name:match("^on_.*_handler$") then
+    -- 事件处理代码更新
+    local event_name = name:match("^on_(.*)_handler$")
+    if event_name then
+      print("[StatusBar] 事件处理代码已更新: " .. event_name)
+    end
   end
   
   return true

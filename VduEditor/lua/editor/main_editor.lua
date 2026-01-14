@@ -57,6 +57,7 @@ local LeftPanel = require("LeftPanel")
 local PropertyArea = require("PropertyArea")
 local StatusBar = require("widgets.status_bar")
 local ProjectManager = require("ProjectManager")
+local ProjectCompiler = require("ProjectCompiler")
 local FileDialog = require("FileDialog")
 
 -- 获取屏幕
@@ -105,6 +106,9 @@ local status_bar_position = "bottom"
 
 -- 工程管理器实例
 local project_manager = ProjectManager.new()
+
+-- 工程编译器实例
+local project_compiler = ProjectCompiler.new()
 
 -- 当前活动的图页索引
 local current_page_index = 0
@@ -417,11 +421,64 @@ local function quick_save()
         local success, err = project_manager:save_project(current_path, project_data)
         if success then
             print("[编辑器] 工程已保存: " .. current_path)
+            return true, current_path
         else
             print("[编辑器] 保存失败: " .. (err or "未知错误"))
+            return false, err
         end
     else
-        save_project_dialog()
+        -- 如果没有当前路径，使用默认路径保存
+        local default_path = "projects/project.json"
+        save_canvas_to_page(current_page_index)
+        local project_data = project_manager:export_project_data(_G.Editor)
+        local success, err = project_manager:save_project(default_path, project_data)
+        if success then
+            print("[编辑器] 工程已保存: " .. default_path)
+            return true, default_path
+        else
+            print("[编辑器] 保存失败: " .. (err or "未知错误"))
+            return false, err
+        end
+    end
+end
+
+-- ========== 工程编译功能 ==========
+
+local function compile_project()
+    print("[编辑器] ========== 开始编译工程 ==========")
+    
+    -- 1. 先保存当前工程
+    local save_success, save_path = quick_save()
+    if not save_success then
+        print("[编辑器] 编译失败: 无法保存工程")
+        return false
+    end
+    
+    -- 2. 获取工程数据
+    local project_data = project_manager:export_project_data(_G.Editor)
+    if not project_data then
+        print("[编辑器] 编译失败: 无法导出工程数据")
+        return false
+    end
+    
+    -- 3. 确定输出文件路径（与JSON文件同目录，扩展名改为.lua）
+    local output_path = save_path:gsub("%.json$", ".lua")
+    if output_path == save_path then
+        -- 如果没有.json扩展名，直接添加.lua
+        output_path = save_path .. ".lua"
+    end
+    
+    -- 4. 编译并保存
+    local success, err = project_compiler:compile_and_save(project_data, output_path)
+    if success then
+        print("[编辑器] ========== 编译成功 ==========")
+        print("[编辑器] 输出文件: " .. output_path)
+        print("[编辑器] 图页数量: " .. #(project_data.pages or {}))
+        return true
+    else
+        print("[编辑器] ========== 编译失败 ==========")
+        print("[编辑器] 错误: " .. (err or "未知错误"))
+        return false
     end
 end
 
@@ -489,6 +546,17 @@ menu_bar:on("menu_action", function(self, menu_key, item_id)
         print("导出工程")
     elseif item_id == "export_image" then
         print("导出图片")
+    elseif item_id == "compile" then
+        -- 编译工程
+        compile_project()
+    elseif item_id == "startInstall" then
+        print("启动下装")
+    elseif item_id == "stopInstall" then
+        print("停止下装")
+    elseif item_id == "startSim" then
+        print("启动仿真")
+    elseif item_id == "stopSim" then
+        print("停止仿真")
     elseif item_id == "exit" then
         print("退出编辑器")
     end

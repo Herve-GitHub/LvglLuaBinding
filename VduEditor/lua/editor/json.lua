@@ -309,6 +309,32 @@ function json.decode(str)
     if str == "" then
         error("Empty string")
     end
+    
+    -- 移除 UTF-8 BOM（如果存在）
+    if str:sub(1, 3) == "\239\187\191" then
+        str = str:sub(4)
+    end
+    
+    -- 移除开头的空白字符（包括换行符等）
+    local start_pos = 1
+    while start_pos <= #str do
+        local c = str:sub(start_pos, start_pos)
+        if c == ' ' or c == '\t' or c == '\n' or c == '\r' then
+            start_pos = start_pos + 1
+        else
+            break
+        end
+    end
+    
+    if start_pos > #str then
+        error("Empty content after trimming")
+    end
+    
+    -- 如果有前导空白，调整字符串
+    if start_pos > 1 then
+        str = str:sub(start_pos)
+    end
+    
     local result, pos = decode_scan_value(str, 1)
     pos = decode_scan_whitespace(str, pos)
     if pos <= #str then

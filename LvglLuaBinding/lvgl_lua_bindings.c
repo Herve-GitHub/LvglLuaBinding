@@ -497,6 +497,9 @@ static int luaopen_lvgl(lua_State* L) {
     // Create module table
     luaL_newlib(L, lvgl_funcs);
     
+    // Add clipboard functions
+    merge_methods_to_table(L, lvgl_get_clipboard_funcs());
+    
     // Add constants - Alignment
     lua_pushinteger(L, LV_ALIGN_DEFAULT); lua_setfield(L, -2, "ALIGN_DEFAULT");
     lua_pushinteger(L, LV_ALIGN_TOP_LEFT); lua_setfield(L, -2, "ALIGN_TOP_LEFT");
