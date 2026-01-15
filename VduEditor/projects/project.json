@@ -1,32 +1,292 @@
 {
-  "created_at": "2026-01-14 21:57:00",
+  "created_at": "2026-01-15 20:47:39",
   "current_page_index": 1,
-  "modified_at": "2026-01-14 21:57:00",
+  "modified_at": "2026-01-15 20:47:39",
   "pages": [
     {
+      "bg_color": 1985310,
+      "height": 601,
       "id": "page_1",
       "name": "图页 1",
+      "widgets": [
+        {
+          "module_path": "widgets.button",
+          "props": {
+            "alignment": "center",
+            "bg_color": "#007acc",
+            "color": "#ffffff",
+            "design_mode": true,
+            "enabled": true,
+            "font_size": 16,
+            "height": 40,
+            "instance_name": "btn1",
+            "label": "点我",
+            "on_clicked_handler": "",
+            "on_double_clicked_handler": "function(self)\n    print(\"按钮1被双击了！\")\n    self:set_property(\"label\", \"已双击\")\n    self:set_property(\"bg_color\", \"#4CAF50\") -- 变为绿色\nend",
+            "on_single_clicked_handler": "function(self)\n    print(\"按钮1被点击了！\")\n    self:set_property(\"label\", \"已点击\")\n    self:set_property(\"bg_color\", \"#E91E63\")\nend",
+            "width": 100,
+            "x": 53,
+            "y": 84
+          },
+          "type": "custom_button"
+        },
+        {
+          "module_path": "widgets.button",
+          "props": {
+            "alignment": "center",
+            "bg_color": "#007acc",
+            "color": "#ffffff",
+            "design_mode": true,
+            "enabled": true,
+            "font_size": 16,
+            "height": 40,
+            "instance_name": "btn2",
+            "label": "重置",
+            "on_clicked_handler": "function(self)\n    print(\"重置按钮被点击！\")\n    btn1:set_property(\"label\", \"点击我\")\n    btn1:set_property(\"bg_color\", \"#2196F3\") -- 变为蓝色\nend",
+            "on_double_clicked_handler": "",
+            "on_single_clicked_handler": "",
+            "width": 100,
+            "x": 53,
+            "y": 149
+          },
+          "type": "custom_button"
+        },
+        {
+          "module_path": "widgets.button",
+          "props": {
+            "alignment": "center",
+            "bg_color": 53708,
+            "color": "#ffffff",
+            "design_mode": true,
+            "enabled": true,
+            "font_size": 16,
+            "height": 40,
+            "instance_name": "btnNext",
+            "label": "下一页",
+            "on_clicked_handler": "function(self)\n    actions_page_navigation.goto_next_page()\nend",
+            "on_double_clicked_handler": "",
+            "on_single_clicked_handler": "",
+            "width": 100,
+            "x": 49,
+            "y": 264
+          },
+          "type": "custom_button"
+        }
+      ],
+      "width": 801
+    },
+    {
+      "bg_color": 1973867,
+      "height": 605,
+      "id": "page_2",
+      "name": "图页 2",
       "widgets": [
         {
           "module_path": "widgets.trend_chart",
           "props": {
             "auto_update": true,
             "design_mode": true,
-            "height": 120,
+            "height": 300,
             "instance_name": "chart1",
-            "on_updated_handler": "print(\"TrendChart updated value:\", value)",
-            "on_updated_params": "print(\"TrendChart updated value:\", value)",
+            "on_updated_handler": "function(_, value)\n    print(\"TrendChart updated value:\", value)\nend",
             "point_count": 300,
             "range_max": 100,
             "range_min": 0,
             "update_interval": 1000,
-            "width": 300,
-            "x": 211,
-            "y": 101
+            "width": 700,
+            "x": 41,
+            "y": 43
           },
           "type": "trend_chart"
+        },
+        {
+          "module_path": "widgets.button",
+          "props": {
+            "alignment": "center",
+            "bg_color": "#007acc",
+            "color": "#ffffff",
+            "design_mode": true,
+            "enabled": true,
+            "font_size": 16,
+            "height": 40,
+            "instance_name": "btn_prepage",
+            "label": "上一页",
+            "on_clicked_handler": "function(self)\n    actions_page_navigation.goto_prev_page()\nend",
+            "on_double_clicked_handler": "",
+            "on_single_clicked_handler": "",
+            "width": 100,
+            "x": 62,
+            "y": 400
+          },
+          "type": "custom_button"
+        },
+        {
+          "module_path": "widgets.button",
+          "props": {
+            "alignment": "center",
+            "bg_color": "#007acc",
+            "color": "#ffffff",
+            "design_mode": true,
+            "enabled": true,
+            "font_size": 16,
+            "height": 40,
+            "instance_name": "btn_nextpage",
+            "label": "下一页",
+            "on_clicked_handler": "function(self)\n    actions_page_navigation.goto_next_page()\nend",
+            "on_double_clicked_handler": "",
+            "on_single_clicked_handler": "",
+            "width": 100,
+            "x": 196,
+            "y": 400
+          },
+          "type": "custom_button"
         }
-      ]
+      ],
+      "width": 810
+    },
+    {
+      "bg_color": 5381662,
+      "height": 700,
+      "id": "page_3",
+      "name": "图页 3",
+      "widgets": [
+        {
+          "module_path": "widgets.valve",
+          "props": {
+            "angle": 0,
+            "close_angle": 0,
+            "design_mode": true,
+            "handle_color": "#FF5722",
+            "instance_name": "v1",
+            "on_angle_changed_handler": "",
+            "on_toggled_handler": "print(\"V1 状态: \" .. (is_open and \"开\" or \"关\"))",
+            "open_angle": 90,
+            "size": 100,
+            "x": 102,
+            "y": 78
+          },
+          "type": "valve"
+        },
+        {
+          "module_path": "widgets.valve",
+          "props": {
+            "angle": 0,
+            "close_angle": 0,
+            "design_mode": true,
+            "handle_color": "#FF5722",
+            "instance_name": "v2",
+            "on_angle_changed_handler": "",
+            "on_toggled_handler": "function(self, is_open)\n     print(\"V2 状态: \" .. (is_open and \"开\" or \"关\")) \nend",
+            "open_angle": 90,
+            "size": 100,
+            "x": 247,
+            "y": 78
+          },
+          "type": "valve"
+        },
+        {
+          "module_path": "widgets.button",
+          "props": {
+            "alignment": "center",
+            "bg_color": "#007acc",
+            "color": "#ffffff",
+            "design_mode": true,
+            "enabled": true,
+            "font_size": 16,
+            "height": 40,
+            "instance_name": "btn_open_all",
+            "label": "一键全开",
+            "on_clicked_handler": "function()\n    print(\"执行：一键全开\")\n    Valve.open_all()\nend",
+            "on_double_clicked_handler": "",
+            "on_single_clicked_handler": "",
+            "width": 100,
+            "x": 105,
+            "y": 215
+          },
+          "type": "custom_button"
+        },
+        {
+          "module_path": "widgets.button",
+          "props": {
+            "alignment": "center",
+            "bg_color": "#007acc",
+            "color": "#ffffff",
+            "design_mode": true,
+            "enabled": true,
+            "font_size": 16,
+            "height": 40,
+            "instance_name": "btn_close_all",
+            "label": "一键全关",
+            "on_clicked_handler": "function()\n    print(\"执行：一键全关\")\n    Valve.close_all()\nend",
+            "on_double_clicked_handler": "",
+            "on_single_clicked_handler": "",
+            "width": 100,
+            "x": 269,
+            "y": 216
+          },
+          "type": "custom_button"
+        },
+        {
+          "module_path": "widgets.valve",
+          "props": {
+            "angle": 0,
+            "close_angle": 0,
+            "design_mode": true,
+            "handle_color": 5986293,
+            "instance_name": "v3",
+            "on_angle_changed_handler": "",
+            "on_toggled_handler": "function(self, is_open)\n     print(\"V3 状态: \" .. (is_open and \"开\" or \"关\")) \nend",
+            "open_angle": 90,
+            "size": 100,
+            "x": 396,
+            "y": 78
+          },
+          "type": "valve"
+        },
+        {
+          "module_path": "widgets.button",
+          "props": {
+            "alignment": "center",
+            "bg_color": "#007acc",
+            "color": "#ffffff",
+            "design_mode": true,
+            "enabled": true,
+            "font_size": 16,
+            "height": 40,
+            "instance_name": "btn_prepage",
+            "label": "上一页",
+            "on_clicked_handler": "function(self)\n    actions_page_navigation.goto_prev_page()\nend",
+            "on_double_clicked_handler": "",
+            "on_single_clicked_handler": "",
+            "width": 100,
+            "x": 87,
+            "y": 342
+          },
+          "type": "custom_button"
+        },
+        {
+          "module_path": "widgets.button",
+          "props": {
+            "alignment": "center",
+            "bg_color": "#007acc",
+            "color": "#ffffff",
+            "design_mode": true,
+            "enabled": true,
+            "font_size": 16,
+            "height": 40,
+            "instance_name": "btn_first",
+            "label": "首页",
+            "on_clicked_handler": "function(self)\n    actions_page_navigation.goto_first_page()\nend",
+            "on_double_clicked_handler": "",
+            "on_single_clicked_handler": "",
+            "width": 100,
+            "x": 213,
+            "y": 345
+          },
+          "type": "custom_button"
+        }
+      ],
+      "width": 900
     }
   ],
   "settings": {

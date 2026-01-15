@@ -103,6 +103,9 @@ function ProjectManager:export_project_data(editor)
         local page_data = {
             id = page.id,
             name = page.name,
+            width = page.width or 800,
+            height = page.height or 600,
+            bg_color = page.bg_color or 0x1E1E1E,
             widgets = page.widgets or {},
         }
         table.insert(project_data.pages, page_data)
@@ -238,16 +241,32 @@ function ProjectManager:import_project_data(editor, project_data)
     
     -- 恢复图页
     if project_data.pages and #project_data.pages > 0 then
-        -- 重命名第一个图页
+        -- 处理第一个图页
         if project_data.pages[1] then
-            canvas_list:rename_page(1, project_data.pages[1].name)
-            canvas_list:update_page_data(1, project_data.pages[1].widgets or {})
+            local first_page = project_data.pages[1]
+            canvas_list:rename_page(1, first_page.name)
+            canvas_list:update_page_data(1, first_page.widgets or {})
+            -- 恢复图页属性
+            if first_page.width then
+                canvas_list:update_page_property(1, "width", first_page.width)
+            end
+            if first_page.height then
+                canvas_list:update_page_property(1, "height", first_page.height)
+            end
+            if first_page.bg_color then
+                canvas_list:update_page_property(1, "bg_color", first_page.bg_color)
+            end
         end
         
         -- 添加其余图页
         for i = 2, #project_data.pages do
             local page = project_data.pages[i]
-            canvas_list:add_page(page.name)
+            -- 添加图页时传入属性
+            canvas_list:add_page(page.name, {
+                width = page.width,
+                height = page.height,
+                bg_color = page.bg_color,
+            })
             canvas_list:update_page_data(i, page.widgets or {})
         end
         

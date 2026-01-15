@@ -24,20 +24,19 @@ local WIDGET_EVENTS = {
     ["status_bar"] = { "updated", "time_tick" },
 }
 
--- 事件回调函数的参数签名（用于生成代码）
--- 使用 _ 作为不常用参数的占位符，与 demo 代码风格一致
-local EVENT_CALLBACK_PARAMS = {
+-- 事件回调函数的默认参数签名（当用户只输入函数体时使用）
+local EVENT_DEFAULT_PARAMS = {
     -- button 事件：function(self)
-    ["clicked"] = "_",
-    ["single_clicked"] = "_",
-    ["double_clicked"] = "_",
+    ["clicked"] = "self",
+    ["single_clicked"] = "self",
+    ["double_clicked"] = "self",
     -- valve 事件
-    ["angle_changed"] = "_, angle",
-    ["toggled"] = "_, is_open",
-    -- trend_chart 事件：参考 demo_trend_chart.lua 的写法
-    ["updated"] = "_, value",
+    ["angle_changed"] = "self, angle",
+    ["toggled"] = "self, is_open",
+    -- trend_chart 事件
+    ["updated"] = "self, value",
     -- status_bar 事件
-    ["time_tick"] = "_, time_str",
+    ["time_tick"] = "self, time_str",
 }
 
 -- actions 模块列表（需要引入到生成代码中）
@@ -137,6 +136,24 @@ local function value_to_string(value, indent)
     end
 end
 
+-- 检查字符串是否是完整的函数定义
+local function is_complete_function(code)
+    if not code or code == "" then
+        return false
+    end
+    -- 去除前后空白
+    local trimmed = code:match("^%s*(.-)%s*$")
+    -- 检查是否以 "function" 开头（支持 function( 或 function ()）
+    if trimmed:match("^function%s*%(") then
+        -- 进一步验证：检查是否有匹配的 "end"
+        -- 简单检查：末尾是否以 "end" 结束
+        if trimmed:match("end%s*$") then
+            return true
+        end
+    end
+    return false
+end
+
 -- 生成控件创建代码
 local function generate_widget_code(widget, index, page_var, used_names)
     local lines = {}
@@ -187,16 +204,23 @@ local function generate_widget_code(widget, index, page_var, used_names)
         local handler_code = props[handler_prop]
         
         if handler_code and handler_code ~= "" then
-            -- 获取回调参数签名
-            local callback_params = EVENT_CALLBACK_PARAMS[event_name] or "self"
-            
             table.insert(lines, "    -- " .. event_name .. " 事件处理")
-            table.insert(lines, "    " .. var_name .. ':on("' .. event_name .. '", function(' .. callback_params .. ')')
-            -- 将处理代码按行添加，并添加适当缩进
-            for line in handler_code:gmatch("[^\n]+") do
-                table.insert(lines, "        " .. line)
+            
+            -- 检查用户是否输入了完整的函数定义
+            if is_complete_function(handler_code) then
+                -- 用户输入了完整的函数，直接使用
+                -- 将多行函数格式化输出
+                table.insert(lines, "    " .. var_name .. ':on("' .. event_name .. '", ' .. handler_code .. ')')
+            else
+                -- 用户只输入了函数体，自动包装
+                local default_params = EVENT_DEFAULT_PARAMS[event_name] or "self"
+                table.insert(lines, "    " .. var_name .. ':on("' .. event_name .. '", function(' .. default_params .. ')')
+                -- 将处理代码按行添加，并添加适当缩进
+                for line in handler_code:gmatch("[^\n]+") do
+                    table.insert(lines, "        " .. line)
+                end
+                table.insert(lines, "    end)")
             end
-            table.insert(lines, "    end)")
             table.insert(lines, "")
         end
     end
@@ -212,13 +236,20 @@ local function generate_page_code(page, page_index)
     local widget_vars = {}  -- 记录控件变量名
     local used_names = {}   -- 记录已使用的变量名
     
+    -- 获取图页属性
+    local page_width = page.width or 800
+    local page_height = page.height or 600
+    local page_bg_color = page.bg_color or 0x1E1E1E
+    
     table.insert(lines, "-- ========== 图页 " .. page_index .. ": " .. (page.name or "未命名") .. " ==========")
+    table.insert(lines, "-- 图页尺寸: " .. page_width .. "x" .. page_height)
+    table.insert(lines, "-- 背景颜色: " .. string.format("0x%06X", page_bg_color))
     table.insert(lines, "local function create_" .. page_var .. "(parent)")
     table.insert(lines, "    -- 创建图页容器")
     table.insert(lines, "    local container = lv.obj_create(parent)")
     table.insert(lines, "    container:set_pos(0, 0)")
-    table.insert(lines, "    container:set_size(lv.display_get_hor_res(), lv.display_get_ver_res())")
-    table.insert(lines, "    container:set_style_bg_color(0x1E1E1E, 0)")
+    table.insert(lines, "    container:set_size(" .. page_width .. ", " .. page_height .. ")")
+    table.insert(lines, "    container:set_style_bg_color(" .. string.format("0x%06X", page_bg_color) .. ", 0)")
     table.insert(lines, "    container:set_style_border_width(0, 0)")
     table.insert(lines, "    container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)")
     table.insert(lines, "    container:clear_layout()")
