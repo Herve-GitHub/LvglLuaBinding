@@ -60,6 +60,17 @@ local ProjectManager = require("ProjectManager")
 local ProjectCompiler = require("ProjectCompiler")
 local FileDialog = require("FileDialog")
 
+-- 辅助函数：解析颜色值（支持字符串 "#RRGGBB" 或数字）
+local function parse_color(value, default)
+    default = default or 0x1E1E1E
+    if type(value) == "number" then
+        return value
+    elseif type(value) == "string" and value:match("^#%x%x%x%x%x%x$") then
+        return tonumber(value:sub(2), 16) or default
+    end
+    return default
+end
+
 -- 获取屏幕
 local scr = lv.scr_act()
 
@@ -109,6 +120,9 @@ local project_manager = ProjectManager.new()
 
 -- 工程编译器实例
 local project_compiler = ProjectCompiler.new()
+
+-- 仿真进程管理
+local simulator_process = nil  -- 存储仿真进程句柄/PID
 
 -- 当前活动的图页索引
 local current_page_index = 0
@@ -451,14 +465,14 @@ local function compile_project()
     local save_success, save_path = quick_save()
     if not save_success then
         print("[编辑器] 编译失败: 无法保存工程")
-        return false
+        return false, nil
     end
     
     -- 2. 获取工程数据
     local project_data = project_manager:export_project_data(_G.Editor)
     if not project_data then
         print("[编辑器] 编译失败: 无法导出工程数据")
-        return false
+        return false, nil
     end
     
     -- 3. 确定输出文件路径（与JSON文件同目录，扩展名改为.lua）
@@ -474,12 +488,171 @@ local function compile_project()
         print("[编辑器] ========== 编译成功 ==========")
         print("[编辑器] 输出文件: " .. output_path)
         print("[编辑器] 图页数量: " .. #(project_data.pages or {}))
-        return true
+        return true, output_path
     else
         print("[编辑器] ========== 编译失败 ==========")
         print("[编辑器] 错误: " .. (err or "未知错误"))
+        return false, nil
+    end
+end
+
+-- ========== 仿真管理功能 ==========
+
+-- 获取仿真器路径
+local function get_simulator_path()
+    -- 仿真器位于与编辑器同级的目录
+    local sim_path = "vdu_sim.exe"
+    if APP_DIR and APP_DIR ~= "" then
+        sim_path = APP_DIR .. "vdu_sim.exe"
+    end
+    return sim_path
+end
+
+-- 检查仿真器是否正在运行
+local function is_simulator_running()
+    if not simulator_process then
         return false
     end
+    
+    -- 使用 tasklist 检查进程是否存在
+    local cmd = 'tasklist /FI "PID eq ' .. simulator_process .. '" /NH 2>nul'
+    local handle = io.popen(cmd)
+    if handle then
+        local result = handle:read("*a")
+        handle:close()
+        -- 如果结果包含进程信息，说明进程仍在运行
+        if result and result:match("vdu_sim") then
+            return true
+        end
+    end
+    
+    -- 进程不存在，清除记录
+    simulator_process = nil
+    return false
+end
+
+-- 停止仿真
+local function stop_simulator()
+    if not simulator_process then
+        print("[仿真] 没有正在运行的仿真进程")
+        return true
+    end
+    
+    print("[仿真] 停止仿真进程 (PID: " .. simulator_process .. ")")
+    
+    -- 使用 taskkill 终止进程
+    local cmd = 'taskkill /PID ' .. simulator_process .. ' /F 2>nul'
+    os.execute(cmd)
+    
+    -- 等待进程结束
+    local wait_count = 0
+    while is_simulator_running() and wait_count < 10 do
+        -- 简单等待
+        local start = os.clock()
+        while os.clock() - start < 0.1 do end
+        wait_count = wait_count + 1
+    end
+    
+    if is_simulator_running() then
+        print("[仿真] 警告: 进程可能未完全终止")
+        return false
+    end
+    
+    simulator_process = nil
+    print("[仿真] 仿真进程已停止")
+    return true
+end
+
+-- 启动仿真
+local function start_simulator()
+    -- 如果仿真器已在运行，先停止
+    if is_simulator_running() then
+        print("[仿真] 检测到仿真器正在运行，先停止...")
+        stop_simulator()
+    end
+    
+    print("[仿真] ========== 启动仿真 ==========")
+    
+    -- 1. 先编译工程
+    local compile_success, compiled_script_path = compile_project()
+    if not compile_success or not compiled_script_path then
+        print("[仿真] 启动失败: 编译工程失败")
+        return false
+    end
+    
+    -- 2. 获取仿真器路径
+    local sim_path = get_simulator_path()
+    
+    -- 检查仿真器是否存在
+    local f = io.open(sim_path, "r")
+    if not f then
+        print("[仿真] 启动失败: 找不到仿真器 - " .. sim_path)
+        return false
+    end
+    f:close()
+    
+    -- 3. 将编译好的脚本复制到仿真器可访问的位置
+    -- 仿真器的 Lua 搜索路径是相对于其可执行文件的
+    -- 从编译输出路径中提取文件名
+    local script_filename = compiled_script_path:match("([^/\\]+)$") or "project.lua"
+    local sim_script_dir = APP_DIR .. "lua\\"
+    local sim_script_path = sim_script_dir .. script_filename
+    
+    -- 确保目录存在
+    os.execute('if not exist "' .. sim_script_dir .. '" mkdir "' .. sim_script_dir .. '"')
+    
+    -- 复制编译好的脚本
+    local src_file = io.open(compiled_script_path, "rb")
+    if not src_file then
+        print("[仿真] 启动失败: 无法读取编译后的脚本 - " .. compiled_script_path)
+        return false
+    end
+    
+    local content = src_file:read("*a")
+    src_file:close()
+    
+    local dst_file = io.open(sim_script_path, "wb")
+    if not dst_file then
+        print("[仿真] 启动失败: 无法写入仿真脚本 - " .. sim_script_path)
+        return false
+    end
+    
+    dst_file:write(content)
+    dst_file:close()
+    
+    print("[仿真] 脚本已复制到: " .. sim_script_path)
+    
+    -- 4. 构建命令行并启动仿真器
+    -- 使用 start 命令在新窗口中启动，并使用 wmic 获取进程ID
+    local script_arg = "lua\\" .. script_filename
+    local cmd = 'start "" "' .. sim_path .. '" "' .. script_arg .. '"'
+    
+    print("[仿真] 执行命令: " .. cmd)
+    os.execute(cmd)
+    
+    -- 等待一小段时间让进程启动
+    local start_time = os.clock()
+    while os.clock() - start_time < 0.5 do end
+    
+    -- 5. 获取仿真器进程ID
+    local pid_cmd = 'wmic process where "name=\'vdu_sim.exe\'" get processid /format:value 2>nul'
+    local pid_handle = io.popen(pid_cmd)
+    if pid_handle then
+        local pid_result = pid_handle:read("*a")
+        pid_handle:close()
+        
+        -- 解析PID (格式: ProcessId=12345)
+        local pid = pid_result:match("ProcessId=(%d+)")
+        if pid then
+            simulator_process = pid
+            print("[仿真] 仿真器已启动 (PID: " .. pid .. ")")
+        else
+            print("[仿真] 警告: 无法获取仿真器进程ID")
+        end
+    end
+    
+    print("[仿真] ========== 仿真已启动 ==========")
+    return true
 end
 
 -- ========== 菜单事件处理 ==========
@@ -554,9 +727,11 @@ menu_bar:on("menu_action", function(self, menu_key, item_id)
     elseif item_id == "stopInstall" then
         print("停止下装")
     elseif item_id == "startSim" then
-        print("启动仿真")
+        -- 启动仿真
+        start_simulator()
     elseif item_id == "stopSim" then
-        print("停止仿真")
+        -- 停止仿真
+        stop_simulator()
     elseif item_id == "exit" then
         print("退出编辑器")
     end
@@ -654,8 +829,9 @@ left_panel:on("page_selected", function(self, page_data, index)
     
     -- 应用图页的背景颜色到画布
     if page_data.bg_color then
-        canvas.container:set_style_bg_color(page_data.bg_color, 0)
-        canvas.props.bg_color = page_data.bg_color
+        local bg_color_num = parse_color(page_data.bg_color, 0x1E1E1E)
+        canvas.container:set_style_bg_color(bg_color_num, 0)
+        canvas.props.bg_color = bg_color_num
     end
     
     -- 显示图页属性
@@ -696,9 +872,10 @@ property_area:on("page_property_changed", function(self, prop_name, prop_value, 
             end
         elseif prop_name == "bg_color" then
             -- 更新画布背景颜色
-            canvas.container:set_style_bg_color(prop_value, 0)
-            canvas.props.bg_color = prop_value
-            print("[编辑器] 画布背景颜色变更: " .. string.format("0x%06X", prop_value))
+            local bg_color_num = parse_color(prop_value, 0x1E1E1E)
+            canvas.container:set_style_bg_color(bg_color_num, 0)
+            canvas.props.bg_color = bg_color_num
+            print("[编辑器] 画布背景颜色变更: " .. string.format("0x%06X", bg_color_num))
         end
     end
 end)

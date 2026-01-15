@@ -35,33 +35,6 @@ Button.__widget_meta = {
   events = { "clicked", "single_clicked", "double_clicked" },
 }
 
--- 解析动作参数的辅助函数
-local function parse_action_params(params_str)
-  local params = {}
-  if params_str and params_str ~= "" and params_str ~= "{}" then
-    local ok, parsed = pcall(function()
-      local content = params_str:match("^%s*{(.*)%s*}%s*$") or params_str
-      local result = {}
-      for key, value in content:gmatch('([%w_]+)%s*=%s*([^,}]+)') do
-        value = value:gsub('^%s*"(.*)"%s*$', '%1')
-        value = value:gsub("^%s*'(.*)'%s*$", '%1')
-        value = value:gsub("^%s*(.-)%s*$", '%1')
-        local num = tonumber(value)
-        if num then
-          result[key] = num
-        else
-          result[key] = value
-        end
-      end
-      return result
-    end)
-    if ok then
-      params = parsed
-    end
-  end
-  return params
-end
-
 -- new(parent, state)
 function Button.new(parent, state)
   state = state or {}
@@ -85,147 +58,10 @@ function Button.new(parent, state)
   self.label:set_text(self.props.label)
   self.label:center()
   
-  -- 保存各事件的动作回调
-  self._action_callbacks = {
-    clicked = nil,
-    single_clicked = nil,
-    double_clicked = nil,
-  }
-  
-  -- 保存各事件的处理代码回调
-  self._handler_callbacks = {
-    clicked = nil,
-    single_clicked = nil,
-    double_clicked = nil,
-  }
-
-  -- 执行事件处理代码
-  function self._execute_handler(self, event_name)
-    local handler_prop = "on_" .. event_name .. "_handler"
-    local code = self.props[handler_prop]
-    
-    if code and code ~= "" then
-      -- 创建执行环境
-      local env = setmetatable({
-        self = self,
-        btn = self.btn,
-        label = self.label,
-        props = self.props,
-        print = print,
-        lv = lv,
-      }, { __index = _G })
-      
-      local func, err = load(code, "event_handler", "t", env)
-      if func then
-        local ok, exec_err = pcall(func)
-        if not ok then
-          print("[button] 事件处理代码执行错误 [" .. event_name .. "]: " .. tostring(exec_err))
-        end
-      else
-        print("[button] 事件处理代码编译错误 [" .. event_name .. "]: " .. tostring(err))
-      end
-    end
-  end
-
-  -- 绑定单个事件的动作
-  function self._bind_event_action(self, event_name)
-    local action_prop = "on_" .. event_name .. "_action"
-    local params_prop = "on_" .. event_name .. "_params"
-    
-    local action_id = self.props[action_prop]
-    if not action_id or action_id == "" then
-      self._action_callbacks[event_name] = nil
-      return
-    end
-
-    local ok, action_module = pcall(require, "actions.page_navigation")
-    if not ok then
-      print("[button] cannot load action module: " .. tostring(action_module))
-      return
-    end
-
-    local params = parse_action_params(self.props[params_prop])
-
-    if action_module.create_action_callback then
-      self._action_callbacks[event_name] = action_module.create_action_callback(action_id, params)
-      print("[button] bindaction " .. event_name .. ": " .. action_id)
-    end
-
-    if not self.props.design_mode and self._action_callbacks[event_name] then
-      local action_cb = self._action_callbacks[event_name]
-      local evt_cb = function(e)
-        if not self.props.enabled then return end
-        if self.props.design_mode then return end
-        local ok2, err = pcall(action_cb)
-        if not ok2 then print("[button] action error:", err) end
-      end
-      
-      local ev_code
-      if event_name == "clicked" then
-        ev_code = lv.EVENT_CLICKED
-      elseif event_name == "single_clicked" then
-        ev_code = lv.EVENT_SINGLE_CLICKED
-      elseif event_name == "double_clicked" then
-        ev_code = lv.EVENT_DOUBLE_CLICKED
-      end
-      
-      if ev_code then
-        if self.btn.add_event_cb then
-          self.btn:add_event_cb(evt_cb, ev_code, nil)
-        elseif lv.obj_add_event_cb then
-          lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
-        end
-      end
-    end
-  end
-  
-  -- 绑定事件处理代码
-  function self._bind_event_handler(self, event_name)
-    if self.props.design_mode then return end
-    
-    local handler_prop = "on_" .. event_name .. "_handler"
-    local code = self.props[handler_prop]
-    
-    if not code or code == "" then return end
-    
-    local evt_cb = function(e)
-      if not self.props.enabled then return end
-      if self.props.design_mode then return end
-      self:_execute_handler(event_name)
-    end
-    
-    local ev_code
-    if event_name == "clicked" then
-      ev_code = lv.EVENT_CLICKED
-    elseif event_name == "single_clicked" then
-      ev_code = lv.EVENT_SINGLE_CLICKED
-    elseif event_name == "double_clicked" then
-      ev_code = lv.EVENT_DOUBLE_CLICKED
-    end
-    
-    if ev_code then
-      if self.btn.add_event_cb then
-        self.btn:add_event_cb(evt_cb, ev_code, nil)
-      elseif lv.obj_add_event_cb then
-        lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
-      end
-    end
-  end
-
-  -- 绑定所有事件动作
-  function self._bind_all_actions(self)
-    for _, event_name in ipairs(Button.__widget_meta.events) do
-      self:_bind_event_action(event_name)
-      self:_bind_event_handler(event_name)
-    end
-  end
-
-  self:_bind_all_actions()
-  
   -- 事件订阅：统一接口 on(event_name, callback)
+  -- callback(self, ...) 将在事件触发时被调用
   function self.on(self, event_name, callback)
-    if self.props.design_mode then return end
-    
+    -- 定义通用的内部回调处理逻辑
     local function create_safe_callback()
       return function(e)
           if not self.props.enabled then return end
@@ -235,6 +71,7 @@ function Button.new(parent, state)
       end
     end
 
+    -- 处理普通点击 (Clicked)
     if event_name == "clicked" then
       local evt_cb = create_safe_callback()
       local ev_code = lv.EVENT_CLICKED
@@ -245,6 +82,7 @@ function Button.new(parent, state)
       end
     end
 
+    -- 处理单次点击 (Single Clicked - 兼容双击)
     if event_name == "single_clicked" then
       local evt_cb = create_safe_callback()
       local ev_code = lv.EVENT_SINGLE_CLICKED
@@ -255,9 +93,12 @@ function Button.new(parent, state)
       end
     end
 
+    -- 处理双击事件
     if event_name == "double_clicked" then
       local evt_cb = create_safe_callback()
       local ev_code = lv.EVENT_DOUBLE_CLICKED
+      
+      -- 优先使用对象方法注册（Lua 绑定通常提供 obj:add_event_cb）
       if self.btn.add_event_cb then
         self.btn:add_event_cb(evt_cb, ev_code, nil)
       elseif lv.obj_add_event_cb then
@@ -273,10 +114,26 @@ function Button.new(parent, state)
   function self.set_property(self, name, value)
     self.props[name] = value
     if name == "label" then
+      -- use object method
       if self.label and self.label.set_text then
         self.label:set_text(value)
       end
+    elseif name == "color" then
+      -- 文本颜色，支持字符串 "#RRGGBB" 或 数字
+      local function parse_color(c)
+        if type(c) == "string" and c:match("^#%x%x%x%x%x%x$") then
+          return tonumber(c:sub(2), 16)
+        elseif type(c) == "number" then
+          return c
+        end
+        return 0xffffff
+      end
+      local col = parse_color(value)
+      if self.label and self.label.set_style_text_color then
+        self.label:set_style_text_color(col, 0)
+      end
     elseif name == "bg_color" then
+      -- 支持字符串 "#RRGGBB" 或 数字
       local function parse_color(c)
         if type(c) == "string" and c:match("^#%x%x%x%x%x%x$") then
           return tonumber(c:sub(2), 16)
@@ -288,22 +145,14 @@ function Button.new(parent, state)
       local col = parse_color(value)
       if self.btn.set_style_bg_color then
         self.btn:set_style_bg_color(col, 0)
+      else
+        -- fallback: try lv.obj_set_style_bg_color if available
+        if lv.obj_set_style_bg_color then lv.obj_set_style_bg_color(self.btn, col, 0) end
       end
     elseif name == "x" or name == "y" then
       self.btn:set_pos(self.props.x, self.props.y)
     elseif name == "width" or name == "height" then
       self.btn:set_size(self.props.width, self.props.height)
-    elseif name:match("^on_.*_action$") or name:match("^on_.*_params$") then
-      local event_name = name:match("^on_(.*)_action$") or name:match("^on_(.*)_params$")
-      if event_name then
-        self:_bind_event_action(event_name)
-      end
-    elseif name:match("^on_.*_handler$") then
-      -- 事件处理代码更新，不需要立即重新绑定（运行时会读取最新值）
-      local event_name = name:match("^on_(.*)_handler$")
-      if event_name then
-        print("[button] 事件处理代码已更新: " .. event_name)
-      end
     elseif name == "enabled" then
       if not value then
         if self.btn and self.btn.set_style_bg_color then

@@ -12,6 +12,47 @@ local PROJECT_VERSION = "1.0"
 -- 默认项目目录
 local DEFAULT_PROJECT_DIR = "projects"
 
+-- 需要转换为颜色字符串格式的属性列表
+local COLOR_PROPERTIES = {
+    "bg_color",
+    "color",
+    "handle_color",
+    "border_color",
+    "text_color",
+    "line_color",
+    "fill_color",
+}
+
+-- 将数字颜色值转换为 #xxxxxx 格式字符串
+local function number_to_color_string(value)
+    if type(value) == "number" then
+        return string.format("#%06X", value)
+    end
+    return value
+end
+
+-- 预处理属性表，将数字颜色转换为字符串格式
+local function preprocess_color_properties(props)
+    if not props then return props end
+    for _, color_prop in ipairs(COLOR_PROPERTIES) do
+        if props[color_prop] ~= nil and type(props[color_prop]) == "number" then
+            props[color_prop] = number_to_color_string(props[color_prop])
+        end
+    end
+    return props
+end
+
+-- 预处理控件列表中的颜色属性
+local function preprocess_widgets_colors(widgets)
+    if not widgets then return widgets end
+    for _, widget in ipairs(widgets) do
+        if widget.props then
+            preprocess_color_properties(widget.props)
+        end
+    end
+    return widgets
+end
+
 -- 构造函数
 function ProjectManager.new()
     local self = setmetatable({}, ProjectManager)
@@ -54,9 +95,13 @@ function ProjectManager:export_project_data(editor)
                     module_path = widget_entry.module_path
                 end
                 
+                -- 预处理控件属性中的颜色
+                local props = widget_state.props
+                preprocess_color_properties(props)
+                
                 table.insert(widgets_data, {
                     type = widget_state.type,
-                    props = widget_state.props,
+                    props = props,
                     module_path = module_path,
                 })
             end
@@ -100,13 +145,23 @@ function ProjectManager:export_project_data(editor)
     -- 导出所有图页
     local pages = canvas_list:get_pages()
     for i, page in ipairs(pages) do
+        -- 预处理图页中控件的颜色属性
+        local widgets = page.widgets or {}
+        preprocess_widgets_colors(widgets)
+        
+        -- 预处理图页背景颜色
+        local bg_color = page.bg_color or 0x1E1E1E
+        if type(bg_color) == "number" then
+            bg_color = number_to_color_string(bg_color)
+        end
+        
         local page_data = {
             id = page.id,
             name = page.name,
             width = page.width or 800,
             height = page.height or 600,
-            bg_color = page.bg_color or 0x1E1E1E,
-            widgets = page.widgets or {},
+            bg_color = bg_color,
+            widgets = widgets,
         }
         table.insert(project_data.pages, page_data)
     end

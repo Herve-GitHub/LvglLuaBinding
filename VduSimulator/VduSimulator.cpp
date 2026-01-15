@@ -17,12 +17,15 @@ static const int WINDOW_HEIGHT = 768;
 // 默认脚本路径
 static const char* DEFAULT_SCRIPT_PATH = "lua\\editor\\main_editor.lua";
 
-// 默认 Lua 搜索路径
-static const char* DEFAULT_LUA_PATH = "lua\\editor\\?.lua;"
-"lua\\editor\\?\\init.lua;"
-"lua\\?.lua;"
-"lua\\?\\init.lua;"
-"lau\\actions\\?.lua";
+// 默认 Lua 搜索路径（模板，使用绝对路径）
+static const char* DEFAULT_LUA_PATH_TEMPLATE = 
+    "%slua\\editor\\?.lua;"
+    "%slua\\editor\\?\\init.lua;"
+    "%slua\\sim\\?.lua;"
+    "%slua\\sim\\?\\init.lua;"
+    "%slua\\?.lua;"
+    "%slua\\?\\init.lua;"
+    "%slua\\actions\\?.lua";
 
 // 默认字体路径（黑体）
 static const char* DEFAULT_FONT_PATH = "fonts\\simhei.ttf";
@@ -33,6 +36,9 @@ static lua_State* g_L = nullptr;
 
 // 全局 TTF 字体
 static lv_font_t* g_chinese_font = nullptr;
+
+// 全局可执行文件目录
+static std::string g_exe_directory;
 
 /**
  * @brief 将窗口居中显示在屏幕上
@@ -84,6 +90,16 @@ static std::string get_exe_directory()
 }
 
 /**
+ * @brief 构建完整路径（基于可执行文件目录）
+ * @param relative_path 相对路径
+ * @return 完整绝对路径
+ */
+static std::string build_full_path(const char* relative_path)
+{
+    return g_exe_directory + relative_path;
+}
+
+/**
  * @brief 使用 TinyTTF 初始化中文字体
  * @return 成功返回 true
  */
@@ -91,10 +107,9 @@ static bool init_chinese_font()
 {
 #if LV_USE_TINY_TTF
     // 获取可执行文件目录并构建完整字体路径
-    std::string exe_dir = get_exe_directory();
-    std::string full_font_path = exe_dir + DEFAULT_FONT_PATH;
+    std::string full_font_path = build_full_path(DEFAULT_FONT_PATH);
 
-    std::cout << "Executable directory: " << exe_dir << std::endl;
+    std::cout << "Executable directory: " << g_exe_directory << std::endl;
     std::cout << "Font path: " << full_font_path << std::endl;
 
     // 检查字体文件是否存在
@@ -155,12 +170,22 @@ static void cleanup_chinese_font()
 }
 
 /**
- * @brief 设置 Lua 模块搜索路径
+ * @brief 设置 Lua 模块搜索路径（使用绝对路径）
  * @param L Lua 状态机
- * @param lua_path 要设置的 Lua 路径
  */
-static void set_lua_path(lua_State* L, const char* lua_path)
+static void set_lua_path(lua_State* L)
 {
+    // 构建使用绝对路径的 Lua 搜索路径
+    char lua_path[4096];
+    snprintf(lua_path, sizeof(lua_path), DEFAULT_LUA_PATH_TEMPLATE,
+        g_exe_directory.c_str(),
+        g_exe_directory.c_str(),
+        g_exe_directory.c_str(),
+        g_exe_directory.c_str(),
+        g_exe_directory.c_str(),
+        g_exe_directory.c_str(),
+        g_exe_directory.c_str());
+
     lua_getglobal(L, "package");
     lua_getfield(L, -1, "path");
     const char* cur_path = lua_tostring(L, -1);
@@ -174,6 +199,19 @@ static void set_lua_path(lua_State* L, const char* lua_path)
     lua_pop(L, 1);  // 弹出 package 表
 
     std::cout << "Lua package.path set to: " << new_path << std::endl;
+}
+
+/**
+ * @brief 设置全局变量 APP_DIR 供 Lua 使用
+ * @param L Lua 状态机
+ */
+static void set_lua_app_dir(lua_State* L)
+{
+    // 设置 APP_DIR 全局变量，供 Lua 脚本使用
+    lua_pushstring(L, g_exe_directory.c_str());
+    lua_setglobal(L, "APP_DIR");
+    
+    std::cout << "Lua APP_DIR set to: " << g_exe_directory << std::endl;
 }
 
 /**
@@ -191,8 +229,11 @@ static bool init_lua()
     // 打开标准库
     luaL_openlibs(g_L);
 
-    // 设置 Lua 模块搜索路径
-    set_lua_path(g_L, DEFAULT_LUA_PATH);
+    // 设置 Lua 模块搜索路径（使用绝对路径）
+    set_lua_path(g_L);
+    
+    // 设置 APP_DIR 全局变量
+    set_lua_app_dir(g_L);
 
     // 注册 LVGL 绑定
     lvgl_lua_register(g_L);
@@ -202,7 +243,7 @@ static bool init_lua()
 
 /**
  * @brief 加载并执行 Lua 脚本
- * @param script_path Lua 脚本路径
+ * @param script_path Lua 脚本路径（相对路径将转换为绝对路径）
  * @return 成功返回 true
  */
 static bool load_lua_script(const char* script_path)
@@ -211,18 +252,21 @@ static bool load_lua_script(const char* script_path)
         return false;
     }
 
+    // 构建完整脚本路径
+    std::string full_script_path = build_full_path(script_path);
+
     // 检查文件是否存在
     FILE* f = nullptr;
-    if (fopen_s(&f, script_path, "r") != 0 || !f) {
-        std::cerr << "Script file not found: " << script_path << std::endl;
+    if (fopen_s(&f, full_script_path.c_str(), "r") != 0 || !f) {
+        std::cerr << "Script file not found: " << full_script_path << std::endl;
         return false;
     }
     fclose(f);
 
-    std::cout << "Loading script: " << script_path << std::endl;
+    std::cout << "Loading script: " << full_script_path << std::endl;
 
     // 加载并执行脚本
-    int result = luaL_dofile(g_L, script_path);
+    int result = luaL_dofile(g_L, full_script_path.c_str());
     if (result != LUA_OK) {
         const char* error = lua_tostring(g_L, -1);
         std::cerr << "Lua error: " << (error ? error : "unknown error") << std::endl;
@@ -255,6 +299,14 @@ int main(int argc, char* argv[])
 
     std::cout << "VduSimulator - LVGL Lua Configuration Editor" << std::endl;
     std::cout << "Window size: " << WINDOW_WIDTH << "x" << WINDOW_HEIGHT << std::endl;
+
+    // 获取可执行文件目录（在程序启动时获取一次）
+    g_exe_directory = get_exe_directory();
+    if (g_exe_directory.empty()) {
+        std::cerr << "Failed to get executable directory" << std::endl;
+        return -1;
+    }
+    std::cout << "Application directory: " << g_exe_directory << std::endl;
 
     // 确定脚本路径
     const char* script_path = DEFAULT_SCRIPT_PATH;

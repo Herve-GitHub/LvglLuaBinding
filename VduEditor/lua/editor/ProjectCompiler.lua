@@ -154,6 +154,50 @@ local function is_complete_function(code)
     return false
 end
 
+-- 需要转换为颜色字符串格式的属性列表
+local COLOR_PROPERTIES = {
+    "bg_color",
+    "color",
+    "handle_color",
+    "border_color",
+    "text_color",
+    "line_color",
+    "fill_color",
+}
+
+-- 将数字颜色值转换为 #xxxxxx 格式字符串
+local function number_to_color_string(value)
+    if type(value) == "number" then
+        return string.format("#%06X", value)
+    end
+    return value
+end
+
+-- 将颜色值转换为 0xXXXXXX 格式的字符串（用于生成代码）
+local function color_to_hex_string(value)
+    if type(value) == "number" then
+        return string.format("0x%06X", value)
+    elseif type(value) == "string" then
+        -- 如果是 #XXXXXX 格式，转换为 0xXXXXXX
+        if value:match("^#%x%x%x%x%x%x$") then
+            return "0x" .. value:sub(2):upper()
+        end
+        -- 其他格式直接返回
+        return value
+    end
+    return "0x1E1E1E"  -- 默认颜色
+end
+
+-- 预处理属性表，将数字颜色转换为字符串格式
+local function preprocess_color_properties(props)
+    for _, color_prop in ipairs(COLOR_PROPERTIES) do
+        if props[color_prop] ~= nil and type(props[color_prop]) == "number" then
+            props[color_prop] = number_to_color_string(props[color_prop])
+        end
+    end
+    return props
+end
+
 -- 生成控件创建代码
 local function generate_widget_code(widget, index, page_var, used_names)
     local lines = {}
@@ -163,6 +207,9 @@ local function generate_widget_code(widget, index, page_var, used_names)
     
     -- 确保 design_mode = false
     props.design_mode = false
+    
+    -- 预处理颜色属性，将数字转换为 #xxxxxx 格式
+    preprocess_color_properties(props)
     
     -- 确定变量名：优先使用 instance_name，否则使用默认名称
     local instance_name = props.instance_name
@@ -240,16 +287,17 @@ local function generate_page_code(page, page_index)
     local page_width = page.width or 800
     local page_height = page.height or 600
     local page_bg_color = page.bg_color or 0x1E1E1E
+    local page_bg_color_str = color_to_hex_string(page_bg_color)
     
     table.insert(lines, "-- ========== 图页 " .. page_index .. ": " .. (page.name or "未命名") .. " ==========")
     table.insert(lines, "-- 图页尺寸: " .. page_width .. "x" .. page_height)
-    table.insert(lines, "-- 背景颜色: " .. string.format("0x%06X", page_bg_color))
+    table.insert(lines, "-- 背景颜色: " .. page_bg_color_str)
     table.insert(lines, "local function create_" .. page_var .. "(parent)")
     table.insert(lines, "    -- 创建图页容器")
     table.insert(lines, "    local container = lv.obj_create(parent)")
     table.insert(lines, "    container:set_pos(0, 0)")
     table.insert(lines, "    container:set_size(" .. page_width .. ", " .. page_height .. ")")
-    table.insert(lines, "    container:set_style_bg_color(" .. string.format("0x%06X", page_bg_color) .. ", 0)")
+    table.insert(lines, "    container:set_style_bg_color(" .. page_bg_color_str .. ", 0)")
     table.insert(lines, "    container:set_style_border_width(0, 0)")
     table.insert(lines, "    container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)")
     table.insert(lines, "    container:clear_layout()")
