@@ -2,6 +2,7 @@
 -- 图页属性编辑模块
 local lv = require("lvgl")
 local ColorDialog = require("editor.ColorDialog")
+local PropertyInputs = require("editor.PropertyInputs")
 
 local PropertyPageEditor = {}
 
@@ -19,7 +20,11 @@ function PropertyPageEditor.create_text_input(ctx, prop_name, value, is_read_onl
     textarea:set_style_pad_left(4, 0)
     textarea:set_one_line(true)
     textarea:set_text(value)
+    textarea:add_flag(lv.OBJ_FLAG_CLICKABLE)
     textarea:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    
+    -- 启用文本选择功能
+    PropertyInputs.setup_text_selection(textarea)
     
     if is_read_only then
         textarea:add_state(lv.STATE_DISABLED)
@@ -31,6 +36,8 @@ function PropertyPageEditor.create_text_input(ctx, prop_name, value, is_read_onl
             ctx:_emit("page_property_changed", prop_name, new_value, page_index)
         end, lv.EVENT_READY, nil)
     end
+    
+    return textarea
 end
 
 -- 创建图页数字输入框
@@ -48,7 +55,11 @@ function PropertyPageEditor.create_number_input(ctx, prop_name, value, min_val, 
     textarea:set_one_line(true)
     textarea:set_text(tostring(math.floor(value)))
     textarea:set_accepted_chars("0123456789-")
+    textarea:add_flag(lv.OBJ_FLAG_CLICKABLE)
     textarea:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    
+    -- 启用文本选择功能
+    PropertyInputs.setup_text_selection(textarea)
     
     if is_read_only then
         textarea:add_state(lv.STATE_DISABLED)
@@ -62,6 +73,8 @@ function PropertyPageEditor.create_number_input(ctx, prop_name, value, min_val, 
             ctx:_emit("page_property_changed", prop_name, new_value, page_index)
         end, lv.EVENT_READY, nil)
     end
+    
+    return textarea
 end
 
 -- 创建图页颜色选择框
@@ -100,7 +113,11 @@ function PropertyPageEditor.create_color_input(ctx, prop_name, value, is_read_on
     textarea:set_text(color_hex)
     textarea:set_accepted_chars("#0123456789ABCDEFabcdef")
     textarea:set_max_length(7)
+    textarea:add_flag(lv.OBJ_FLAG_CLICKABLE)
     textarea:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    
+    -- 启用文本选择功能
+    PropertyInputs.setup_text_selection(textarea)
     
     if is_read_only then
         textarea:add_state(lv.STATE_DISABLED)
@@ -153,6 +170,8 @@ function PropertyPageEditor.create_color_input(ctx, prop_name, value, is_read_on
             end
         end, lv.EVENT_VALUE_CHANGED, nil)
     end
+    
+    return textarea, color_box
 end
 
 -- 显示图页属性

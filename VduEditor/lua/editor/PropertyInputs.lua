@@ -45,6 +45,32 @@ local function clipboard_set_text(text)
     return false
 end
 
+-- ========== 文本选择辅助函数 ==========
+
+-- 为 textarea 设置文本选择功能
+local function setup_text_selection(textarea)
+    -- 启用点击定位光标
+    if textarea.set_cursor_click_pos then
+        textarea:set_cursor_click_pos(true)
+    end
+    
+    -- 启用文本选择（鼠标拖动选择）
+    if textarea.set_text_selection then
+        textarea:set_text_selection(true)
+    end
+    
+    -- 设置选中文本的样式（背景色）
+    --textarea:set_style_bg_color(0x264F78, lv.PART_SELECTED)  -- 选中背景色（深蓝色）
+    textarea:set_style_text_color(0xFFFFFF, lv.PART_SELECTED) -- 选中文字颜色（白色）
+    
+    -- 注意：LVGL 的 textarea 已经内置支持文本选择功能
+    -- 复制粘贴等快捷键需要在 C 层实现，Lua 绑定中没有 lv.event_get_key 函数
+    -- 用户可以使用以下方法：
+    -- - 鼠标拖动选择文本
+    -- - 通过复制粘贴按钮进行操作
+    -- - textarea:copy_selection(), textarea:paste() 等方法
+end
+
 -- ========== 输入控件创建函数 ==========
 
 -- 创建文本输入框
@@ -66,6 +92,9 @@ function PropertyInputs.create_text_input(ctx, prop_name, value, is_read_only, w
     textarea:add_flag(lv.OBJ_FLAG_CLICKABLE)
     textarea:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     
+    -- 启用文本选择功能
+    setup_text_selection(textarea)
+    
     if is_read_only then
         textarea:add_state(lv.STATE_DISABLED)
     else
@@ -79,6 +108,8 @@ function PropertyInputs.create_text_input(ctx, prop_name, value, is_read_only, w
             ctx:_emit("property_changed", prop_name, new_value, widget_entry)
         end, lv.EVENT_READY, nil)
     end
+    
+    return textarea
 end
 
 -- 创建数字输入框
@@ -101,6 +132,9 @@ function PropertyInputs.create_number_input(ctx, prop_name, value, min_val, max_
     textarea:add_flag(lv.OBJ_FLAG_CLICKABLE)
     textarea:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     
+    -- 启用文本选择功能
+    setup_text_selection(textarea)
+    
     if is_read_only then
         textarea:add_state(lv.STATE_DISABLED)
     else
@@ -116,6 +150,8 @@ function PropertyInputs.create_number_input(ctx, prop_name, value, min_val, max_
             ctx:_emit("property_changed", prop_name, new_value, widget_entry)
         end, lv.EVENT_READY, nil)
     end
+    
+    return textarea
 end
 
 -- 创建复选框
@@ -145,6 +181,8 @@ function PropertyInputs.create_checkbox_input(ctx, prop_name, value, is_read_onl
             ctx:_emit("property_changed", prop_name, is_checked, widget_entry)
         end, lv.EVENT_CLICKED, nil)
     end
+    
+    return checkbox
 end
 
 -- 创建颜色选择框
@@ -187,6 +225,9 @@ function PropertyInputs.create_color_input(ctx, prop_name, value, is_read_only, 
     -- 设置基本属性
     textarea:add_flag(lv.OBJ_FLAG_CLICKABLE)
     textarea:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    
+    -- 启用文本选择功能
+    setup_text_selection(textarea)
     
     if is_read_only then
         textarea:add_state(lv.STATE_DISABLED)
@@ -246,6 +287,8 @@ function PropertyInputs.create_color_input(ctx, prop_name, value, is_read_only, 
             end
         end, lv.EVENT_VALUE_CHANGED, nil)
     end
+    
+    return textarea, color_box
 end
 
 -- 创建枚举下拉框
@@ -268,10 +311,15 @@ function PropertyInputs.create_enum_dropdown(ctx, prop_name, value, options, is_
     if not is_read_only then
         dropdown:add_flag(lv.OBJ_FLAG_CLICKABLE)
     end
+    
+    return dropdown
 end
 
 -- 导出剪贴板函数供其他模块使用
 PropertyInputs.clipboard_get_text = clipboard_get_text
 PropertyInputs.clipboard_set_text = clipboard_set_text
+
+-- 导出文本选择设置函数
+PropertyInputs.setup_text_selection = setup_text_selection
 
 return PropertyInputs

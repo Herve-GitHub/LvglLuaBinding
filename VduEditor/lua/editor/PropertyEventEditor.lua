@@ -234,6 +234,9 @@ local function create_code_textarea(ctx, y_pos, initial_code)
     -- 多行文本框需要滚动支持
     textarea:add_flag(lv.OBJ_FLAG_SCROLLABLE)
     
+    -- 启用文本选择功能（鼠标拖动选择）
+    PropertyInputs.setup_text_selection(textarea)
+    
     _current_state.textarea = textarea
     
     -- 创建复制粘贴按钮
@@ -260,10 +263,19 @@ local function create_code_textarea(ctx, y_pos, initial_code)
     copy_label:center()
     
     copy_btn:add_event_cb(function(e)
-        local text = lv.textarea_get_text(ta)
-        if text and text ~= "" then
-            PropertyInputs.clipboard_set_text(text)
-            print("[剪贴板] 已复制代码")
+        -- 如果有选中文本，只复制选中部分
+        if ta.text_is_selected and ta:text_is_selected() then
+            if ta.copy_selection then
+                ta:copy_selection()
+                print("[剪贴板] 已复制选中的代码")
+            end
+        else
+            -- 否则复制全部文本
+            local text = lv.textarea_get_text(ta)
+            if text and text ~= "" then
+                PropertyInputs.clipboard_set_text(text)
+                print("[剪贴板] 已复制全部代码")
+            end
         end
     end, lv.EVENT_CLICKED, nil)
     
@@ -285,15 +297,16 @@ local function create_code_textarea(ctx, y_pos, initial_code)
     paste_label:center()
     
     paste_btn:add_event_cb(function(e)
+        -- 如果有选中文本，先删除选中部分再粘贴
+        if ta.text_is_selected and ta:text_is_selected() then
+            if ta.delete_selection then
+                ta:delete_selection()
+            end
+        end
+        
         local text = PropertyInputs.clipboard_get_text()
         if text and text ~= "" then
-            -- 追加到当前位置（或替换全部）
-            local current = lv.textarea_get_text(ta)
-            if current == "" then
-                ta:set_text(text)
-            else
-                ta:add_text(text)
-            end
+            ta:add_text(text)
             print("[剪贴板] 已粘贴代码")
         end
     end, lv.EVENT_CLICKED, nil)

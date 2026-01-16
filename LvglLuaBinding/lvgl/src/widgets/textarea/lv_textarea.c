@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file lv_textarea.c
  *
  */
@@ -654,7 +654,7 @@ const char * lv_textarea_get_text(const lv_obj_t * obj)
     return txt;
 }
 
-const char * lv_textarea_get_placeholder_text(lv_obj_t * obj)
+const char * lv_textarea_get_placeholder_text(const lv_obj_t * obj)
 {
     LV_ASSERT_OBJ(obj, MY_CLASS);
 
@@ -975,10 +975,56 @@ static void lv_textarea_event(const lv_obj_class_t * class_p, lv_event_t * e)
             lv_textarea_cursor_up(obj);
         else if(c == LV_KEY_DOWN)
             lv_textarea_cursor_down(obj);
-        else if(c == LV_KEY_BACKSPACE)
-            lv_textarea_delete_char(obj);
-        else if(c == LV_KEY_DEL)
-            lv_textarea_delete_char_forward(obj);
+        else if(c == LV_KEY_BACKSPACE) {
+#if LV_LABEL_TEXT_SELECTION
+            /*If text is selected, delete the selection instead of one char*/
+            if(lv_textarea_text_is_selected(obj)) {
+                lv_textarea_t * ta = (lv_textarea_t *)obj;
+                uint32_t sel_start = lv_label_get_text_selection_start(ta->label);
+                uint32_t sel_end = lv_label_get_text_selection_end(ta->label);
+                if(sel_start > sel_end) {
+                    uint32_t tmp = sel_start;
+                    sel_start = sel_end;
+                    sel_end = tmp;
+                }
+                lv_textarea_clear_selection(obj);
+                lv_textarea_set_cursor_pos(obj, sel_end);
+                uint32_t chars_to_delete = sel_end - sel_start;
+                for(uint32_t i = 0; i < chars_to_delete; i++) {
+                    lv_textarea_delete_char(obj);
+                }
+            }
+            else
+#endif
+            {
+                lv_textarea_delete_char(obj);
+            }
+        }
+        else if(c == LV_KEY_DEL) {
+#if LV_LABEL_TEXT_SELECTION
+            /*If text is selected, delete the selection instead of one char*/
+            if(lv_textarea_text_is_selected(obj)) {
+                lv_textarea_t * ta = (lv_textarea_t *)obj;
+                uint32_t sel_start = lv_label_get_text_selection_start(ta->label);
+                uint32_t sel_end = lv_label_get_text_selection_end(ta->label);
+                if(sel_start > sel_end) {
+                    uint32_t tmp = sel_start;
+                    sel_start = sel_end;
+                    sel_end = tmp;
+                }
+                lv_textarea_clear_selection(obj);
+                lv_textarea_set_cursor_pos(obj, sel_end);
+                uint32_t chars_to_delete = sel_end - sel_start;
+                for(uint32_t i = 0; i < chars_to_delete; i++) {
+                    lv_textarea_delete_char(obj);
+                }
+            }
+            else
+#endif
+            {
+                lv_textarea_delete_char_forward(obj);
+            }
+        }
         else if(c == LV_KEY_HOME)
             lv_textarea_set_cursor_pos(obj, 0);
         else if(c == LV_KEY_END)
