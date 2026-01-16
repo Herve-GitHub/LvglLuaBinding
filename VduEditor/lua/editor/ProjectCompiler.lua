@@ -440,11 +440,11 @@ function ProjectCompiler:compile(project_data)
         end
     end
     
-    -- 生成图页管理器
-    table.insert(lines, "-- ========== 图页管理 ==========")
+    -- 生成图页管理器（预创建所有图页模式）
+    table.insert(lines, "-- ========== 图页管理（预创建模式） ==========")
     table.insert(lines, "local PageManager = {}")
-    table.insert(lines, "PageManager.pages = {}")
-    table.insert(lines, "PageManager.current_page = nil")
+    table.insert(lines, "PageManager.pages = {}        -- 图页信息")
+    table.insert(lines, "PageManager.containers = {}   -- 预创建的图页容器")
     table.insert(lines, "PageManager.current_index = 0")
     table.insert(lines, "")
     
@@ -454,6 +454,23 @@ function ProjectCompiler:compile(project_data)
         local page_name = project_data.pages[i] and project_data.pages[i].name or ("图页 " .. i)
         table.insert(lines, 'PageManager.pages[' .. i .. '] = { name = "' .. escape_string(page_name) .. '", create = ' .. func_name .. ' }')
     end
+    table.insert(lines, "")
+    
+    -- 预创建所有图页
+    table.insert(lines, "-- 预创建所有图页（启动时调用）")
+    table.insert(lines, "function PageManager.init()")
+    table.insert(lines, '    print("[PageManager] 预创建所有图页...")')
+    table.insert(lines, "    for i, page_info in ipairs(PageManager.pages) do")
+    table.insert(lines, "        if page_info.create then")
+    table.insert(lines, "            local container = page_info.create(scr)")
+    table.insert(lines, "            -- 默认隐藏所有图页")
+    table.insert(lines, "            container:add_flag(lv.OBJ_FLAG_HIDDEN)")
+    table.insert(lines, "            PageManager.containers[i] = container")
+    table.insert(lines, '            print("[PageManager] 图页 " .. i .. " 已创建: " .. page_info.name)')
+    table.insert(lines, "        end")
+    table.insert(lines, "    end")
+    table.insert(lines, '    print("[PageManager] 所有图页创建完成，共 " .. #PageManager.containers .. " 个")')
+    table.insert(lines, "end")
     table.insert(lines, "")
     
     -- 获取图页数量
@@ -487,30 +504,42 @@ function ProjectCompiler:compile(project_data)
     table.insert(lines, "end")
     table.insert(lines, "")
     
-    -- 图页切换函数
-    table.insert(lines, "-- 切换图页")
+    -- 图页切换函数（显示/隐藏模式，不销毁图页）
+    table.insert(lines, "-- 切换图页（显示/隐藏模式，不销毁图页）")
     table.insert(lines, "function PageManager.goto_page(index)")
     table.insert(lines, "    if index < 1 or index > #PageManager.pages then")
     table.insert(lines, '        print("[PageManager] 无效的图页索引: " .. tostring(index))')
     table.insert(lines, "        return false")
     table.insert(lines, "    end")
     table.insert(lines, "")
-    table.insert(lines, "    -- 删除当前图页")
-    table.insert(lines, "    if PageManager.current_page then")
-    table.insert(lines, "        PageManager.current_page:delete()")
-    table.insert(lines, "        PageManager.current_page = nil")
+    table.insert(lines, "    -- 隐藏当前图页")
+    table.insert(lines, "    if PageManager.current_index > 0 and PageManager.containers[PageManager.current_index] then")
+    table.insert(lines, "        PageManager.containers[PageManager.current_index]:add_flag(lv.OBJ_FLAG_HIDDEN)")
     table.insert(lines, "    end")
     table.insert(lines, "")
-    table.insert(lines, "    -- 创建新图页")
-    table.insert(lines, "    local page_info = PageManager.pages[index]")
-    table.insert(lines, "    if page_info and page_info.create then")
-    table.insert(lines, "        PageManager.current_page = page_info.create(scr)")
+    table.insert(lines, "    -- 显示目标图页")
+    table.insert(lines, "    if PageManager.containers[index] then")
+    table.insert(lines, "        PageManager.containers[index]:remove_flag(lv.OBJ_FLAG_HIDDEN)")
     table.insert(lines, "        PageManager.current_index = index")
-    table.insert(lines, '        print("[PageManager] 切换到图页 " .. index .. ": " .. page_info.name)')
+    table.insert(lines, '        print("[PageManager] 切换到图页 " .. index .. ": " .. PageManager.pages[index].name)')
     table.insert(lines, "        return true")
     table.insert(lines, "    end")
     table.insert(lines, "")
     table.insert(lines, "    return false")
+    table.insert(lines, "end")
+    table.insert(lines, "")
+    
+    -- 获取图页容器
+    table.insert(lines, "-- 获取指定图页的容器")
+    table.insert(lines, "function PageManager.get_page_container(index)")
+    table.insert(lines, "    return PageManager.containers[index]")
+    table.insert(lines, "end")
+    table.insert(lines, "")
+    
+    -- 获取当前图页容器
+    table.insert(lines, "-- 获取当前图页的容器")
+    table.insert(lines, "function PageManager.get_current_container()")
+    table.insert(lines, "    return PageManager.containers[PageManager.current_index]")
     table.insert(lines, "end")
     table.insert(lines, "")
     
@@ -546,6 +575,11 @@ function ProjectCompiler:compile(project_data)
         table.insert(lines, "create_status_bar()")
         table.insert(lines, "")
     end
+    
+    -- 预创建所有图页
+    table.insert(lines, "-- 预创建所有图页")
+    table.insert(lines, "PageManager.init()")
+    table.insert(lines, "")
     
     table.insert(lines, "-- 显示初始图页")
     table.insert(lines, "PageManager.goto_page(" .. start_page .. ")")
