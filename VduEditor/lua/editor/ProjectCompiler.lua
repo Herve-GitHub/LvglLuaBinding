@@ -114,7 +114,7 @@ local function value_to_string(value, indent)
             for i = 1, max_index do
                 table.insert(parts, value_to_string(value[i], indent .. "    "))
             end
-            return "{ " .. table.concat(parts, ", ") .. " }"
+            return "{ " .. table.concat(parts, ", " .. indent) .. " }"
         else
             local new_indent = indent .. "    "
             for k, v in pairs(value) do
@@ -328,6 +328,7 @@ function ProjectCompiler:compile(project_data)
     
     local lines = {}
     local all_required_modules = {}
+    local has_status_bar = project_data.status_bar and project_data.status_bar.enabled
     
     -- 文件头
     table.insert(lines, "-- ==============================================")
@@ -349,6 +350,11 @@ function ProjectCompiler:compile(project_data)
                 end
             end
         end
+    end
+    
+    -- 如果有状态栏，添加状态栏模块
+    if has_status_bar then
+        all_required_modules["widgets.status_bar"] = true
     end
     
     -- 生成模块引用
@@ -379,6 +385,50 @@ function ProjectCompiler:compile(project_data)
     table.insert(lines, "scr:remove_flag(lv.OBJ_FLAG_SCROLLABLE)")
     table.insert(lines, "scr:clear_layout()")
     table.insert(lines, "")
+    
+    -- 获取屏幕尺寸
+    table.insert(lines, "-- 获取屏幕尺寸")
+    table.insert(lines, "local scr_width = scr:get_width()")
+    table.insert(lines, "local scr_height = scr:get_height()")
+    table.insert(lines, "")
+    
+    -- 生成状态栏代码（如果有）
+    if has_status_bar then
+        local sb = project_data.status_bar
+        local sb_height = 28
+        local sb_position = sb.position or "bottom"
+        local sb_lamp_status = sb.lamp_status or "#00FF00"
+        local sb_lamp_text = sb.lamp_text or "CH1"
+        local sb_bg_color = sb.bg_color or "#252526"
+        local sb_text_color = sb.text_color or "#CCCCCC"
+        local sb_show_time = sb.show_time ~= false and "true" or "false"
+        local sb_lamp_size = sb.lamp_size or 14
+        
+        table.insert(lines, "-- ========== 状态栏 ==========")
+        table.insert(lines, "local status_bar = nil")
+        table.insert(lines, "local STATUS_BAR_HEIGHT = " .. sb_height)
+        table.insert(lines, "")
+        table.insert(lines, "local function create_status_bar()")
+        table.insert(lines, "    local sb_y = scr_height - STATUS_BAR_HEIGHT")
+        table.insert(lines, "    status_bar = widgets_status_bar.new(scr, {")
+        table.insert(lines, "        x = 0,")
+        table.insert(lines, "        y = sb_y,")
+        table.insert(lines, "        width = scr_width,")
+        table.insert(lines, "        height = STATUS_BAR_HEIGHT,")
+        table.insert(lines, '        position = "' .. sb_position .. '",')
+        table.insert(lines, '        lamp_status = "' .. sb_lamp_status .. '",')
+        table.insert(lines, '        lamp_text = "' .. escape_string(sb_lamp_text) .. '",')
+        table.insert(lines, '        bg_color = "' .. sb_bg_color .. '",')
+        table.insert(lines, '        text_color = "' .. sb_text_color .. '",')
+        table.insert(lines, "        show_time = " .. sb_show_time .. ",")
+        table.insert(lines, "        lamp_size = " .. sb_lamp_size .. ",")
+        table.insert(lines, "        design_mode = false,")
+        table.insert(lines, "    })")
+        table.insert(lines, "    status_bar:start()")
+        table.insert(lines, "    return status_bar")
+        table.insert(lines, "end")
+        table.insert(lines, "")
+    end
     
     -- 生成每个图页的代码
     local page_functions = {}
@@ -474,7 +524,12 @@ function ProjectCompiler:compile(project_data)
     table.insert(lines, "_G.Editor = {")
     table.insert(lines, "    get_canvas_list = function()")
     table.insert(lines, "        return PageManager")
-    table.insert(lines, "    end")
+    table.insert(lines, "    end,")
+    if has_status_bar then
+        table.insert(lines, "    get_status_bar = function()")
+        table.insert(lines, "        return status_bar")
+        table.insert(lines, "    end,")
+    end
     table.insert(lines, "}")
     table.insert(lines, "")
     
@@ -484,6 +539,14 @@ function ProjectCompiler:compile(project_data)
     table.insert(lines, 'print("=== 组态程序启动 ===")')
     table.insert(lines, 'print("图页数量: " .. #PageManager.pages)')
     table.insert(lines, "")
+    
+    -- 创建状态栏
+    if has_status_bar then
+        table.insert(lines, "-- 创建状态栏")
+        table.insert(lines, "create_status_bar()")
+        table.insert(lines, "")
+    end
+    
     table.insert(lines, "-- 显示初始图页")
     table.insert(lines, "PageManager.goto_page(" .. start_page .. ")")
     table.insert(lines, "")

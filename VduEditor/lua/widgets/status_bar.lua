@@ -65,13 +65,17 @@ function StatusBar.new(parent, state)
   -- 初始化属性
   self.props = {}
   for _, p in ipairs(StatusBar.__widget_meta.properties) do
-    self.props[p.name] = state[p.name] ~= nil and state[p.name] or p.default
+    if state[p.name] ~= nil then
+      self.props[p.name] = state[p.name]
+    else
+      self.props[p.name] = p.default
+    end
   end
   
   -- 保存父元素引用
   self._parent = parent
   
-  -- 定时器引用（暂时禁用，因为 lv.timer_create 未实现）
+  -- 定时器引用
   self._timer = nil
   self._timer_running = false
   
@@ -105,46 +109,12 @@ function StatusBar.new(parent, state)
   return self
 end
 
--- 执行事件处理代码
-function StatusBar:_execute_handler(event_name, ...)
-  local handler_prop = "on_" .. event_name .. "_handler"
-  local code = self.props[handler_prop]
-  
-  if code and code ~= "" then
-    -- 创建执行环境
-    local env = setmetatable({
-      self = self,
-      container = self.container,
-      lamp = self.lamp,
-      lamp_label = self.lamp_label,
-      time_label = self.time_label,
-      date_label = self.date_label,
-      props = self.props,
-      print = print,
-      lv = lv,
-    }, { __index = _G })
-    
-    local func, err = load(code, "event_handler", "t", env)
-    if func then
-      local ok, exec_err = pcall(func, ...)
-      if not ok then
-        print("[StatusBar] 事件处理代码执行错误 [" .. event_name .. "]: " .. tostring(exec_err))
-      end
-    else
-      print("[StatusBar] 事件处理代码编译错误 [" .. event_name .. "]: " .. tostring(err))
-    end
-  end
-end
-
 -- 创建通道状态灯
 function StatusBar:_create_status_lamp()
   local lamp_size = self.props.lamp_size
-  local container_height = self.props.height
-  local y_offset = 0--math.floor((container_height - lamp_size) / 2)
   
   -- 状态灯（圆形）
   self.lamp = lv.obj_create(self.container)
-  self.lamp:set_pos(0, y_offset)
   self.lamp:set_size(lamp_size, lamp_size)
   self.lamp:set_style_bg_color(parse_color(self.props.lamp_status), 0)
   self.lamp:set_style_bg_opa(255, 0)
@@ -153,12 +123,15 @@ function StatusBar:_create_status_lamp()
   self.lamp:set_style_border_color(0x555555, 0)
   self.lamp:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
   self.lamp:remove_flag(lv.OBJ_FLAG_CLICKABLE)
+  -- 使用 align 来垂直居中状态灯
+  self.lamp:align(lv.ALIGN_LEFT_MID, 0, 0)
   
   -- 状态文字标签
   self.lamp_label = lv.label_create(self.container)
   self.lamp_label:set_text(self.props.lamp_text)
   self.lamp_label:set_style_text_color(parse_color(self.props.text_color), 0)
-  self.lamp_label:set_pos(lamp_size + 6, y_offset)
+  -- 使用 align 来垂直居中标签，水平位置在状态灯右侧
+  self.lamp_label:align(lv.ALIGN_LEFT_MID, lamp_size + 6, 0)
 end
 
 -- 创建时间显示
@@ -207,22 +180,40 @@ function StatusBar:_update_time()
   self:_emit("time_tick", get_time_string())
 end
 
--- 启动定时器（暂时禁用，因为 timer_create 未实现）
+-- 启动定时器
 function StatusBar:start()
   -- 设计模式下不启动定时器
   if self.props.design_mode then
+    print("[StatusBar] 设计模式，不启动定时器")
     return
   end
   
-  -- 注意：lv.timer_create 尚未在 Lua 绑定中实现
-  -- 目前仅更新一次时间
+  -- 如果定时器已经运行，先停止
+  if self._timer then
+    self:stop()
+  end
+  
+  -- 立即更新一次时间
   self:_update_time()
+  
+  -- 创建定时器，每秒更新一次
+  local this = self
+  self._timer = lv.timer_create(function(timer)
+    this:_update_time()
+  end, 1000)  -- 1000ms = 1秒
+  
   self._timer_running = true
+  print("[StatusBar] 定时器已启动")
 end
 
 -- 停止定时器
 function StatusBar:stop()
+  if self._timer then
+    self._timer:delete()
+    self._timer = nil
+  end
   self._timer_running = false
+  print("[StatusBar] 定时器已停止")
 end
 
 -- 设置通道状态灯颜色
@@ -302,6 +293,7 @@ end
 
 -- 设置设计模式
 function StatusBar:set_design_mode(enabled)
+  local was_design_mode = self.props.design_mode
   self.props.design_mode = enabled
   
   if enabled then
@@ -350,8 +342,6 @@ function StatusBar:_emit(event_name, ...)
       end
     end
   end
-  -- 执行事件处理代码
-  self:_execute_handler(event_name, ...)
 end
 
 -- 获取属性

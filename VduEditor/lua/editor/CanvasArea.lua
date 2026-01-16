@@ -1095,10 +1095,47 @@ end
 
 -- ========== 对齐操作 ==========
 
+-- 获取选中控件组的边界框
+function CanvasArea:_get_selection_bounds()
+    if #self._selected_widgets == 0 then
+        return nil
+    end
+    
+    local min_x, min_y = math.huge, math.huge
+    local max_x, max_y = -math.huge, -math.huge
+    
+    for _, widget_entry in ipairs(self._selected_widgets) do
+        local instance = widget_entry.instance
+        local main_obj = instance.btn or instance.container or instance.obj or instance.chart
+        if main_obj then
+            local x = main_obj:get_x()
+            local y = main_obj:get_y()
+            local w = main_obj:get_width()
+            local h = main_obj:get_height()
+            
+            min_x = math.min(min_x, x)
+            min_y = math.min(min_y, y)
+            max_x = math.max(max_x, x + w)
+            max_y = math.max(max_y, y + h)
+        end
+    end
+    
+    return {
+        x = min_x,
+        y = min_y,
+        width = max_x - min_x,
+        height = max_y - min_y,
+        right = max_x,
+        bottom = max_y
+    }
+end
+
 function CanvasArea:align_selected(align_type)
     if #self._selected_widgets == 0 then return end
     
-    for _, widget_entry in ipairs(self._selected_widgets) do
+    -- 单个控件时，对齐到画布边界
+    if #self._selected_widgets == 1 then
+        local widget_entry = self._selected_widgets[1]
         local instance = widget_entry.instance
         local main_obj = instance.btn or instance.container or instance.obj or instance.chart
         if main_obj then
@@ -1129,6 +1166,58 @@ function CanvasArea:align_selected(align_type)
             end
             widget_entry.props.x = new_x
             widget_entry.props.y = new_y
+        end
+    else
+        -- 多个控件时，对齐到选中控件组的边界
+        local bounds = self:_get_selection_bounds()
+        if not bounds then return end
+        
+        for _, widget_entry in ipairs(self._selected_widgets) do
+            local instance = widget_entry.instance
+            local main_obj = instance.btn or instance.container or instance.obj or instance.chart
+            if main_obj then
+                local w = main_obj:get_width()
+                local h = main_obj:get_height()
+                local cur_x = main_obj:get_x()
+                local cur_y = main_obj:get_y()
+                local new_x, new_y = cur_x, cur_y
+                
+                if align_type == "center_h" then
+                    -- 水平居中：相对于选中组的中心
+                    local group_center_x = bounds.x + bounds.width / 2
+                    new_x = math.floor(group_center_x - w / 2)
+                elseif align_type == "center_v" then
+                    -- 垂直居中：相对于选中组的中心
+                    local group_center_y = bounds.y + bounds.height / 2
+                    new_y = math.floor(group_center_y - h / 2)
+                elseif align_type == "left" then
+                    -- 左对齐：对齐到选中组的左边界
+                    new_x = bounds.x
+                elseif align_type == "right" then
+                    -- 右对齐：对齐到选中组的右边界
+                    new_x = bounds.right - w
+                elseif align_type == "top" then
+                    -- 顶对齐：对齐到选中组的上边界
+                    new_y = bounds.y
+                elseif align_type == "bottom" then
+                    -- 底对齐：对齐到选中组的下边界
+                    new_y = bounds.bottom - h
+                end
+                
+                -- 确保不超出画布边界
+                new_x = math.max(0, math.min(new_x, self.props.width - w))
+                new_y = math.max(0, math.min(new_y, self.props.height - h))
+                
+                new_x, new_y = self:snap_position(new_x, new_y)
+                main_obj:set_pos(new_x, new_y)
+                
+                if instance.props then
+                    instance.props.x = new_x
+                    instance.props.y = new_y
+                end
+                widget_entry.props.x = new_x
+                widget_entry.props.y = new_y
+            end
         end
     end
     

@@ -136,9 +136,13 @@ function ProjectManager:export_project_data(editor)
     if status_bar then
         project_data.status_bar = {
             enabled = true,
-            position = "bottom",
+            position = status_bar.props.position or "bottom",
             lamp_status = status_bar.props.lamp_status or "#00FF00",
             lamp_text = status_bar.props.lamp_text or "CH1",
+            bg_color = status_bar.props.bg_color or "#252526",
+            text_color = status_bar.props.text_color or "#CCCCCC",
+            show_time = status_bar.props.show_time ~= false,
+            lamp_size = status_bar.props.lamp_size or 14,
         }
     end
     
