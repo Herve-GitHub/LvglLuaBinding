@@ -358,6 +358,12 @@ end
 left_panel:add_page("图页 1")
 current_page_index = 1
 
+-- 初始化画布的图页边界线（使用默认图页的宽高）
+local default_page_data = left_panel:get_page_data(1)
+if default_page_data then
+    canvas:update_page_border(default_page_data.width or 800, default_page_data.height or 600)
+end
+
 -- 同步菜单栏状态
 menu_bar:set_state("show_grid", canvas:is_grid_visible())
 menu_bar:set_state("snap_to_grid", canvas:is_snap_to_grid())
@@ -834,6 +840,11 @@ left_panel:on("page_selected", function(self, page_data, index)
         canvas.props.bg_color = bg_color_num
     end
     
+    -- 更新画布的图页边界线（使用图页的宽高）
+    local page_width = page_data.width or 800
+    local page_height = page_data.height or 600
+    canvas:update_page_border(page_width, page_height)
+    
     -- 显示图页属性
     local page_meta = left_panel:get_page_meta()
     property_area:onSelectedPage(page_data, index, page_meta)
@@ -863,11 +874,11 @@ property_area:on("page_property_changed", function(self, prop_name, prop_value, 
     -- 如果是当前图页，同步更新画布
     if page_index == current_page_index then
         if prop_name == "width" or prop_name == "height" then
-            -- 更新画布大小
+            -- 获取更新后的图页数据
             local page_data = left_panel:get_page_data(page_index)
             if page_data then
-                -- 注意：这里可以根据需要调整画布大小
-                -- 目前画布大小由窗口布局决定，图页大小可用于导出或预览
+                -- 更新画布的图页边界线
+                canvas:update_page_border(page_data.width, page_data.height)
                 print("[编辑器] 图页尺寸变更: " .. page_data.width .. "x" .. page_data.height)
             end
         elseif prop_name == "bg_color" then

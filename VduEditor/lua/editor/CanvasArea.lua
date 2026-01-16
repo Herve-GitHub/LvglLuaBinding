@@ -29,6 +29,12 @@ function CanvasArea.new(parent, props)
         grid_size = props.grid_size or 20,
         show_grid = props.show_grid ~= false,
         snap_to_grid = props.snap_to_grid ~= false,
+        -- 图页边界属性
+        page_width = props.page_width or 800,
+        page_height = props.page_height or 600,
+        show_page_border = props.show_page_border ~= false,  -- 默认显示边界线
+        page_border_color = props.page_border_color or 0xFF6600,  -- 橙色边界线
+        page_border_width = props.page_border_width or 2,
     }
     
     -- 放置的控件列表
@@ -72,6 +78,9 @@ function CanvasArea.new(parent, props)
         marquee_box = nil,
     }
     
+    -- 图页边界线对象
+    self._page_border = nil
+    
     -- 事件监听器
     self._event_listeners = {}
     
@@ -91,6 +100,11 @@ function CanvasArea.new(parent, props)
     -- 绘制网格
     if self.props.show_grid then
         self:_draw_grid()
+    end
+    
+    -- 绘制图页边界线
+    if self.props.show_page_border then
+        self:_create_page_border()
     end
     
     -- 画布事件
@@ -615,7 +629,142 @@ function CanvasArea:_on_widget_released(widget_entry)
     self._drag_state.widget_entry = nil
 end
 
--- ========== 选中管理（多选） ==========
+-- ========== 图页边界线管理 ==========
+
+-- 创建图页边界线
+function CanvasArea:_create_page_border()
+    if self._page_border then
+        self:_delete_page_border()
+    end
+    
+    local border_width = self.props.page_border_width
+    local page_w = self.props.page_width
+    local page_h = self.props.page_height
+    
+    -- 创建边界容器
+    self._page_border = {
+        lines = {}
+    }
+    
+    -- 上边界
+    local top_line = lv.obj_create(self.container)
+    top_line:set_pos(0, 0)
+    top_line:set_size(page_w, border_width)
+    top_line:set_style_bg_color(self.props.page_border_color, 0)
+    top_line:set_style_bg_opa(180, 0)
+    top_line:set_style_radius(0, 0)
+    top_line:set_style_border_width(0, 0)
+    top_line:remove_flag(lv.OBJ_FLAG_CLICKABLE)
+    top_line:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    table.insert(self._page_border.lines, top_line)
+    
+    -- 下边界
+    local bottom_line = lv.obj_create(self.container)
+    bottom_line:set_pos(0, page_h - border_width)
+    bottom_line:set_size(page_w, border_width)
+    bottom_line:set_style_bg_color(self.props.page_border_color, 0)
+    bottom_line:set_style_bg_opa(180, 0)
+    bottom_line:set_style_radius(0, 0)
+    bottom_line:set_style_border_width(0, 0)
+    bottom_line:remove_flag(lv.OBJ_FLAG_CLICKABLE)
+    bottom_line:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    table.insert(self._page_border.lines, bottom_line)
+    
+    -- 左边界
+    local left_line = lv.obj_create(self.container)
+    left_line:set_pos(0, border_width)
+    left_line:set_size(border_width, page_h - 2 * border_width)
+    left_line:set_style_bg_color(self.props.page_border_color, 0)
+    left_line:set_style_bg_opa(180, 0)
+    left_line:set_style_radius(0, 0)
+    left_line:set_style_border_width(0, 0)
+    left_line:remove_flag(lv.OBJ_FLAG_CLICKABLE)
+    left_line:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    table.insert(self._page_border.lines, left_line)
+    
+    -- 右边界
+    local right_line = lv.obj_create(self.container)
+    right_line:set_pos(page_w - border_width, border_width)
+    right_line:set_size(border_width, page_h - 2 * border_width)
+    right_line:set_style_bg_color(self.props.page_border_color, 0)
+    right_line:set_style_bg_opa(180, 0)
+    right_line:set_style_radius(0, 0)
+    right_line:set_style_border_width(0, 0)
+    right_line:remove_flag(lv.OBJ_FLAG_CLICKABLE)
+    right_line:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    table.insert(self._page_border.lines, right_line)
+    
+    print("[画布] 图页边界线已创建: " .. page_w .. "x" .. page_h)
+end
+
+-- 删除图页边界线
+function CanvasArea:_delete_page_border()
+    if self._page_border and self._page_border.lines then
+        for _, line in ipairs(self._page_border.lines) do
+            if line then
+                pcall(function() line:delete() end)
+            end
+        end
+    end
+    self._page_border = nil
+end
+
+-- 更新图页边界线位置和大小
+function CanvasArea:update_page_border(page_width, page_height)
+    self.props.page_width = page_width or self.props.page_width
+    self.props.page_height = page_height or self.props.page_height
+    
+    if self.props.show_page_border then
+        self:_create_page_border()
+    end
+    
+    print("[画布] 图页边界更新: " .. self.props.page_width .. "x" .. self.props.page_height)
+end
+
+-- 设置是否显示图页边界线
+function CanvasArea:set_show_page_border(show)
+    self.props.show_page_border = show
+    if show then
+        self:_create_page_border()
+    else
+        self:_delete_page_border()
+    end
+end
+
+-- 获取是否显示图页边界线
+function CanvasArea:is_page_border_visible()
+    return self.props.show_page_border
+end
+
+-- 切换图页边界线显示
+function CanvasArea:toggle_page_border()
+    self:set_show_page_border(not self.props.show_page_border)
+    return self.props.show_page_border
+end
+
+-- 设置图页边界线颜色
+function CanvasArea:set_page_border_color(color)
+    self.props.page_border_color = color
+    if self._page_border and self._page_border.lines then
+        for _, line in ipairs(self._page_border.lines) do
+            if line then
+                line:set_style_bg_color(color, 0)
+            end
+        end
+    end
+end
+
+-- 获取图页尺寸
+function CanvasArea:get_page_size()
+    return self.props.page_width, self.props.page_height
+end
+
+-- 设置图页尺寸
+function CanvasArea:set_page_size(width, height)
+    self:update_page_border(width, height)
+end
+
+-- ========== 选择管理（多选） ==========
 
 function CanvasArea:_is_widget_selected(widget_entry)
     for _, w in ipairs(self._selected_widgets) do
