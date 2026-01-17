@@ -98,15 +98,30 @@ function PropertyInputs.create_text_input(ctx, prop_name, value, is_read_only, w
     if is_read_only then
         textarea:add_state(lv.STATE_DISABLED)
     else
-        -- 按回车键时触发设置
         local ta = textarea
-        textarea:add_event_cb(function(e)
+        local last_value = value  -- 记录上次的值，避免重复触发
+        
+        -- 提交属性变更的函数
+        local function commit_change()
             local new_value = lv.textarea_get_text(ta)
-            if widget_entry.instance and widget_entry.instance.set_property then
-                widget_entry.instance:set_property(prop_name, new_value)
+            if new_value ~= last_value then
+                last_value = new_value
+                if widget_entry.instance and widget_entry.instance.set_property then
+                    widget_entry.instance:set_property(prop_name, new_value)
+                end
+                ctx:_emit("property_changed", prop_name, new_value, widget_entry)
             end
-            ctx:_emit("property_changed", prop_name, new_value, widget_entry)
+        end
+        
+        -- 按回车键时触发设置
+        textarea:add_event_cb(function(e)
+            commit_change()
         end, lv.EVENT_READY, nil)
+        
+        -- 失去焦点时也触发设置
+        textarea:add_event_cb(function(e)
+            commit_change()
+        end, lv.EVENT_DEFOCUSED, nil)
     end
     
     return textarea
@@ -138,17 +153,32 @@ function PropertyInputs.create_number_input(ctx, prop_name, value, min_val, max_
     if is_read_only then
         textarea:add_state(lv.STATE_DISABLED)
     else
-        -- 按回车键时触发设置
         local ta = textarea
-        textarea:add_event_cb(function(e)
+        local last_value = value  -- 记录上次的值，避免重复触发
+        
+        -- 提交属性变更的函数
+        local function commit_change()
             local new_value = tonumber(lv.textarea_get_text(ta)) or 0
             if min_val and new_value < min_val then new_value = min_val end
             if max_val and new_value > max_val then new_value = max_val end
-            if widget_entry.instance and widget_entry.instance.set_property then
-                widget_entry.instance:set_property(prop_name, new_value)
+            if new_value ~= last_value then
+                last_value = new_value
+                if widget_entry.instance and widget_entry.instance.set_property then
+                    widget_entry.instance:set_property(prop_name, new_value)
+                end
+                ctx:_emit("property_changed", prop_name, new_value, widget_entry)
             end
-            ctx:_emit("property_changed", prop_name, new_value, widget_entry)
+        end
+        
+        -- 按回车键时触发设置
+        textarea:add_event_cb(function(e)
+            commit_change()
         end, lv.EVENT_READY, nil)
+        
+        -- 失去焦点时也触发设置
+        textarea:add_event_cb(function(e)
+            commit_change()
+        end, lv.EVENT_DEFOCUSED, nil)
     end
     
     return textarea

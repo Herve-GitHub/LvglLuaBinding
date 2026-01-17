@@ -134,15 +134,20 @@ function ProjectManager:export_project_data(editor)
     
     -- 导出状态栏设置
     if status_bar then
+        local sb_props = status_bar:get_properties()
         project_data.status_bar = {
             enabled = true,
-            position = status_bar.props.position or "bottom",
-            lamp_status = status_bar.props.lamp_status or "#00FF00",
-            lamp_text = status_bar.props.lamp_text or "CH1",
-            bg_color = status_bar.props.bg_color or "#252526",
-            text_color = status_bar.props.text_color or "#CCCCCC",
-            show_time = status_bar.props.show_time ~= false,
-            lamp_size = status_bar.props.lamp_size or 14,
+            instance_name = sb_props.instance_name or "",
+            position = sb_props.position or "bottom",
+            lamp_status = number_to_color_string(sb_props.lamp_status) or "#00FF00",
+            lamp_text = sb_props.lamp_text or "CH1",
+            bg_color = number_to_color_string(sb_props.bg_color) or "#252526",
+            text_color = number_to_color_string(sb_props.text_color) or "#CCCCCC",
+            show_time = sb_props.show_time ~= false,
+            lamp_size = sb_props.lamp_size or 14,
+            -- 事件处理代码
+            on_updated_handler = sb_props.on_updated_handler or "",
+            on_time_tick_handler = sb_props.on_time_tick_handler or "",
         }
     end
     
@@ -292,7 +297,38 @@ function ProjectManager:import_project_data(editor, project_data)
     if project_data.status_bar and project_data.status_bar.enabled then
         local status_bar = editor.get_status_bar()
         if not status_bar then
-            editor.create_status_bar(project_data.status_bar.position or "bottom")
+            status_bar = editor.create_status_bar(project_data.status_bar.position or "bottom")
+        end
+        -- 恢复状态栏的所有属性
+        if status_bar then
+            local sb_data = project_data.status_bar
+            if sb_data.instance_name then
+                status_bar:set_property("instance_name", sb_data.instance_name)
+            end
+            if sb_data.lamp_status then
+                status_bar:set_property("lamp_status", sb_data.lamp_status)
+            end
+            if sb_data.lamp_text then
+                status_bar:set_property("lamp_text", sb_data.lamp_text)
+            end
+            if sb_data.bg_color then
+                status_bar:set_property("bg_color", sb_data.bg_color)
+            end
+            if sb_data.text_color then
+                status_bar:set_property("text_color", sb_data.text_color)
+            end
+            if sb_data.show_time ~= nil then
+                status_bar:set_property("show_time", sb_data.show_time)
+            end
+            if sb_data.lamp_size then
+                status_bar:set_property("lamp_size", sb_data.lamp_size)
+            end
+            if sb_data.on_updated_handler then
+                status_bar:set_property("on_updated_handler", sb_data.on_updated_handler)
+            end
+            if sb_data.on_time_tick_handler then
+                status_bar:set_property("on_time_tick_handler", sb_data.on_time_tick_handler)
+            end
         end
     else
         editor.remove_status_bar()
