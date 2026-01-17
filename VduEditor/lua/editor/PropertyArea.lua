@@ -5,6 +5,7 @@ local lv = require("lvgl")
 -- 引入子模块
 local PropertyPageEditor = require("editor.PropertyPageEditor")
 local PropertyWidgetEditor = require("editor.PropertyWidgetEditor")
+local PropertyGlobalEditor = require("editor.PropertyGlobalEditor")
 
 local PropertyArea = {}
 PropertyArea.__index = PropertyArea
@@ -21,6 +22,7 @@ PropertyArea.__widget_meta = {
 local selectedItems = {}
 local selectedPage = nil
 local selectedPageIndex = 0
+local selectedGlobal = nil  -- 当前选中的全局组件
 
 -- 构造函数
 function PropertyArea.new(parent, props)
@@ -181,6 +183,8 @@ function PropertyArea:onSelectedItem(item)
     -- 清除图页选中状态
     selectedPage = nil
     selectedPageIndex = 0
+    -- 清除全局组件选中状态
+    selectedGlobal = nil
     
     if item == nil then
         print("[属性窗口] 取消选中控件")
@@ -205,6 +209,8 @@ end
 function PropertyArea:onSelectedPage(page_data, page_index, page_meta)
     -- 清除控件选中状态
     selectedItems = {}
+    -- 清除全局组件选中状态
+    selectedGlobal = nil
     
     if page_data == nil then
         print("[属性窗口] 取消选中图页")
@@ -219,6 +225,36 @@ function PropertyArea:onSelectedPage(page_data, page_index, page_meta)
     
     print("[属性窗口] 选中图页: " .. page_data.name)
     PropertyPageEditor.display_properties(self, page_data, page_index, page_meta)
+end
+
+-- 选中全局组件时调用（如状态栏）
+function PropertyArea:onSelectedGlobal(global_entry)
+    -- 清除控件选中状态
+    selectedItems = {}
+    -- 清除图页选中状态
+    selectedPage = nil
+    selectedPageIndex = 0
+    
+    if global_entry == nil then
+        print("[属性窗口] 取消选中全局组件")
+        selectedGlobal = nil
+        self:_clear_content_area()
+        return
+    end
+    
+    selectedGlobal = global_entry
+    
+    local name = "未知"
+    if global_entry.module and global_entry.module.__widget_meta then
+        name = global_entry.module.__widget_meta.name or global_entry.module.__widget_meta.id
+    end
+    print("[属性窗口] 选中全局组件: " .. name)
+    PropertyGlobalEditor.display_properties(self, global_entry)
+end
+
+-- 获取当前选中的全局组件
+function PropertyArea:get_selected_global()
+    return selectedGlobal
 end
 
 return PropertyArea

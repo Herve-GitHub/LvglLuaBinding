@@ -9,7 +9,6 @@
 extern "C" {
 #include "lvgl_lua_bindings.h"
 }
-
 // 窗口尺寸
 static const int WINDOW_WIDTH = 1280;
 static const int WINDOW_HEIGHT = 960;
@@ -37,6 +36,7 @@ static lv_font_t* g_chinese_font = nullptr;
 
 // 全局可执行文件目录
 static std::string g_exe_directory;
+
 /**
  * @brief 将窗口居中显示在屏幕上
  * @param hwnd 窗口句柄
@@ -64,6 +64,7 @@ static void center_window(HWND hwnd)
     // 设置窗口位置
     SetWindowPos(hwnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
+
 /**
  * @brief 获取当前可执行文件所在目录
  * @return 以反斜杠结尾的目录路径，失败时返回空字符串

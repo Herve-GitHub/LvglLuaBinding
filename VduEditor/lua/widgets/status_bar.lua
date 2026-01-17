@@ -17,15 +17,20 @@ StatusBar.__widget_meta = {
     -- 实例名称（用于编译时变量命名）
     { name = "instance_name", type = "string", default = "", label = "实例名称",
       description = "用于编译时的变量名，留空则自动生成" },
-    { name = "x", type = "number", default = 0, label = "X" },
-    { name = "y", type = "number", default = 0, label = "Y" },
-    { name = "width", type = "number", default = 800, label = "宽度" },
-    { name = "height", type = "number", default = 28, label = "高度" },
+    { name = "x", type = "number", default = 0, label = "X", read_only = true },
+    { name = "y", type = "number", default = 0, label = "Y", read_only = true },
+    { name = "width", type = "number", default = 800, label = "宽度", read_only = true },
+    { name = "height", type = "number", default = 28, label = "高度", read_only = true },
     { name = "bg_color", type = "color", default = "#252526", label = "背景色" },
     { name = "text_color", type = "color", default = "#CCCCCC", label = "文本颜色" },
     { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
     { name = "show_time", type = "boolean", default = true, label = "显示时间" },
-    { name = "position", type = "string", default = "bottom", label = "位置(top/bottom)" },
+    { name = "position", type = "enum", default = "bottom", label = "位置",
+      options = { 
+        { value = "top", label = "顶部" }, 
+        { value = "bottom", label = "底部" } 
+      } 
+    },
     { name = "lamp_status", type = "color", default = "#00FF00", label = "通道状态" },
     { name = "lamp_text", type = "string", default = "CH1", label = "通道名称" },
     { name = "lamp_size", type = "number", default = 14, label = "状态灯大小" },
@@ -82,6 +87,10 @@ function StatusBar.new(parent, state)
   -- 事件监听器
   self._event_listeners = {}
   
+  -- 选中状态
+  self._selected = false
+  self._selection_box = nil
+  
   -- 创建主容器
   self.container = lv.obj_create(parent)
   self.container:set_size(self.props.width, self.props.height)
@@ -94,8 +103,21 @@ function StatusBar.new(parent, state)
   self.container:set_style_pad_left(10, 0)
   self.container:set_style_pad_right(10, 0)
   self.container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
-  self.container:remove_flag(lv.OBJ_FLAG_CLICKABLE)
+  -- 在设计模式下允许点击
+  if self.props.design_mode then
+    self.container:add_flag(lv.OBJ_FLAG_CLICKABLE)
+  else
+    self.container:remove_flag(lv.OBJ_FLAG_CLICKABLE)
+  end
   self.container:clear_layout()
+  
+  -- 设置点击事件（用于设计模式下的选中）
+  local this = self
+  self.container:add_event_cb(function(e)
+    if this.props.design_mode then
+      this:_emit("clicked")
+    end
+  end, lv.EVENT_CLICKED, nil)
   
   -- 创建通道状态灯（左侧）
   self:_create_status_lamp()
@@ -291,13 +313,90 @@ function StatusBar:set_width(width)
   end
 end
 
+-- 设置选中状态
+function StatusBar:set_selected(selected)
+  self._selected = selected
+  if selected then
+    self:_create_selection_box()
+  else
+    self:_remove_selection_box()
+  end
+end
+
+-- 获取选中状态
+function StatusBar:is_selected()
+  return self._selected
+end
+
+-- 创建选中框
+function StatusBar:_create_selection_box()
+  if self._selection_box then
+    self:_remove_selection_box()
+  end
+  
+  local x = self.props.x
+  local y = self.props.y
+  local w = self.props.width
+  local h = self.props.height
+  
+  self._selection_box = lv.obj_create(self._parent)
+  self._selection_box:set_pos(x - 2, y - 2)
+  self._selection_box:set_size(w + 4, h + 4)
+  self._selection_box:set_style_bg_opa(0, 0)
+  self._selection_box:set_style_border_width(2, 0)
+  self._selection_box:set_style_border_color(0x007ACC, 0)
+  self._selection_box:set_style_radius(2, 0)
+  self._selection_box:remove_flag(lv.OBJ_FLAG_CLICKABLE)
+  self._selection_box:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+  
+  -- 添加四个角的小方块
+  local handle_size = 8
+  local handle_positions = {
+    { x = -handle_size/2, y = -handle_size/2 },
+    { x = w - handle_size/2, y = -handle_size/2 },
+    { x = -handle_size/2, y = h - handle_size/2 },
+    { x = w - handle_size/2, y = h - handle_size/2 },
+  }
+  
+  for _, pos in ipairs(handle_positions) do
+    local handle = lv.obj_create(self._selection_box)
+    handle:set_pos(pos.x, pos.y)
+    handle:set_size(handle_size, handle_size)
+    handle:set_style_bg_color(0x007ACC, 0)
+    handle:set_style_radius(1, 0)
+    handle:set_style_border_width(0, 0)
+    handle:remove_flag(lv.OBJ_FLAG_CLICKABLE)
+  end
+end
+
+-- 移除选中框
+function StatusBar:_remove_selection_box()
+  if self._selection_box then
+    self._selection_box:delete()
+    self._selection_box = nil
+  end
+end
+
+-- 更新选中框位置
+function StatusBar:_update_selection_box()
+  if self._selection_box then
+    local x = self.props.x
+    local y = self.props.y
+    local w = self.props.width
+    local h = self.props.height
+    
+    self._selection_box:set_pos(x - 2, y - 2)
+    self._selection_box:set_size(w + 4, h + 4)
+  end
+end
+
 -- 设置设计模式
 function StatusBar:set_design_mode(enabled)
   local was_design_mode = self.props.design_mode
   self.props.design_mode = enabled
   
   if enabled then
-    -- 进入设计模式：停止定时器，显示固定时间
+    -- 进入设计模式：停止定时器，显示固定时间，允许点击
     self:stop()
     if self.time_label then
       self.time_label:set_text("00:00:00")
@@ -305,14 +404,22 @@ function StatusBar:set_design_mode(enabled)
     if self.date_label then
       self.date_label:set_text("0000-00-00")
     end
+    if self.container then
+      self.container:add_flag(lv.OBJ_FLAG_CLICKABLE)
+    end
   else
-    -- 退出设计模式：立即更新时间并启动定时器
+    -- 退出设计模式：立即更新时间并启动定时器，禁用点击
     if self.time_label then
       self.time_label:set_text(get_time_string())
     end
     if self.date_label then
       self.date_label:set_text(get_date_string())
     end
+    if self.container then
+      self.container:remove_flag(lv.OBJ_FLAG_CLICKABLE)
+    end
+    -- 移除选中状态
+    self:set_selected(false)
     self:start()
   end
 end
@@ -423,6 +530,7 @@ end
 -- 销毁组件
 function StatusBar:destroy()
   self:stop()
+  self:_remove_selection_box()
   if self.container then
     self.container:delete()
     self.container = nil

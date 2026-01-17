@@ -134,6 +134,7 @@ local loaded_modules = {}
 local widget_id_to_module_path = {
     ["custom_button"] = "widgets.button",
     ["button"] = "widgets.button",
+    ["label"] = "widgets.label",
     ["valve"] = "widgets.valve",
     ["trend_chart"] = "widgets.trend_chart",
     ["status_bar"] = "widgets.status_bar",
@@ -240,6 +241,9 @@ local function update_layout()
             status_bar.container:set_width(cw)
         end
         
+        -- 更新菜单栏宽度
+        menu_bar:set_width(new_width)     
+
         print("[编辑器] 窗口大小更新: " .. new_width .. "x" .. new_height)
     end
 end
@@ -250,6 +254,9 @@ local layout_timer = lv.timer_create(function(timer)
 end, 200)
 
 -- ========== 状态栏管理 ==========
+
+-- 状态栏模块引用（用于属性编辑）
+local StatusBarModule = StatusBar
 
 local function create_status_bar(position)
     position = position or "bottom"
@@ -267,7 +274,27 @@ local function create_status_bar(position)
         position = position,
         lamp_status = "#00FF00",
         lamp_text = "CH1",
+        design_mode = true,  -- 在编辑器中默认为设计模式
     })
+    
+    -- 监听状态栏点击事件，选中状态栏并显示属性
+    status_bar:on("clicked", function(sb)
+        -- 取消画布上控件的选中
+        canvas:deselect_all()
+        
+        -- 选中状态栏
+        status_bar:set_selected(true)
+        
+        -- 在属性窗口显示状态栏属性
+        local global_entry = {
+            id = "status_bar_global",
+            module = StatusBarModule,
+            instance = status_bar,
+        }
+        property_area:onSelectedGlobal(global_entry)
+        
+        print("[编辑器] 状态栏已选中")
+    end)
     
     -- 更新画布大小
     local cx, cy, cw, ch = get_canvas_bounds()
@@ -749,17 +776,29 @@ canvas:on("widget_added", function(self, widget_entry)
 end)
 
 canvas:on("widget_selected", function(self, widget_entry)
+    -- 取消状态栏的选中状态
+    if status_bar and status_bar:is_selected() then
+        status_bar:set_selected(false)
+    end
     property_area:onSelectedItem(widget_entry)
     print("[画布] 选中控件: " .. widget_entry.id)
 end)
 
 canvas:on("widgets_selected", function(self, widget_entries)
+    -- 取消状态栏的选中状态
+    if status_bar and status_bar:is_selected() then
+        status_bar:set_selected(false)
+    end
     property_area:onSelectedItem(widget_entries)
     print("[画布] 多选控件: " .. #widget_entries .. " 个")
 end)
 
 canvas:on("widget_deselected", function(self, prev_widget)
-    -- 控件取消选中时，显示当前图页属性
+    -- 控件取消选中时，显示当前图页属性（如果状态栏未选中）
+    if status_bar and status_bar:is_selected() then
+        -- 状态栏已选中，不需要更改属性窗口
+        return
+    end
     if current_page_index > 0 then
         local page_data = left_panel:get_page_data(current_page_index)
         local page_meta = left_panel:get_page_meta()
@@ -818,6 +857,11 @@ left_panel:on("page_selected", function(self, page_data, index)
     
     -- 先取消画布上的选中
     canvas:deselect_all()
+    
+    -- 取消状态栏的选中状态
+    if status_bar and status_bar:is_selected() then
+        status_bar:set_selected(false)
+    end
     
     if index == current_page_index then
         -- 即使是同一个图页，也显示图页属性

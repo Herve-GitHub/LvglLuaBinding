@@ -93,6 +93,8 @@
     <None Include="lua\editor\clipboard.lua" />
     <None Include="projects\project.json" />
     <None Include="projects\project.lua" />
+    <None Include="lua\editor\PropertyGlobalEditor.lua" />
+    <None Include="lua\widgets\label.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

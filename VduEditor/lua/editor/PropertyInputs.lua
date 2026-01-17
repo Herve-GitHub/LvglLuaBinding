@@ -293,26 +293,140 @@ end
 
 -- 创建枚举下拉框
 function PropertyInputs.create_enum_dropdown(ctx, prop_name, value, options, is_read_only, widget_entry, y_pos)
-    local dropdown = lv.obj_create(ctx.content)
-    dropdown:set_pos(95, y_pos + 2)
-    dropdown:set_size(ctx.props.width - 105, 20)
-    dropdown:set_style_bg_color(0x1E1E1E, 0)
-    dropdown:set_style_border_width(1, 0)
-    dropdown:set_style_border_color(0x555555, 0)
-    dropdown:set_style_text_color(0xFFFFFF, 0)
-    dropdown:set_style_radius(0, 0)
-    dropdown:set_style_pad_all(3, 0)
-    dropdown:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    -- 解析选项：支持 {value, label} 格式或简单字符串数组
+    local option_list = {}
+    local value_to_label = {}
+    local label_to_value = {}
     
-    local label = lv.label_create(dropdown)
-    label:set_text(tostring(value))
-    label:set_style_text_color(0xFFFFFF, 0)
-    
-    if not is_read_only then
-        dropdown:add_flag(lv.OBJ_FLAG_CLICKABLE)
+    if options then
+        for _, opt in ipairs(options) do
+            if type(opt) == "table" then
+                -- { value = "xxx", label = "显示文本" } 格式
+                local opt_value = opt.value or opt[1]
+                local opt_label = opt.label or opt[2] or opt_value
+                table.insert(option_list, { value = opt_value, label = opt_label })
+                value_to_label[opt_value] = opt_label
+                label_to_value[opt_label] = opt_value
+            else
+                -- 简单字符串
+                table.insert(option_list, { value = opt, label = opt })
+                value_to_label[opt] = opt
+                label_to_value[opt] = opt
+            end
+        end
     end
     
-    return dropdown
+    -- 获取当前值的显示标签
+    local current_label = value_to_label[value] or tostring(value)
+    
+    -- 创建下拉框容器
+    local dropdown_container = lv.obj_create(ctx.content)
+    dropdown_container:set_pos(95, y_pos + 2)
+    dropdown_container:set_size(ctx.props.width - 105, 22)
+    dropdown_container:set_style_bg_color(0x1E1E1E, 0)
+    dropdown_container:set_style_border_width(1, 0)
+    dropdown_container:set_style_border_color(0x555555, 0)
+    dropdown_container:set_style_radius(3, 0)
+    dropdown_container:set_style_pad_all(2, 0)
+    dropdown_container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    
+    -- 显示标签
+    local display_label = lv.label_create(dropdown_container)
+    display_label:set_text(current_label)
+    display_label:set_style_text_color(0xFFFFFF, 0)
+    display_label:align(lv.ALIGN_LEFT_MID, 4, 0)
+    
+    -- 下拉箭头
+    local arrow_label = lv.label_create(dropdown_container)
+    arrow_label:set_text("▼")
+    arrow_label:set_style_text_color(0xAAAAAA, 0)
+    arrow_label:align(lv.ALIGN_RIGHT_MID, -4, 0)
+    
+    if is_read_only then
+        dropdown_container:set_style_bg_color(0x2D2D2D, 0)
+        display_label:set_style_text_color(0x888888, 0)
+        arrow_label:set_style_text_color(0x555555, 0)
+        return dropdown_container
+    end
+    
+    dropdown_container:add_flag(lv.OBJ_FLAG_CLICKABLE)
+    
+    -- 下拉列表状态
+    local dropdown_list = nil
+    local is_open = false
+    
+    -- 关闭下拉列表
+    local function close_dropdown()
+        if dropdown_list then
+            pcall(function() dropdown_list:delete() end)
+            dropdown_list = nil
+            is_open = false
+        end
+    end
+    
+    -- 打开下拉列表
+    local function open_dropdown()
+        if is_open then
+            close_dropdown()
+            return
+        end
+        
+        local list = lv.obj_create(ctx._parent)
+        local list_height = math.min(#option_list * 24 + 6, 150)
+        list:set_size(ctx.props.width - 105, list_height)
+        
+        -- 计算绝对位置
+        local abs_x = ctx.props.x + 95
+        local abs_y = ctx.props.y + ctx.props.title_height + y_pos + 26
+        list:set_pos(abs_x, abs_y)
+        
+        list:set_style_bg_color(0x2D2D2D, 0)
+        list:set_style_border_width(1, 0)
+        list:set_style_border_color(0x555555, 0)
+        list:set_style_radius(3, 0)
+        list:set_style_pad_all(3, 0)
+        list:add_flag(lv.OBJ_FLAG_SCROLLABLE)
+        list:clear_layout()
+        
+        for i, opt in ipairs(option_list) do
+            local item = lv.obj_create(list)
+            item:set_pos(0, (i - 1) * 22)
+            item:set_size(ctx.props.width - 115, 20)
+            item:set_style_bg_color(opt.value == value and 0x007ACC or 0x3D3D3D, 0)
+            item:set_style_radius(2, 0)
+            item:set_style_border_width(0, 0)
+            item:set_style_pad_all(0, 0)
+            item:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+            item:add_flag(lv.OBJ_FLAG_CLICKABLE)
+            
+            local item_label = lv.label_create(item)
+            item_label:set_text(opt.label)
+            item_label:set_style_text_color(0xFFFFFF, 0)
+            item_label:align(lv.ALIGN_LEFT_MID, 6, 0)
+            
+            local opt_value = opt.value
+            local opt_label = opt.label
+            item:add_event_cb(function(e)
+                display_label:set_text(opt_label)
+                value = opt_value
+                close_dropdown()
+                
+                if widget_entry.instance and widget_entry.instance.set_property then
+                    widget_entry.instance:set_property(prop_name, opt_value)
+                end
+                ctx:_emit("property_changed", prop_name, opt_value, widget_entry)
+            end, lv.EVENT_CLICKED, nil)
+        end
+        
+        dropdown_list = list
+        is_open = true
+    end
+    
+    dropdown_container:add_event_cb(function(e)
+        open_dropdown()
+    end, lv.EVENT_CLICKED, nil)
+    
+    return dropdown_container
 end
 
 -- 导出剪贴板函数供其他模块使用
