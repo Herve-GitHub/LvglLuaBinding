@@ -1,7 +1,7 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-01-17 13:43:18
+-- 生成时间: 2026-01-17 20:53:12
 -- 工程版本: 1.0
 -- ==============================================
 
@@ -9,11 +9,13 @@
 local lv = require("lvgl")
 
 -- 引用控件模块
-local widgets_valve = require("widgets.valve")
-local widgets_status_bar = require("widgets.status_bar")
+local widgets_slider = require("widgets.slider")
 local widgets_label = require("widgets.label")
-local widgets_button = require("widgets.button")
+local widgets_status_bar = require("widgets.status_bar")
 local widgets_trend_chart = require("widgets.trend_chart")
+local widgets_button = require("widgets.button")
+local widgets_checkbox = require("widgets.checkbox")
+local widgets_valve = require("widgets.valve")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -67,21 +69,21 @@ local function create_page_1(parent)
 
     -- 控件 1: custom_button (btn1)
     local btn1 = widgets_button.new(container, {
-        height = 40,
         enabled = true,
+        height = 40,
+        y = 84,
+        design_mode = false,
+        x = 49,
+        instance_name = "btn1",
+        color = "#ffffff",
+        width = 100,
+        on_single_clicked_handler = "function(self)\n    print(\"按钮1被点击了！\")\n    self:set_property(\"label\", \"已点击\")\n    self:set_property(\"bg_color\", \"#E91E63\")\nend",
+        on_double_clicked_handler = "function(self)\n    print(\"按钮1被双击了！\")\n    self:set_property(\"label\", \"已双击\")\n    self:set_property(\"bg_color\", \"#4CAF50\") -- 变为绿色\nend",
+        bg_color = "#00E0CC",
         font_size = 16,
         on_clicked_handler = "",
-        alignment = "center",
-        color = "#ffffff",
-        on_double_clicked_handler = "function(self)\n    print(\"按钮1被双击了！\")\n    self:set_property(\"label\", \"已双击\")\n    self:set_property(\"bg_color\", \"#4CAF50\") -- 变为绿色\nend",
-        design_mode = false,
-        on_single_clicked_handler = "function(self)\n    print(\"按钮1被点击了！\")\n    self:set_property(\"label\", \"已点击\")\n    self:set_property(\"bg_color\", \"#E91E63\")\nend",
-        width = 100,
-        bg_color = "#00E0CC",
-        instance_name = "btn1",
         label = "点我",
-        x = 49,
-        y = 84
+        alignment = "center"
     })
 
     -- single_clicked 事件处理
@@ -100,21 +102,21 @@ end)
 
     -- 控件 2: custom_button (btn2)
     local btn2 = widgets_button.new(container, {
-        height = 40,
         enabled = true,
+        height = 40,
+        y = 149,
+        design_mode = false,
+        x = 49,
+        instance_name = "btn2",
+        color = "#ffffff",
+        width = 100,
+        on_single_clicked_handler = "",
+        on_double_clicked_handler = "",
+        bg_color = "#007acc",
         font_size = 16,
         on_clicked_handler = "function(self)\n    print(\"重置按钮被点击！\")\n    btn1:set_property(\"label\", \"点击我\")\n    btn1:set_property(\"bg_color\", \"#2196F3\") -- 变为蓝色\nend",
-        alignment = "center",
-        color = "#ffffff",
-        on_double_clicked_handler = "",
-        design_mode = false,
-        on_single_clicked_handler = "",
-        width = 100,
-        bg_color = "#007acc",
-        instance_name = "btn2",
         label = "重置",
-        x = 49,
-        y = 149
+        alignment = "center"
     })
 
     -- clicked 事件处理
@@ -126,21 +128,21 @@ end)
 
     -- 控件 3: custom_button (btn_pg1_next)
     local btn_pg1_next = widgets_button.new(container, {
-        height = 40,
         enabled = true,
+        height = 40,
+        y = 264,
+        design_mode = false,
+        x = 49,
+        instance_name = "btn_pg1_next",
+        color = "#ffffff",
+        width = 100,
+        on_single_clicked_handler = "",
+        on_double_clicked_handler = "",
+        bg_color = "#00D1CC",
         font_size = 16,
         on_clicked_handler = "function(self)\n    actions_page_navigation.goto_next_page()\nend",
-        alignment = "center",
-        color = "#ffffff",
-        on_double_clicked_handler = "",
-        design_mode = false,
-        on_single_clicked_handler = "",
-        width = 100,
-        bg_color = "#00D1CC",
-        instance_name = "btn_pg1_next",
         label = "下一页",
-        x = 49,
-        y = 264
+        alignment = "center"
     })
 
     -- clicked 事件处理
@@ -150,21 +152,21 @@ end)
 
     -- 控件 4: custom_button (btn_pg1_last)
     local btn_pg1_last = widgets_button.new(container, {
-        height = 40,
         enabled = true,
+        height = 40,
+        y = 264,
+        design_mode = false,
+        x = 183,
+        instance_name = "btn_pg1_last",
+        color = "#ffffff",
+        width = 100,
+        on_single_clicked_handler = "",
+        on_double_clicked_handler = "",
+        bg_color = "#007acc",
         font_size = 16,
         on_clicked_handler = "function(self)\n    actions_page_navigation.goto_last_page()\nend",
-        alignment = "center",
-        color = "#ffffff",
-        on_double_clicked_handler = "",
-        design_mode = false,
-        on_single_clicked_handler = "",
-        width = 100,
-        bg_color = "#007acc",
-        instance_name = "btn_pg1_last",
         label = "最后一页",
-        x = 183,
-        y = 264
+        alignment = "center"
     })
 
     -- clicked 事件处理
@@ -191,17 +193,17 @@ local function create_page_2(parent)
     -- 控件 1: trend_chart (chart1)
     local chart1 = widgets_trend_chart.new(container, {
         height = 300,
-        width = 700,
-        y = 43,
-        on_updated_handler = "function(_, value)\n    print(\"TrendChart updated value:\", value)\nend",
-        design_mode = false,
-        x = 41,
-        update_interval = 1000,
         point_count = 300,
-        range_min = 0,
-        instance_name = "chart1",
+        design_mode = false,
         range_max = 100,
-        auto_update = true
+        instance_name = "chart1",
+        on_updated_handler = "function(_, value)\n    print(\"TrendChart updated value:\", value)\nend",
+        update_interval = 1000,
+        auto_update = true,
+        y = 43,
+        width = 700,
+        x = 41,
+        range_min = 0
     })
 
     -- updated 事件处理
@@ -211,21 +213,21 @@ end)
 
     -- 控件 2: custom_button (btn_page2_prepage)
     local btn_page2_prepage = widgets_button.new(container, {
-        height = 40,
         enabled = true,
+        height = 40,
+        y = 400,
+        design_mode = false,
+        x = 41,
+        instance_name = "btn_page2_prepage",
+        color = "#ffffff",
+        width = 100,
+        on_single_clicked_handler = "",
+        on_double_clicked_handler = "",
+        bg_color = "#007acc",
         font_size = 16,
         on_clicked_handler = "function(self)\n    actions_page_navigation.goto_prev_page()\nend",
-        alignment = "center",
-        color = "#ffffff",
-        on_double_clicked_handler = "",
-        design_mode = false,
-        on_single_clicked_handler = "",
-        width = 100,
-        bg_color = "#007acc",
-        instance_name = "btn_page2_prepage",
         label = "上一页",
-        x = 41,
-        y = 400
+        alignment = "center"
     })
 
     -- clicked 事件处理
@@ -235,21 +237,21 @@ end)
 
     -- 控件 3: custom_button (btn_page2_nextpage)
     local btn_page2_nextpage = widgets_button.new(container, {
-        height = 40,
         enabled = true,
+        height = 40,
+        y = 400,
+        design_mode = false,
+        x = 196,
+        instance_name = "btn_page2_nextpage",
+        color = "#ffffff",
+        width = 100,
+        on_single_clicked_handler = "",
+        on_double_clicked_handler = "",
+        bg_color = "#007acc",
         font_size = 16,
         on_clicked_handler = "function(self)\n    actions_page_navigation.goto_next_page()\nend",
-        alignment = "center",
-        color = "#ffffff",
-        on_double_clicked_handler = "",
-        design_mode = false,
-        on_single_clicked_handler = "",
-        width = 100,
-        bg_color = "#007acc",
-        instance_name = "btn_page2_nextpage",
         label = "下一页",
-        x = 196,
-        y = 400
+        alignment = "center"
     })
 
     -- clicked 事件处理
@@ -275,15 +277,15 @@ local function create_page_3(parent)
 
     -- 控件 1: valve (v1)
     local v1 = widgets_valve.new(container, {
-        angle = 0,
-        size = 100,
-        handle_color = "#FF5722",
-        close_angle = 0,
-        design_mode = false,
-        on_toggled_handler = "print(\"V1 状态: \" .. (is_open and \"开\" or \"关\"))",
         open_angle = 90,
-        instance_name = "v1",
+        design_mode = false,
         on_angle_changed_handler = "",
+        instance_name = "v1",
+        size = 100,
+        close_angle = 0,
+        angle = 0,
+        on_toggled_handler = "print(\"V1 状态: \" .. (is_open and \"开\" or \"关\"))",
+        handle_color = "#FF5722",
         x = 87,
         y = 82
     })
@@ -295,15 +297,15 @@ local function create_page_3(parent)
 
     -- 控件 2: valve (v2)
     local v2 = widgets_valve.new(container, {
-        angle = 0,
-        size = 100,
-        handle_color = "#FF5722",
-        close_angle = 0,
-        design_mode = false,
-        on_toggled_handler = "function(self, is_open)\n     print(\"V2 状态: \" .. (is_open and \"开\" or \"关\")) \nend",
         open_angle = 90,
-        instance_name = "v2",
+        design_mode = false,
         on_angle_changed_handler = "",
+        instance_name = "v2",
+        size = 100,
+        close_angle = 0,
+        angle = 0,
+        on_toggled_handler = "function(self, is_open)\n     print(\"V2 状态: \" .. (is_open and \"开\" or \"关\")) \nend",
+        handle_color = "#FF5722",
         x = 213,
         y = 82
     })
@@ -315,21 +317,21 @@ end)
 
     -- 控件 3: custom_button (btn_open_all)
     local btn_open_all = widgets_button.new(container, {
-        height = 40,
-        width = 100,
-        font_size = 16,
-        on_single_clicked_handler = "",
-        alignment = "center",
-        color = "#ffffff",
-        on_double_clicked_handler = "",
-        design_mode = false,
-        on_clicked_handler = "function()\n    print(\"执行：一键全开\")\n    widgets_valve.open_all()\nend",
         enabled = true,
-        bg_color = "#007acc",
-        instance_name = "btn_open_all",
-        label = "一键全开",
+        height = 40,
+        y = 284,
+        design_mode = false,
         x = 80,
-        y = 284
+        instance_name = "btn_open_all",
+        color = "#ffffff",
+        on_single_clicked_handler = "",
+        font_size = 16,
+        width = 100,
+        alignment = "center",
+        bg_color = "#007acc",
+        on_clicked_handler = "function()\n    print(\"执行：一键全开\")\n    widgets_valve.open_all()\nend",
+        label = "一键全开",
+        on_double_clicked_handler = ""
     })
 
     -- clicked 事件处理
@@ -340,21 +342,21 @@ end)
 
     -- 控件 4: custom_button (btn_close_all)
     local btn_close_all = widgets_button.new(container, {
-        height = 40,
-        width = 100,
-        font_size = 16,
-        on_single_clicked_handler = "",
-        alignment = "center",
-        color = "#ffffff",
-        on_double_clicked_handler = "",
-        design_mode = false,
-        on_clicked_handler = "function()\n    print(\"执行：一键全关\")\n    widgets_valve.close_all()\nend",
         enabled = true,
-        bg_color = "#007acc",
-        instance_name = "btn_close_all",
-        label = "一键全关",
+        height = 40,
+        y = 285,
+        design_mode = false,
         x = 206,
-        y = 285
+        instance_name = "btn_close_all",
+        color = "#ffffff",
+        on_single_clicked_handler = "",
+        font_size = 16,
+        width = 100,
+        alignment = "center",
+        bg_color = "#007acc",
+        on_clicked_handler = "function()\n    print(\"执行：一键全关\")\n    widgets_valve.close_all()\nend",
+        label = "一键全关",
+        on_double_clicked_handler = ""
     })
 
     -- clicked 事件处理
@@ -365,15 +367,15 @@ end)
 
     -- 控件 5: valve (v3)
     local v3 = widgets_valve.new(container, {
-        angle = 0,
-        size = 100,
-        handle_color = "#5B57F5",
-        close_angle = 0,
-        design_mode = false,
-        on_toggled_handler = "function(self, is_open)\n     print(\"V3 状态: \" .. (is_open and \"开\" or \"关\")) \nend",
         open_angle = 90,
-        instance_name = "v3",
+        design_mode = false,
         on_angle_changed_handler = "",
+        instance_name = "v3",
+        size = 100,
+        close_angle = 0,
+        angle = 0,
+        on_toggled_handler = "function(self, is_open)\n     print(\"V3 状态: \" .. (is_open and \"开\" or \"关\")) \nend",
+        handle_color = "#5B57F5",
         x = 344,
         y = 82
     })
@@ -385,21 +387,21 @@ end)
 
     -- 控件 6: custom_button (btn_page3_prepage)
     local btn_page3_prepage = widgets_button.new(container, {
-        height = 40,
-        width = 100,
-        font_size = 16,
-        on_single_clicked_handler = "",
-        alignment = "center",
-        color = "#ffffff",
-        on_double_clicked_handler = "",
-        design_mode = false,
-        on_clicked_handler = "function(self)\n    actions_page_navigation.goto_prev_page()\nend",
         enabled = true,
-        bg_color = "#007acc",
-        instance_name = "btn_page3_prepage",
-        label = "上一页",
+        height = 40,
+        y = 411,
+        design_mode = false,
         x = 80,
-        y = 411
+        instance_name = "btn_page3_prepage",
+        color = "#ffffff",
+        on_single_clicked_handler = "",
+        font_size = 16,
+        width = 100,
+        alignment = "center",
+        bg_color = "#007acc",
+        on_clicked_handler = "function(self)\n    actions_page_navigation.goto_prev_page()\nend",
+        label = "上一页",
+        on_double_clicked_handler = ""
     })
 
     -- clicked 事件处理
@@ -409,21 +411,21 @@ end)
 
     -- 控件 7: custom_button (btn_page3_first)
     local btn_page3_first = widgets_button.new(container, {
-        height = 40,
-        width = 100,
-        font_size = 16,
-        on_single_clicked_handler = "",
-        alignment = "center",
-        color = "#ffffff",
-        on_double_clicked_handler = "",
-        design_mode = false,
-        on_clicked_handler = "function(self)\n    actions_page_navigation.goto_first_page()\nend",
         enabled = true,
-        bg_color = "#007acc",
-        instance_name = "btn_page3_first",
-        label = "首页",
+        height = 40,
+        y = 414,
+        design_mode = false,
         x = 206,
-        y = 414
+        instance_name = "btn_page3_first",
+        color = "#ffffff",
+        on_single_clicked_handler = "",
+        font_size = 16,
+        width = 100,
+        alignment = "center",
+        bg_color = "#007acc",
+        on_clicked_handler = "function(self)\n    actions_page_navigation.goto_first_page()\nend",
+        label = "首页",
+        on_double_clicked_handler = ""
     })
 
     -- clicked 事件处理
@@ -433,59 +435,96 @@ end)
 
     -- 控件 8: label (lb_v1)
     local lb_v1 = widgets_label.new(container, {
-        height = 30,
-        width = 100,
-        font_size = 16,
-        text = "阀门1",
-        alignment = "center",
-        visible = true,
-        on_clicked_handler = "",
-        design_mode = false,
         text_color = "#FFFFFF",
-        instance_name = "lb_v1",
-        bg_color = "#00000000",
-        bg_opa = 0,
         long_mode = "wrap",
+        height = 30,
+        design_mode = false,
+        y = 218,
+        visible = true,
+        width = 100,
+        instance_name = "lb_v1",
+        text = "阀门1",
+        bg_opa = 0,
+        bg_color = "#00000000",
+        font_size = 16,
+        on_clicked_handler = "",
         x = 87,
-        y = 218
+        alignment = "center"
     })
 
     -- 控件 9: label (lb_v2)
     local lb_v2 = widgets_label.new(container, {
-        height = 30,
-        width = 100,
-        font_size = 16,
-        text = "阀门2",
-        alignment = "center",
-        visible = true,
-        on_clicked_handler = "",
-        design_mode = false,
         text_color = "#FFFFFF",
-        instance_name = "lb_v2",
-        bg_color = "#00000000",
-        bg_opa = 0,
         long_mode = "wrap",
+        height = 30,
+        design_mode = false,
+        y = 218,
+        visible = true,
+        width = 100,
+        instance_name = "lb_v2",
+        text = "阀门2",
+        bg_opa = 0,
+        bg_color = "#00000000",
+        font_size = 16,
+        on_clicked_handler = "",
         x = 213,
-        y = 218
+        alignment = "center"
     })
 
     -- 控件 10: label (lb_v3)
     local lb_v3 = widgets_label.new(container, {
-        height = 30,
-        width = 100,
-        font_size = 16,
-        text = "阀门3",
-        alignment = "center",
-        visible = true,
-        on_clicked_handler = "",
-        design_mode = false,
         text_color = "#FFFFFF",
-        instance_name = "lb_v3",
-        bg_color = "#00000000",
-        bg_opa = 0,
         long_mode = "wrap",
+        height = 30,
+        design_mode = false,
+        y = 218,
+        visible = true,
+        width = 100,
+        instance_name = "lb_v3",
+        text = "阀门3",
+        bg_opa = 0,
+        bg_color = "#00000000",
+        font_size = 16,
+        on_clicked_handler = "",
         x = 344,
-        y = 218
+        alignment = "center"
+    })
+
+    -- 控件 11: checkbox (ckBox1)
+    local ckBox1 = widgets_checkbox.new(container, {
+        text_color = "#FFFFFF",
+        check_color = "#007ACC",
+        height = 30,
+        design_mode = false,
+        checked = false,
+        instance_name = "ckBox1",
+        width = 120,
+        text = "选项",
+        box_color = "#3C3C3C",
+        box_size = 20,
+        on_changed_handler = "",
+        enabled = true,
+        x = 409,
+        y = 337
+    })
+
+    -- 控件 12: slider
+    local widget_12 = widgets_slider.new(container, {
+        enabled = true,
+        min_value = 0,
+        max_value = 100,
+        design_mode = false,
+        value = 50,
+        on_changed_handler = "",
+        width = 150,
+        instance_name = "",
+        show_value = true,
+        knob_color = 16777215,
+        height = 20,
+        bg_color = "#33292E",
+        indicator_color = "#007ACC",
+        x = 380,
+        y = 436
     })
 
     return container

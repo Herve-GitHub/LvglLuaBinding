@@ -171,11 +171,13 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\editor\PropertyInputs.lua" />
     <None Include="lua\editor\PropertyPageEditor.lua" />
     <None Include="lua\editor\PropertyWidgetEditor.lua" />
-    <None Include="lua\editor\tools_box.lua" />
     <None Include="lua\general.lua" />
     <None Include="lua\print_widget_meta.lua" />
     <None Include="lua\widgets\button.lua" />
+    <None Include="lua\widgets\checkbox.lua" />
+    <None Include="lua\widgets\dropdown.lua" />
     <None Include="lua\widgets\label.lua" />
+    <None Include="lua\widgets\slider.lua" />
     <None Include="lua\widgets\status_bar.lua" />
     <None Include="lua\widgets\trend_chart.lua" />
     <None Include="lua\widgets\valve.lua" />

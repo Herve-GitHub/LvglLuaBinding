@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-01-17 18:16:08",
+  "created_at": "2026-01-17 20:28:36",
   "current_page_index": 3,
-  "modified_at": "2026-01-17 18:16:08",
+  "modified_at": "2026-01-17 20:28:36",
   "pages": [
     {
       "bg_color": "#1E4B1E",
@@ -305,6 +305,68 @@
             "y": 345
           },
           "type": "custom_button"
+        },
+        {
+          "module_path": "widgets.dropdown",
+          "props": {
+            "bg_color": "#3C3C3C",
+            "border_color": "#555555",
+            "design_mode": true,
+            "enabled": true,
+            "height": 32,
+            "instance_name": "cmB1",
+            "list_bg_color": "#2D2D2D",
+            "on_changed_handler": "",
+            "options": "选项1\n选项2\n选项3",
+            "selected_color": "#007ACC",
+            "selected_index": 0,
+            "text_color": "#FFFFFF",
+            "width": 150,
+            "x": 354,
+            "y": 344
+          },
+          "type": "dropdown"
+        },
+        {
+          "module_path": "widgets.checkbox",
+          "props": {
+            "box_color": "#3C3C3C",
+            "box_size": 20,
+            "check_color": "#007ACC",
+            "checked": false,
+            "design_mode": true,
+            "enabled": true,
+            "height": 30,
+            "instance_name": "ck1",
+            "on_changed_handler": "",
+            "text": "选项",
+            "text_color": "#FFFFFF",
+            "width": 120,
+            "x": 359,
+            "y": 222
+          },
+          "type": "checkbox"
+        },
+        {
+          "module_path": "widgets.slider",
+          "props": {
+            "bg_color": "#3C3C3C",
+            "design_mode": true,
+            "enabled": true,
+            "height": 20,
+            "indicator_color": "#007ACC",
+            "instance_name": "",
+            "knob_color": "#FFFFFF",
+            "max_value": 100,
+            "min_value": 0,
+            "on_changed_handler": "",
+            "show_value": true,
+            "value": 50,
+            "width": 150,
+            "x": 495,
+            "y": 475
+          },
+          "type": "slider"
         }
       ],
       "width": 900
@@ -320,9 +382,12 @@
   "status_bar": {
     "bg_color": "#252526",
     "enabled": true,
+    "instance_name": "",
     "lamp_size": 14,
     "lamp_status": "#00FF00",
     "lamp_text": "CH1",
+    "on_time_tick_handler": "",
+    "on_updated_handler": "",
     "position": "bottom",
     "show_time": true,
     "text_color": "#CCCCCC"

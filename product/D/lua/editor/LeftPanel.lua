@@ -32,6 +32,9 @@ LeftPanel.__page_meta = {
 LeftPanel.DEFAULT_TOOLS = {
     { id = "button", name = "按钮", icon = "BTN", module_path = "widgets.button" },
     { id = "label", name = "标签", icon = "LBL", module_path = "widgets.label" },
+    { id = "checkbox", name = "复选框", icon = "CHK", module_path = "widgets.checkbox" },
+    { id = "dropdown", name = "下拉框", icon = "DDL", module_path = "widgets.dropdown" },
+    { id = "slider", name = "滑块", icon = "SLD", module_path = "widgets.slider" },
     { id = "valve", name = "阀门", icon = "VLV", module_path = "widgets.valve" },
     { id = "trend_chart", name = "趋势图", icon = "CHT", module_path = "widgets.trend_chart" },
     { id = "status_bar", name = "状态栏", icon = "STA", module_path = "widgets.status_bar" },

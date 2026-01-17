@@ -118,8 +118,18 @@ function PropertyWidgetEditor.create_properties_table(ctx, y_pos, widget_entry, 
         label:set_pos(5, y_pos)
         label:set_width(80)
         
+        -- 计算此属性占用的高度
+        local current_item_height = item_height
+        
         if prop_type == "string" then
-            PropertyInputs.create_text_input(ctx, prop_name, tostring(prop_value), is_read_only, widget_entry, y_pos)
+            -- 检查是否是多行文本
+            if prop_def.multiline then
+                local lines = prop_def.lines or 3
+                local _, actual_height = PropertyInputs.create_multiline_text_input(ctx, prop_name, tostring(prop_value), is_read_only, widget_entry, y_pos, lines)
+                current_item_height = actual_height + 4
+            else
+                PropertyInputs.create_text_input(ctx, prop_name, tostring(prop_value), is_read_only, widget_entry, y_pos)
+            end
         elseif prop_type == "number" then
             PropertyInputs.create_number_input(ctx, prop_name, tonumber(prop_value) or 0, prop_def.min, prop_def.max, is_read_only, widget_entry, y_pos)
         elseif prop_type == "boolean" then
@@ -134,7 +144,7 @@ function PropertyWidgetEditor.create_properties_table(ctx, y_pos, widget_entry, 
             value_label:set_style_text_color(0xFFFFFF, 0)
             value_label:set_pos(95, y_pos)
         end
-        y_pos = y_pos + item_height
+        y_pos = y_pos + current_item_height
         ::continue::
     end
     

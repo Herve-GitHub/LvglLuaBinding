@@ -68,9 +68,6 @@
     <None Include="lua\widgets\status_bar.lua">
       <Filter>lua</Filter>
     </None>
-    <None Include="lua\editor\tools_box.lua">
-      <Filter>lua</Filter>
-    </None>
     <None Include="lua\widgets\trend_chart.lua">
       <Filter>lua</Filter>
     </None>
@@ -95,6 +92,9 @@
     <None Include="projects\project.lua" />
     <None Include="lua\editor\PropertyGlobalEditor.lua" />
     <None Include="lua\widgets\label.lua" />
+    <None Include="lua\widgets\checkbox.lua" />
+    <None Include="lua\widgets\dropdown.lua" />
+    <None Include="lua\widgets\slider.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

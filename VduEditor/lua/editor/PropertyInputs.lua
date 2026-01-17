@@ -127,6 +127,58 @@ function PropertyInputs.create_text_input(ctx, prop_name, value, is_read_only, w
     return textarea
 end
 
+-- 创建多行文本输入框
+function PropertyInputs.create_multiline_text_input(ctx, prop_name, value, is_read_only, widget_entry, y_pos, lines)
+    lines = lines or 3
+    local height = lines * 18 + 8  -- 每行约18像素高度，加上内边距
+    
+    local textarea = lv.textarea_create(ctx.content)
+    textarea:set_pos(95, y_pos + 2)
+    textarea:set_size(ctx.props.width - 105, height)
+    textarea:set_style_bg_color(0x1E1E1E, 0)
+    textarea:set_style_border_width(1, 0)
+    textarea:set_style_border_color(0x555555, 0)
+    textarea:set_style_text_color(0xFFFFFF, 0)
+    textarea:set_style_radius(0, 0)
+    textarea:set_style_pad_all(4, 0)
+    textarea:set_one_line(false)  -- 允许多行
+    textarea:set_text(value or "")
+    
+    -- 设置基本属性
+    textarea:add_flag(lv.OBJ_FLAG_CLICKABLE)
+    textarea:add_flag(lv.OBJ_FLAG_SCROLLABLE)  -- 允许滚动
+    
+    -- 启用文本选择功能
+    setup_text_selection(textarea)
+    
+    if is_read_only then
+        textarea:add_state(lv.STATE_DISABLED)
+    else
+        local ta = textarea
+        local last_value = value or ""
+        
+        -- 提交属性变更的函数
+        local function commit_change()
+            local new_value = lv.textarea_get_text(ta)
+            if new_value ~= last_value then
+                last_value = new_value
+                if widget_entry.instance and widget_entry.instance.set_property then
+                    widget_entry.instance:set_property(prop_name, new_value)
+                end
+                ctx:_emit("property_changed", prop_name, new_value, widget_entry)
+            end
+        end
+        
+        -- 失去焦点时触发设置（多行文本不使用回车提交，因为回车用于换行）
+        textarea:add_event_cb(function(e)
+            commit_change()
+        end, lv.EVENT_DEFOCUSED, nil)
+    end
+    
+    -- 返回 textarea 和实际高度
+    return textarea, height
+end
+
 -- 创建数字输入框
 function PropertyInputs.create_number_input(ctx, prop_name, value, min_val, max_val, is_read_only, widget_entry, y_pos)
     local textarea = lv.textarea_create(ctx.content)
