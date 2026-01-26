@@ -12,7 +12,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 /* Note: 组态使用msvc编译 需要LUA_BUILD_AS_DLL 仿真使用GCC不需要 */
-#if __MSVC___
+#if defined(_MSC_VER)
 #ifndef LUA_BUILD_AS_DLL
 #define LUA_BUILD_AS_DLL
 #endif // !LUA_BUILD_AS_DLL

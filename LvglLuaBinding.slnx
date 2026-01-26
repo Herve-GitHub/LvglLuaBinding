@@ -10,7 +10,4 @@
   <Project Path="VduEditor/VduEditor.vcxproj" Id="af66d0d6-7b20-459f-8e8c-edaf237290b3">
     <Platform Solution="*|ARM64" Project="x64" />
   </Project>
-  <Project Path="VduSimulator/VduSimulator.vcxproj" Id="47643b9c-540c-4c59-8f56-45af31d78606">
-    <Platform Solution="*|ARM64" Project="x64" />
-  </Project>
 </Solution>
