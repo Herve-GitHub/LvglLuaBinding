@@ -13,12 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="lvglluabinding">
+      <UniqueIdentifier>{dc0eb688-f965-458e-919b-ca270ff8f994}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lv_conf.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="lvgl_lua_bindings.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="lua\lapi.h">
@@ -1902,14 +1902,14 @@
     <ClInclude Include="lvgl\lv_version.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="lvgl_lua_bindings.h">
+      <Filter>lvglluabinding</Filter>
+    </ClInclude>
     <ClInclude Include="lvgl_lua_bindings_internal.h">
-      <Filter>头文件</Filter>
+      <Filter>lvglluabinding</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="lvgl_lua_bindings.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="lua\lapi.c">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -3593,17 +3593,20 @@
     <ClCompile Include="lvgl\src\lv_init.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="lvgl_obj_lua_bindings.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="lvgl_textarea_lua_bindings.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="lvgl_chart_lua_bindings.c">
-      <Filter>源文件</Filter>
+      <Filter>lvglluabinding</Filter>
+    </ClCompile>
+    <ClCompile Include="lvgl_lua_bindings.c">
+      <Filter>lvglluabinding</Filter>
+    </ClCompile>
+    <ClCompile Include="lvgl_obj_lua_bindings.c">
+      <Filter>lvglluabinding</Filter>
     </ClCompile>
     <ClCompile Include="lvgl_slider_lua_bindings.c">
-      <Filter>源文件</Filter>
+      <Filter>lvglluabinding</Filter>
+    </ClCompile>
+    <ClCompile Include="lvgl_textarea_lua_bindings.c">
+      <Filter>lvglluabinding</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -11,10 +11,12 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+/* Note: 组态使用msvc编译 需要LUA_BUILD_AS_DLL 仿真使用GCC不需要 */
+#if __MSVC___
 #ifndef LUA_BUILD_AS_DLL
 #define LUA_BUILD_AS_DLL
 #endif // !LUA_BUILD_AS_DLL
-
+#endif
 
 #define LUA_COPYRIGHT	LUA_RELEASE "  Copyright (C) 1994-2025 Lua.org, PUC-Rio"
 #define LUA_AUTHORS	"R. Ierusalimschy, L. H. de Figueiredo, W. Celes"

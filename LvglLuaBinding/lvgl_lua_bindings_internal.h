@@ -1,6 +1,6 @@
 ﻿/**
  * @file lvgl_lua_bindings_internal.h
- * @brief Internal header for LVGL Lua bindings - shared declarations
+ * @brief LVGL Lua 绑定的内部头文件 - 共享声明
  */
 //内部头文件，包含共享的数据结构和函数声明
 #ifndef LVGL_LUA_BINDINGS_INTERNAL_H

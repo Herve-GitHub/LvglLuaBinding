@@ -218,7 +218,7 @@ const char * lv_textarea_get_text(const lv_obj_t * obj);
  * @param obj       pointer to a text area object
  * @return          pointer to the text
  */
-const char * lv_textarea_get_placeholder_text(lv_obj_t * obj);
+const char * lv_textarea_get_placeholder_text(const lv_obj_t * obj);
 
 /**
  * Get the label of a text area
