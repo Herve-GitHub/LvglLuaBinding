@@ -5,20 +5,27 @@
 //公共头文件
 #ifndef LVGL_LUA_BINDINGS_H
 #define LVGL_LUA_BINDINGS_H
-#ifndef LVGLLUABINDING_EXPORTS
-#define LVGLLUABINDING_API __declspec(dllimport)
+
+// Platform-specific DLL export/import macros
+#if defined(_MSC_VER)
+    #ifndef LVGLLUABINDING_EXPORTS
+        #define LVGLLUABINDING_API __declspec(dllimport)
+    #else
+        #define LVGLLUABINDING_API __declspec(dllexport)
+    #endif
 #else
-#define LVGLLUABINDING_API __declspec(dllexport)
-#endif // !LVGLLUABINDING_EXPORTS
+    // For GCC/non-Windows platforms, no DLL export needed
+    #define LVGLLUABINDING_API
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "lua/lua.h"
-#include <lua/lauxlib.h>
-#include <lua/lualib.h>
-#include <lvgl/lvgl.h>
+#include "lua/lauxlib.h"
+#include "lua/lualib.h"
+#include "lvgl/lvgl.h"
 
 /**
  * @brief Register all LVGL functions to Lua state

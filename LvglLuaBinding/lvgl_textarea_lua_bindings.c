@@ -5,13 +5,13 @@
 
 #include "lvgl_lua_bindings_internal.h"
 
-#ifdef _WIN32
+#if defined(_MSC_VER)
 #include <Windows.h>
 #endif
 
 // ========== Clipboard functions ==========
 
-#ifdef _WIN32
+#if defined(_MSC_VER)
 // Get text from Windows clipboard
 static char* get_clipboard_text(void) {
     if (!OpenClipboard(NULL)) {
@@ -90,12 +90,15 @@ static bool set_clipboard_text(const char* text) {
     return true;
 }
 #else
-// Stub implementations for non-Windows platforms
+// Stub implementations for non-Windows platforms (GCC/Linux/etc.)
 static char* get_clipboard_text(void) {
+    // TODO: Implement platform-specific clipboard support if needed
     return NULL;
 }
 
 static bool set_clipboard_text(const char* text) {
+    (void)text;
+    // TODO: Implement platform-specific clipboard support if needed
     return false;
 }
 #endif

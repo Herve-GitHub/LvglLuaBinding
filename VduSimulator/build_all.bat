@@ -40,6 +40,23 @@ gcc %CFLAGS% -c src\lv_lua.c -o src\lv_lua.o
 if %errorlevel% neq 0 exit /b 1
 
 echo.
+echo Step 3.5: Compiling LvglLuaBinding source files...
+gcc %CFLAGS% -c ..\LvglLuaBinding\lvgl_lua_bindings.c -o ..\LvglLuaBinding\lvgl_lua_bindings.o
+if %errorlevel% neq 0 exit /b 1
+
+gcc %CFLAGS% -c ..\LvglLuaBinding\lvgl_obj_lua_bindings.c -o ..\LvglLuaBinding\lvgl_obj_lua_bindings.o
+if %errorlevel% neq 0 exit /b 1
+
+gcc %CFLAGS% -c ..\LvglLuaBinding\lvgl_textarea_lua_bindings.c -o ..\LvglLuaBinding\lvgl_textarea_lua_bindings.o
+if %errorlevel% neq 0 exit /b 1
+
+gcc %CFLAGS% -c ..\LvglLuaBinding\lvgl_chart_lua_bindings.c -o ..\LvglLuaBinding\lvgl_chart_lua_bindings.o
+if %errorlevel% neq 0 exit /b 1
+
+gcc %CFLAGS% -c ..\LvglLuaBinding\lvgl_slider_lua_bindings.c -o ..\LvglLuaBinding\lvgl_slider_lua_bindings.o
+if %errorlevel% neq 0 exit /b 1
+
+echo.
 echo Step 4: Creating static library libvdu.a...
 REM Generate response file with forward slashes for ar
 del /q lvgl_objs.rsp 2>nul
@@ -53,6 +70,13 @@ setlocal enabledelayedexpansion
 set "lv_lua_path=%CD%\src\lv_lua.o"
 echo !lv_lua_path:\=/!>>lvgl_objs.rsp
 endlocal
+REM Add LvglLuaBinding object files
+for %%f in ("..\LvglLuaBinding\lvgl_*.o") do (
+    set "objpath=%%~ff"
+    setlocal enabledelayedexpansion
+    echo !objpath:\=/!>>lvgl_objs.rsp
+    endlocal
+)
 cmd /c "ar rcs libvdu.a @lvgl_objs.rsp"
 if %errorlevel% neq 0 (
     echo Failed to create static library

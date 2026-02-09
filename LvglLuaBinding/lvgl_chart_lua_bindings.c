@@ -61,10 +61,16 @@ static int l_chart_set_div_line_count(lua_State* L) {
 static int l_chart_add_series(lua_State* L) {
     lv_obj_t* obj = check_lv_obj(L, 1);
     uint32_t color_hex = (uint32_t)luaL_checkinteger(L, 2);
-    lv_chart_axis_t axis = (lv_chart_axis_t)luaL_checkinteger(L, 3);
+    lv_chart_axis_t axis = LV_CHART_AXIS_PRIMARY_Y;  // Default axis
+    if (lua_gettop(L) >= 3) {
+        axis = (lv_chart_axis_t)luaL_checkinteger(L, 3);
+    }
+    printf("[DEBUG] l_chart_add_series: obj=%p, color=0x%06X, axis=%d\n", (void*)obj, color_hex, axis);
+    fflush(stdout);
     if (obj) {
         lv_chart_series_t* series = lv_chart_add_series(obj, lv_color_hex(color_hex), axis);
-        printf("l_chart_add_series: obj=%p, series=%p\n", (void*)obj, (void*)series);
+        printf("[DEBUG] l_chart_add_series: series=%p\n", (void*)series);
+        fflush(stdout);
         push_lv_chart_series(L, series);
         return 1;
     }
@@ -88,21 +94,13 @@ static int l_chart_set_next_value(lua_State* L) {
     lv_chart_series_t* series = check_lv_chart_series(L, 2);
     int32_t value = (int32_t)luaL_checkinteger(L, 3);
     
+    printf("[DEBUG] l_chart_set_next_value: obj=%p, series=%p, value=%d\n", (void*)obj, (void*)series, value);
+    fflush(stdout);
     if (obj && series) {
-        // Debug: print chart state
-        lv_chart_type_t type = lv_chart_get_type(obj);
-        uint32_t point_cnt = lv_chart_get_point_count(obj);
-        
-        // Check if chart is on active screen
-        lv_obj_t* scr = lv_obj_get_screen(obj);
-        lv_obj_t* active_scr = lv_screen_active();
-        bool on_active_screen = (scr == active_scr);
-        bool is_visible = lv_obj_is_visible(obj);
-        
-        printf("l_chart_set_next_value: type=%d, point_cnt=%u, value=%d, on_active_screen=%d, is_visible=%d\n", 
-               (int)type, point_cnt, value, on_active_screen, is_visible);
-        
         lv_chart_set_next_value(obj, series, value);
+    } else {
+        printf("[DEBUG] l_chart_set_next_value: SKIPPED (obj or series is NULL)\n");
+        fflush(stdout);
     }
     return 0;
 }
