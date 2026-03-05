@@ -55,13 +55,18 @@ void lvgl_register_textarea_methods(lua_State* L, luaL_Reg* methods, int* count)
 // Register chart methods (defined in lvgl_chart_lua_bindings.c)
 void lvgl_register_chart_methods(lua_State* L, luaL_Reg* methods, int* count);
 
+void lvgl_register_mongoose_methods(lua_State* L, luaL_Reg* methods, int* count);
+
 // Get methods tables
 const luaL_Reg* lvgl_get_obj_methods(void);
 const luaL_Reg* lvgl_get_textarea_methods(void);
 const luaL_Reg* lvgl_get_chart_methods(void);
 const luaL_Reg* lvgl_get_slider_methods(void);
 
+
 // Get clipboard functions
 const luaL_Reg* lvgl_get_clipboard_funcs(void);
+
+const luaL_Reg* lvgl_get_mongoose_methods(void);
 
 #endif // LVGL_LUA_BINDINGS_INTERNAL_H

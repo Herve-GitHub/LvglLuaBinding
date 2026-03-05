@@ -17,7 +17,7 @@ MenuBar.__widget_meta = {
 local APP_DIR = _G.APP_DIR or ""
 
 -- LVGL 文件系统前缀（与 lv_conf.h 中的 LV_FS_WIN32_LETTER 对应）
-local FS_PREFIX = "D:"
+local FS_PREFIX = "C:"
 
 -- 辅助函数：构建完整路径（用于 LVGL 图片加载）
 local function build_path(relative_path)

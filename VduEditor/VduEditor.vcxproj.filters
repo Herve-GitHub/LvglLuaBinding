@@ -95,6 +95,15 @@
     <None Include="lua\widgets\checkbox.lua" />
     <None Include="lua\widgets\dropdown.lua" />
     <None Include="lua\widgets\slider.lua" />
+    <None Include="projects\project20260116.json" />
+    <None Include="projects\project20260116.lua" />
+    <None Include="lua\editor\PropertyDataEditor.lua" />
+    <None Include="lua\editor\DataBindingManager.lua" />
+    <None Include="lua\editor\savelua.lua" />
+    <None Include="websocket\http.lua" />
+    <None Include="websocket\websocket.lua" />
+    <None Include="lua\editor\PropertyEvent.lua" />
+    <None Include="lua\test_lua\websocket.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

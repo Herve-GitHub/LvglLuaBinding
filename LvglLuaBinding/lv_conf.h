@@ -328,7 +328,7 @@
 #define LV_USE_FS_POSIX 0
 #define LV_USE_FS_WIN32 1
 #if LV_USE_FS_WIN32
-    #define LV_FS_WIN32_LETTER 'D'
+    #define LV_FS_WIN32_LETTER 'C'
     #define LV_FS_WIN32_PATH ""
     #define LV_FS_WIN32_CACHE_SIZE 0
 #endif

@@ -480,6 +480,8 @@ static int luaopen_lvgl(lua_State* L) {
     // Add slider methods
     merge_methods_to_table(L, lvgl_get_slider_methods());
     
+   
+    
     lua_setfield(L, -2, "__index");
     lua_pop(L, 1);
     
@@ -499,6 +501,7 @@ static int luaopen_lvgl(lua_State* L) {
     
     // Add clipboard functions
     merge_methods_to_table(L, lvgl_get_clipboard_funcs());
+    merge_methods_to_table(L, lvgl_get_mongoose_methods());
     
     // Add constants - Alignment
     lua_pushinteger(L, LV_ALIGN_DEFAULT); lua_setfield(L, -2, "ALIGN_DEFAULT");

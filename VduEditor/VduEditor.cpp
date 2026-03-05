@@ -14,15 +14,16 @@ static const int WINDOW_WIDTH = 1280;
 static const int WINDOW_HEIGHT = 960;
 
 // 默认脚本路径（相对于可执行文件目录）
-static const char* DEFAULT_SCRIPT_PATH = "lua\\editor\\main_editor.lua";
-
+//static const char* DEFAULT_SCRIPT_PATH = "websocket\\websocket.lua";  // 修改为 websocket 测试脚本
+static const char* DEFAULT_SCRIPT_PATH = "lua\\editor\\main_editor.lua";  // 修改为 websocket 测试脚本
 // 默认 Lua 搜索路径（相对于可执行文件目录）
-static const char* DEFAULT_LUA_PATH_TEMPLATE = 
-    "%slua\\editor\\?.lua;"
-    "%slua\\editor\\?\\init.lua;"
-    "%slua\\?.lua;"
-    "%slua\\?\\init.lua;"
-    "%slua\\actions\\?.lua";
+static const char* DEFAULT_LUA_PATH_TEMPLATE =
+"%slua\\editor\\?.lua;"
+"%slua\\editor\\?\\init.lua;"
+"%slua\\?.lua;"
+"%slua\\?\\init.lua;"
+"%slua\\actions\\?.lua;"
+"%swebsocket\\?.lua";  // 添加 websocket 目录到搜索路径
 
 // 默认字体路径（黑体）
 static const char* DEFAULT_FONT_PATH = "fonts\\simhei.ttf";
@@ -76,7 +77,7 @@ static std::string get_exe_directory()
     if (len == 0 || len >= MAX_PATH) {
         return "";
     }
-    
+
     // 查找最后一个反斜杠并截断
     std::string dir(path);
     size_t pos = dir.find_last_of("\\/");
@@ -104,10 +105,10 @@ static bool init_chinese_font()
 {
 #if LV_USE_TINY_TTF
     std::string full_font_path = build_full_path(DEFAULT_FONT_PATH);
-    
+
     std::cout << "Executable directory: " << g_exe_directory << std::endl;
     std::cout << "Font path: " << full_font_path << std::endl;
-    
+
     // 检查字体文件是否存在
     FILE* f = nullptr;
     if (fopen_s(&f, full_font_path.c_str(), "rb") != 0 || !f) {
@@ -120,7 +121,7 @@ static bool init_chinese_font()
     // 创建 TTF 字体，禁用字距调整
     // 注意：对于中文字体，应禁用字距调整以避免字符间距问题
     g_chinese_font = lv_tiny_ttf_create_file_ex(
-        full_font_path.c_str(), 
+        full_font_path.c_str(),
         DEFAULT_FONT_SIZE,
         LV_FONT_KERNING_NONE,  // 禁用中文字体的字距调整
         LV_TINY_TTF_CACHE_GLYPH_CNT
@@ -178,21 +179,25 @@ static void set_lua_path(lua_State* L)
         g_exe_directory.c_str(),
         g_exe_directory.c_str(),
         g_exe_directory.c_str(),
-        g_exe_directory.c_str());
-    
+        g_exe_directory.c_str(),
+        g_exe_directory.c_str());  // 添加第六个参数用于 websocket 目录
+
     lua_getglobal(L, "package");
     lua_getfield(L, -1, "path");
     const char* cur_path = lua_tostring(L, -1);
-    
+
     // 将新路径与现有路径合并
     std::string new_path = std::string(lua_path) + ";" + (cur_path ? cur_path : "");
-    
+
     lua_pop(L, 1);  // 弹出旧路径
     lua_pushstring(L, new_path.c_str());
     lua_setfield(L, -2, "path");
     lua_pop(L, 1);  // 弹出 package 表
-    
+
     std::cout << "Lua package.path set to: " << new_path << std::endl;
+
+    // 同时设置 package.cpath 如果有需要
+    // 这里可以添加动态库搜索路径的设置
 }
 
 /**
@@ -204,7 +209,7 @@ static void set_lua_app_dir(lua_State* L)
     // 设置 APP_DIR 全局变量，供 Lua 脚本使用
     lua_pushstring(L, g_exe_directory.c_str());
     lua_setglobal(L, "APP_DIR");
-    
+
     std::cout << "Lua APP_DIR set to: " << g_exe_directory << std::endl;
 }
 
@@ -225,7 +230,7 @@ static bool init_lua()
 
     // 设置 Lua 模块搜索路径（使用绝对路径）
     set_lua_path(g_L);
-    
+
     // 设置 APP_DIR 全局变量
     set_lua_app_dir(g_L);
 
@@ -253,9 +258,20 @@ static bool load_lua_script(const char* script_path)
     FILE* f = nullptr;
     if (fopen_s(&f, full_script_path.c_str(), "r") != 0 || !f) {
         std::cerr << "Script file not found: " << full_script_path << std::endl;
-        return false;
+
+        // 尝试直接使用传入的路径（可能是绝对路径）
+        if (fopen_s(&f, script_path, "r") == 0 && f) {
+            fclose(f);
+            full_script_path = script_path;
+            std::cout << "Using direct path: " << full_script_path << std::endl;
+        }
+        else {
+            return false;
+        }
     }
-    fclose(f);
+    else {
+        fclose(f);
+    }
 
     std::cout << "Loading script: " << full_script_path << std::endl;
 
@@ -292,6 +308,7 @@ int main(int argc, char* argv[])
     SetConsoleOutputCP(CP_UTF8);
     std::cout << "VduEditor - LVGL Lua Configuration Editor" << std::endl;
     std::cout << "Window size: " << WINDOW_WIDTH << "x" << WINDOW_HEIGHT << std::endl;
+    std::cout << "Testing WebSocket module" << std::endl;  // 添加测试提示
 
     // 获取可执行文件目录（在程序启动时获取一次）
     g_exe_directory = get_exe_directory();
@@ -301,15 +318,9 @@ int main(int argc, char* argv[])
     }
     std::cout << "Application directory: " << g_exe_directory << std::endl;
 
-    // 确定脚本路径
+    // 确定脚本路径 - 使用 websocket 测试脚本
     const char* script_path = DEFAULT_SCRIPT_PATH;
-    if (argc > 1) {
-        script_path = argv[1];
-        std::cout << "Using command line script: " << script_path << std::endl;
-    }
-    else {
-        std::cout << "Using default script: " << script_path << std::endl;
-    }
+    std::cout << "Using WebSocket test script: " << script_path << std::endl;
 
     // 初始化 LVGL
     lv_init();
@@ -318,9 +329,9 @@ int main(int argc, char* argv[])
     int32_t zoom_level = 100;
     bool allow_dpi_override = false;
     bool simulator_mode = false;
-    
+
     lv_display_t* display = lv_windows_create_display(
-        L"VduEditor",
+        L"VduEditor - WebSocket Test",  // 修改窗口标题，显示正在测试 WebSocket
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
         zoom_level,
@@ -340,6 +351,7 @@ int main(int argc, char* argv[])
     }
     // 将窗口居中显示
     center_window(window_handle);
+
     // 创建输入设备
     lv_indev_t* pointer_indev = lv_windows_acquire_pointer_indev(display);
     if (!pointer_indev) {
@@ -381,22 +393,24 @@ int main(int argc, char* argv[])
 
     // 加载并执行 Lua 脚本
     if (!load_lua_script(script_path)) {
-        std::cerr << "Failed to load Lua script, showing default demo" << std::endl;
-        
-        // 如果脚本加载失败，创建一个简单的演示界面
+        std::cerr << "Failed to load WebSocket test script!" << std::endl;
+
+        // 如果脚本加载失败，创建一个简单的错误提示界面
         lv_obj_t* scr = lv_screen_active();
         lv_obj_set_style_bg_color(scr, lv_color_hex(0x2D3436), 0);
-        
+
         lv_obj_t* label = lv_label_create(scr);
-        lv_label_set_text(label, "VduEditor - Script load failed\nCheck console for errors");
-        lv_obj_set_style_text_color(label, lv_color_hex(0xFFFFFF), 0);
+        lv_label_set_text(label, "WebSocket Test Script Load Failed!\n\n"
+            "Expected path: websocket/websocket.lua\n"
+            "Please check if the file exists.");
+        lv_obj_set_style_text_color(label, lv_color_hex(0xFF6B6B), 0);  // 红色显示错误
         if (g_chinese_font) {
             lv_obj_set_style_text_font(label, g_chinese_font, 0);
         }
         lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
     }
 
-    std::cout << "Starting main loop..." << std::endl;
+    std::cout << "Starting main loop... (Testing WebSocket module)" << std::endl;
 
     // 主循环
     while (1) {

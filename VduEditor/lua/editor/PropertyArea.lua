@@ -6,6 +6,8 @@ local lv = require("lvgl")
 local PropertyPageEditor = require("editor.PropertyPageEditor")
 local PropertyWidgetEditor = require("editor.PropertyWidgetEditor")
 local PropertyGlobalEditor = require("editor.PropertyGlobalEditor")
+local PropertyDataEditor = require("editor.PropertyDataEditor")
+local PropertyEventEditor = require("editor.PropertyEventEditor")
 
 local PropertyArea = {}
 PropertyArea.__index = PropertyArea
@@ -13,16 +15,24 @@ PropertyArea.__index = PropertyArea
 PropertyArea.__widget_meta = {
     id = "property_area",
     name = "属性窗口",
-    description = "右侧固定属性面板",
+    description = "右侧固定属性面板，包含属性、数据和事件操作",
     schema_version = "1.0",
     version = "1.0",
+}
+
+-- 标签页类型常量
+local TAB_TYPE = {
+    PROPERTY = 1,
+    DATA = 2,
+    EVENT = 3
 }
 
 -- 模块状态
 local selectedItems = {}
 local selectedPage = nil
 local selectedPageIndex = 0
-local selectedGlobal = nil  -- 当前选中的全局组件
+local selectedGlobal = nil
+local currentTab = TAB_TYPE.PROPERTY
 
 -- 构造函数
 function PropertyArea.new(parent, props)
@@ -36,11 +46,15 @@ function PropertyArea.new(parent, props)
         width = props.width or 280,
         height = props.height or 600,
         title_height = props.title_height or 32,
+        tab_height = props.tab_height or 36,
         item_height = props.item_height or 32,
         bg_color = props.bg_color or 0x2D2D2D,
         title_bg_color = props.title_bg_color or 0x3D3D3D,
+        tab_bg_color = props.tab_bg_color or 0x3D3D3D,
+        tab_active_color = props.tab_active_color or 0x4A90E2,
         border_color = props.border_color or 0x555555,
         text_color = props.text_color or 0xFFFFFF,
+        text_inactive_color = props.text_inactive_color or 0xAAAAAA,
     }
     
     -- 保存父元素引用
@@ -49,8 +63,27 @@ function PropertyArea.new(parent, props)
     -- 事件监听器
     self._event_listeners = {}
     
-    -- 创建主容器（固定面板样式）
-    self.container = lv.obj_create(parent)
+    -- 创建主容器
+    self:_create_main_container()
+    
+    -- 创建标题栏
+    self:_create_title_bar()
+    
+    -- 创建标签页切换栏
+    self:_create_tab_bar()
+    
+    -- 创建内容区域
+    self:_create_content_area()
+    
+    -- 初始化显示属性页面
+    self:_switch_tab(TAB_TYPE.PROPERTY)
+    
+    return self
+end
+
+-- 创建主容器
+function PropertyArea:_create_main_container()
+    self.container = lv.obj_create(self._parent)
     self.container:set_pos(self.props.x, self.props.y)
     self.container:set_size(self.props.width, self.props.height)
     self.container:set_style_bg_color(self.props.bg_color, 0)
@@ -62,14 +95,6 @@ function PropertyArea.new(parent, props)
     self.container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     self.container:remove_flag(lv.OBJ_FLAG_GESTURE_BUBBLE)
     self.container:clear_layout()
-    
-    -- 创建标题栏
-    self:_create_title_bar()
-    
-    -- 创建内容区域
-    self:_create_content_area()
-    
-    return self
 end
 
 -- 创建标题栏
@@ -87,25 +112,199 @@ function PropertyArea:_create_title_bar()
     
     -- 标题文本
     self.title_label = lv.label_create(self.title_bar)
-    self.title_label:set_text("属性")
+    self.title_label:set_text("工具面板")
     self.title_label:set_style_text_color(self.props.text_color, 0)
     self.title_label:align(lv.ALIGN_LEFT_MID, 10, 0)
 end
 
+-- 创建标签页切换栏（三个标签）
+function PropertyArea:_create_tab_bar()
+    local tab_y = self.props.title_height
+    
+    self.tab_bar = lv.obj_create(self.container)
+    self.tab_bar:set_pos(0, tab_y)
+    self.tab_bar:set_size(self.props.width, self.props.tab_height)
+    self.tab_bar:set_style_bg_color(self.props.tab_bg_color, 0)
+    self.tab_bar:set_style_radius(0, 0)
+    self.tab_bar:set_style_border_width(0, 1)
+    self.tab_bar:set_style_border_color(self.props.border_color, 0)
+    self.tab_bar:set_style_pad_all(0, 0)
+    self.tab_bar:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    self.tab_bar:clear_layout()
+    
+    -- 创建三个标签按钮，宽度平均分配（使用math.floor确保整数）
+    local tab_width = math.floor(self.props.width / 3)
+    local remainder = self.props.width - tab_width * 3
+    
+    -- 属性标签
+    self.tab_property = lv.btn_create(self.tab_bar)
+    self.tab_property:set_size(tab_width, self.props.tab_height)
+    self.tab_property:set_pos(0, 0)
+    self.tab_property:set_style_bg_color(self.props.tab_active_color, 0)
+    self.tab_property:set_style_radius(0, 0)
+    self.tab_property:set_style_border_width(0, 0)
+    self.tab_property:set_style_text_color(self.props.text_color, 0)
+    
+    local tab_property_label = lv.label_create(self.tab_property)
+    tab_property_label:set_text("属性")
+    tab_property_label:center()
+    
+    -- 数据标签
+    self.tab_data = lv.btn_create(self.tab_bar)
+    self.tab_data:set_size(tab_width, self.props.tab_height)
+    self.tab_data:set_pos(tab_width, 0)
+    self.tab_data:set_style_bg_color(self.props.tab_bg_color, 0)
+    self.tab_data:set_style_radius(0, 0)
+    self.tab_data:set_style_border_width(0, 0)
+    self.tab_data:set_style_text_color(self.props.text_inactive_color, 0)
+    
+    local tab_data_label = lv.label_create(self.tab_data)
+    tab_data_label:set_text("数据")
+    tab_data_label:center()
+    
+    -- 事件标签（最后一个标签可能会稍宽一些，以补偿余数）
+    self.tab_event = lv.btn_create(self.tab_bar)
+    self.tab_event:set_size(tab_width + remainder, self.props.tab_height)
+    self.tab_event:set_pos(tab_width * 2, 0)
+    self.tab_event:set_style_bg_color(self.props.tab_bg_color, 0)
+    self.tab_event:set_style_radius(0, 0)
+    self.tab_event:set_style_border_width(0, 0)
+    self.tab_event:set_style_text_color(self.props.text_inactive_color, 0)
+    
+    local tab_event_label = lv.label_create(self.tab_event)
+    tab_event_label:set_text("事件")
+    tab_event_label:center()
+    
+    -- 事件处理
+    self.tab_property:add_event_cb(function()
+        self:_switch_tab(TAB_TYPE.PROPERTY)
+    end, lv.EVENT_CLICKED, nil)
+    
+    self.tab_data:add_event_cb(function()
+        self:_switch_tab(TAB_TYPE.DATA)
+    end, lv.EVENT_CLICKED, nil)
+    
+    self.tab_event:add_event_cb(function()
+        self:_switch_tab(TAB_TYPE.EVENT)
+    end, lv.EVENT_CLICKED, nil)
+end
+
+-- 切换标签页
+function PropertyArea:_switch_tab(tab_type)
+    if currentTab == tab_type then
+        return
+    end
+    
+    currentTab = tab_type
+    
+    -- 更新所有标签样式
+    -- 先全部设置为非活动状态
+    self.tab_property:set_style_bg_color(self.props.tab_bg_color, 0)
+    self.tab_property:set_style_text_color(self.props.text_inactive_color, 0)
+    self.tab_data:set_style_bg_color(self.props.tab_bg_color, 0)
+    self.tab_data:set_style_text_color(self.props.text_inactive_color, 0)
+    self.tab_event:set_style_bg_color(self.props.tab_bg_color, 0)
+    self.tab_event:set_style_text_color(self.props.text_inactive_color, 0)
+    
+    -- 根据选中的标签设置活动样式
+    if tab_type == TAB_TYPE.PROPERTY then
+        self.tab_property:set_style_bg_color(self.props.tab_active_color, 0)
+        self.tab_property:set_style_text_color(self.props.text_color, 0)
+        self.title_label:set_text("属性")
+        self:_refresh_current_selection()
+    elseif tab_type == TAB_TYPE.DATA then
+        self.tab_data:set_style_bg_color(self.props.tab_active_color, 0)
+        self.tab_data:set_style_text_color(self.props.text_color, 0)
+        self.title_label:set_text("数据")
+        self:_show_data_page()
+    else -- EVENT
+        self.tab_event:set_style_bg_color(self.props.tab_active_color, 0)
+        self.tab_event:set_style_text_color(self.props.text_color, 0)
+        self.title_label:set_text("事件")
+        self:_show_event_page()
+    end
+    
+    self:_emit("tab_changed", tab_type)
+end
+
+-- 刷新当前选中的内容（属性页面）
+function PropertyArea:_refresh_current_selection()
+    self:_clear_content_area()
+    
+    if #selectedItems > 0 then
+       PropertyWidgetEditor.display_properties(self, selectedItems[1])
+    elseif selectedPage then
+        PropertyPageEditor.display_properties(self, selectedPage, selectedPageIndex)
+    elseif selectedGlobal then
+        PropertyGlobalEditor.display_properties(self, selectedGlobal)
+    else
+        local placeholder = lv.label_create(self.content)
+        placeholder:set_text("请选择一个控件或图页\n查看其属性")
+        placeholder:set_style_text_color(self.props.text_inactive_color, 0)
+        placeholder:set_long_mode(lv.LABEL_LONG_WRAP)
+        placeholder:set_width(self.props.width - 20)
+        placeholder:align(lv.ALIGN_TOP_MID, 0, 20)
+    end
+end
+
+-- 显示数据页面
+function PropertyArea:_show_data_page()
+    self:_clear_content_area()
+    
+    if PropertyDataEditor and PropertyDataEditor.display then
+        PropertyDataEditor.display(self)
+    else
+        local placeholder = lv.label_create(self.content)
+        placeholder:set_text("数据操作页面\n\n此功能正在开发中...")
+        placeholder:set_style_text_color(self.props.text_color, 0)
+        placeholder:set_long_mode(lv.LABEL_LONG_WRAP)
+        placeholder:set_width(self.props.width - 20)
+        placeholder:align(lv.ALIGN_TOP_MID, 0, 20)
+    end
+end
+
+-- 显示事件页面
+function PropertyArea:_show_event_page()
+    self:_clear_content_area()
+    
+    if #selectedItems > 0 then
+        -- 如果有选中的控件，显示事件编辑器
+        if PropertyEventEditor and PropertyEventEditor.create_events_table then
+            local meta = selectedItems[1].meta or {}
+            PropertyEventEditor.create_events_table(self, 10, selectedItems[1], meta)
+        else
+            local placeholder = lv.label_create(self.content)
+            placeholder:set_text("事件绑定页面\n\n正在开发中...")
+            placeholder:set_style_text_color(self.props.text_color, 0)
+            placeholder:set_long_mode(lv.LABEL_LONG_WRAP)
+            placeholder:set_width(self.props.width - 20)
+            placeholder:align(lv.ALIGN_TOP_MID, 0, 50)
+        end
+    else
+        -- 如果没有选中控件，显示提示
+        local placeholder = lv.label_create(self.content)
+        placeholder:set_text("请先选择一个控件\n\n然后在事件页面配置该控件的事件绑定")
+        placeholder:set_style_text_color(self.props.text_inactive_color, 0)
+        placeholder:set_long_mode(lv.LABEL_LONG_WRAP)
+        placeholder:set_width(self.props.width - 20)
+        placeholder:align(lv.ALIGN_TOP_MID, 0, 50)
+    end
+end
+
 -- 创建内容区域
 function PropertyArea:_create_content_area()
-    local content_height = self.props.height - self.props.title_height
+    local content_y = self.props.title_height + self.props.tab_height
+    local content_height = self.props.height - self.props.title_height - self.props.tab_height
     
     self.content = lv.obj_create(self.container)
-    self.content:set_pos(0, self.props.title_height)
+    self.content:set_pos(0, content_y)
     self.content:set_size(self.props.width, content_height)
     self.content:set_style_bg_opa(0, 0)
     self.content:set_style_border_width(0, 0)
     self.content:set_style_text_color(self.props.text_color, 0)
     self.content:set_style_pad_all(5, 0)
     self.content:set_style_pad_right(10, 0)
-    -- 禁用滚动
-    self.content:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    self.content:add_flag(lv.OBJ_FLAG_SCROLLABLE)
     self.content:remove_flag(lv.OBJ_FLAG_GESTURE_BUBBLE)
     self.content:clear_layout()
 end
@@ -133,12 +332,14 @@ end
 
 -- 清空内容区域
 function PropertyArea:_clear_content_area()
-    local child_count = self.content:get_child_count()
-    for i = child_count - 1, 0, -1 do
-        local child = self.content:get_child(i)
-        if child then
-            child:delete()
-        end
+    if not self.content then
+        return
+    end
+    
+    local child = self.content:get_child(0)
+    while child do
+        child:delete()
+        child = self.content:get_child(0)
     end
 end
 
@@ -147,7 +348,11 @@ function PropertyArea:set_height(height)
     if height and height > 0 then
         self.props.height = height
         self.container:set_height(height)
-        self.content:set_height(height - self.props.title_height)
+        
+        local content_y = self.props.title_height + self.props.tab_height
+        local content_height = height - self.props.title_height - self.props.tab_height
+        self.content:set_pos(0, content_y)
+        self.content:set_height(content_height)
     end
 end
 
@@ -178,45 +383,85 @@ function PropertyArea:is_visible()
     return true
 end
 
+-- 获取当前标签页
+function PropertyArea:get_current_tab()
+    return currentTab
+end
+
+-- 切换到属性标签页
+function PropertyArea:switch_to_property_tab()
+    self:_switch_tab(TAB_TYPE.PROPERTY)
+end
+
+-- 切换到数据标签页
+function PropertyArea:switch_to_data_tab()
+    self:_switch_tab(TAB_TYPE.DATA)
+end
+
+-- 切换到事件标签页
+function PropertyArea:switch_to_event_tab()
+    self:_switch_tab(TAB_TYPE.EVENT)
+end
+
 -- 选中控件时调用
 function PropertyArea:onSelectedItem(item)
-    -- 清除图页选中状态
     selectedPage = nil
     selectedPageIndex = 0
-    -- 清除全局组件选中状态
     selectedGlobal = nil
     
     if item == nil then
         print("[属性窗口] 取消选中控件")
         selectedItems = {}
-        self:_clear_content_area()
+        if currentTab == TAB_TYPE.PROPERTY then
+            self:_refresh_current_selection()
+        elseif currentTab == TAB_TYPE.DATA then
+            self:_show_data_page()
+        else
+            self:_show_event_page()
+        end
         return
     end
     
     if type(item) == "table" and item.instance then
         selectedItems = { item }
-        PropertyWidgetEditor.display_properties(self, item)
+        if currentTab == TAB_TYPE.PROPERTY then
+            self:_refresh_current_selection()
+        elseif currentTab == TAB_TYPE.DATA then
+            self:_show_data_page()
+        else
+            self:_show_event_page()
+        end
     elseif type(item) == "table" then
         selectedItems = item
         if #item > 0 then
-            print("[属性窗口] 多个控件已选中，共 " .. #item .. " 个，显示第一个")
-            PropertyWidgetEditor.display_properties(self, item[1])
+            print("[属性窗口] 多个控件已选中，共 " .. #item .. " 个")
+            if currentTab == TAB_TYPE.PROPERTY then
+                self:_refresh_current_selection()
+            elseif currentTab == TAB_TYPE.DATA then
+                self:_show_data_page()
+            else
+                self:_show_event_page()
+            end
         end
     end
 end
 
 -- 选中图页时调用
 function PropertyArea:onSelectedPage(page_data, page_index, page_meta)
-    -- 清除控件选中状态
     selectedItems = {}
-    -- 清除全局组件选中状态
     selectedGlobal = nil
     
     if page_data == nil then
         print("[属性窗口] 取消选中图页")
         selectedPage = nil
         selectedPageIndex = 0
-        self:_clear_content_area()
+        if currentTab == TAB_TYPE.PROPERTY then
+            self:_refresh_current_selection()
+        elseif currentTab == TAB_TYPE.DATA then
+            self:_show_data_page()
+        else
+            self:_show_event_page()
+        end
         return
     end
     
@@ -224,21 +469,31 @@ function PropertyArea:onSelectedPage(page_data, page_index, page_meta)
     selectedPageIndex = page_index
     
     print("[属性窗口] 选中图页: " .. page_data.name)
-    PropertyPageEditor.display_properties(self, page_data, page_index, page_meta)
+    if currentTab == TAB_TYPE.PROPERTY then
+        self:_refresh_current_selection()
+    elseif currentTab == TAB_TYPE.DATA then
+        self:_show_data_page()
+    else
+        self:_show_event_page()
+    end
 end
 
--- 选中全局组件时调用（如状态栏）
+-- 选中全局组件时调用
 function PropertyArea:onSelectedGlobal(global_entry)
-    -- 清除控件选中状态
     selectedItems = {}
-    -- 清除图页选中状态
     selectedPage = nil
     selectedPageIndex = 0
     
     if global_entry == nil then
         print("[属性窗口] 取消选中全局组件")
         selectedGlobal = nil
-        self:_clear_content_area()
+        if currentTab == TAB_TYPE.PROPERTY then
+            self:_refresh_current_selection()
+        elseif currentTab == TAB_TYPE.DATA then
+            self:_show_data_page()
+        else
+            self:_show_event_page()
+        end
         return
     end
     
@@ -249,12 +504,28 @@ function PropertyArea:onSelectedGlobal(global_entry)
         name = global_entry.module.__widget_meta.name or global_entry.module.__widget_meta.id
     end
     print("[属性窗口] 选中全局组件: " .. name)
-    PropertyGlobalEditor.display_properties(self, global_entry)
+    if currentTab == TAB_TYPE.PROPERTY then
+        self:_refresh_current_selection()
+    elseif currentTab == TAB_TYPE.DATA then
+        self:_show_data_page()
+    else
+        self:_show_event_page()
+    end
 end
 
 -- 获取当前选中的全局组件
 function PropertyArea:get_selected_global()
     return selectedGlobal
+end
+
+-- 获取当前选中的控件
+function PropertyArea:get_selected_items()
+    return selectedItems
+end
+
+-- 获取当前选中的图页
+function PropertyArea:get_selected_page()
+    return selectedPage, selectedPageIndex
 end
 
 return PropertyArea

@@ -157,6 +157,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\editor\CanvasArea.lua" />
     <None Include="lua\editor\CanvasList.lua" />
     <None Include="lua\editor\ColorDialog.lua" />
+    <None Include="lua\editor\DataBindingManager.lua" />
     <None Include="lua\editor\FileDialog.lua" />
     <None Include="lua\editor\icons.lua" />
     <None Include="lua\editor\json.lua" />
@@ -166,13 +167,17 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\editor\ProjectCompiler.lua" />
     <None Include="lua\editor\ProjectManager.lua" />
     <None Include="lua\editor\PropertyArea.lua" />
+    <None Include="lua\editor\PropertyDataEditor.lua" />
+    <None Include="lua\editor\PropertyEvent.lua" />
     <None Include="lua\editor\PropertyEventEditor.lua" />
     <None Include="lua\editor\PropertyGlobalEditor.lua" />
     <None Include="lua\editor\PropertyInputs.lua" />
     <None Include="lua\editor\PropertyPageEditor.lua" />
     <None Include="lua\editor\PropertyWidgetEditor.lua" />
+    <None Include="lua\editor\savelua.lua" />
     <None Include="lua\general.lua" />
     <None Include="lua\print_widget_meta.lua" />
+    <None Include="lua\test_lua\websocket.lua" />
     <None Include="lua\widgets\button.lua" />
     <None Include="lua\widgets\checkbox.lua" />
     <None Include="lua\widgets\dropdown.lua" />
@@ -183,6 +188,10 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\widgets\valve.lua" />
     <None Include="projects\project.json" />
     <None Include="projects\project.lua" />
+    <None Include="projects\project20260116.json" />
+    <None Include="projects\project20260116.lua" />
+    <None Include="websocket\http.lua" />
+    <None Include="websocket\websocket.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\fa-regular-400.ttf" />

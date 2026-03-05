@@ -648,6 +648,8 @@
     <ClInclude Include="lvgl\src\widgets\win\lv_win_private.h" />
     <ClInclude Include="lvgl_lua_bindings.h" />
     <ClInclude Include="lvgl_lua_bindings_internal.h" />
+    <ClInclude Include="cJSON.h" />
+    <ClInclude Include="mongoose.h" />
     <ClInclude Include="lv_conf.h" />
   </ItemGroup>
   <ItemGroup>
@@ -1217,6 +1219,9 @@
     <ClCompile Include="lvgl_obj_lua_bindings.c" />
     <ClCompile Include="lvgl_slider_lua_bindings.c" />
     <ClCompile Include="lvgl_textarea_lua_bindings.c" />
+    <ClCompile Include="lvgl_lua_mongoose.c" /> 
+    <ClCompile Include="cJSON.c" />
+    <ClCompile Include="mongoose.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="LvglLuaBinding.def" />
