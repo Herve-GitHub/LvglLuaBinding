@@ -568,7 +568,7 @@ local function is_simulator_running()
 end
 
 -- 停止仿真
-local function stop_simulator()
+--[[local function stop_simulator()
     if not simulator_process then
         print("[仿真] 没有正在运行的仿真进程")
         return true
@@ -597,7 +597,7 @@ local function stop_simulator()
     simulator_process = nil
     print("[仿真] 仿真进程已停止")
     return true
-end
+end]]--
 
 -- 启动仿真
 local function start_simulator()
@@ -690,7 +690,19 @@ local function start_simulator()
     print("[仿真] ========== 仿真已启动 ==========")
     return true
 end
-
+--[[local function start_simulator()
+    -- 临时修复：强制设置正确的仿真器路径
+    local correct_sim_path = "C:\\Users\\86188\\Desktop\\LvgLuaBling\\git\\LvglLuaBinding\\Output\\Binaries\\Debug\\x64\\vdu_sim.exe"
+    
+    -- 构建命令（切换到正确目录执行）
+    local sim_dir = "C:\\Users\\86188\\Desktop\\LvgLuaBling\\git\\LvglLuaBinding\\Output\\Binaries\\Debug\\x64\\"
+    local cmd = 'cd /d "' .. sim_dir .. '" && vdu_sim.exe lua\\project.lua'
+    
+    print("[仿真] 执行命令: " .. cmd)
+    os.execute(cmd)
+    
+    return true
+end]]--
 -- ========== 菜单事件处理 ==========
 menu_bar:on("menu_action", function(self, menu_key, item_id)
     print("[Ribbon] 按钮点击: " .. tostring(item_id))

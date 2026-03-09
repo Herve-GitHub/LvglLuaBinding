@@ -9,10 +9,12 @@ ProjectCompiler.__index = ProjectCompiler
 -- 控件类型到模块路径的映射
 local WIDGET_TYPE_TO_MODULE = {
     ["custom_button"] = "widgets.button",
-    ["button"] = "widgets.button",
+    ["label"] = "weidgets.label",
+    ["button"] = "widgets.new_button",
     ["valve"] = "widgets.valve",
     ["trend_chart"] = "widgets.trend_chart",
     ["status_bar"] = "widgets.status_bar",
+    ["switch"] = "widgets.switch",
 }
 
 -- 控件类型对应的事件列表
@@ -42,6 +44,7 @@ local EVENT_DEFAULT_PARAMS = {
 -- actions 模块列表（需要引入到生成代码中）
 local ACTION_MODULES = {
     "actions.page_navigation",
+    "editor.DataAction"
 }
 
 -- 构造函数
@@ -643,7 +646,7 @@ function ProjectCompiler:compile_and_save(project_data, output_filepath)
     if dir then
         local cmd = 'if not exist "' .. dir .. '" mkdir "' .. dir .. '"'
         os.execute(cmd)
-    end
+    end 
     
     -- 写入输出文件
     local out_file, out_err = io.open(output_filepath, "w")

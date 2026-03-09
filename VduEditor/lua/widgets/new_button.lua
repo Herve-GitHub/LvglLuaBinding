@@ -1,0 +1,288 @@
+﻿-- Button.lua - 修改版
+-- 带元数据的按钮示例，添加数据配置支持
+local lv = require("lvgl")
+local gen = require("general")
+local DataAction = require("editor.DataAction")  -- 添加这行
+
+local Button = {}
+
+Button.__widget_meta = {
+  id = "custom_button",
+  name = "Custom Button",
+  description = "示例按钮，包含数据绑定和事件配置",
+  schema_version = "1.0",
+  version = "1.0",
+  properties = {
+    -- 实例名称（用于编译时变量命名）
+    { name = "instance_name", type = "string", default = "", label = "实例名称",
+      description = "用于编译时的变量名，留空则自动生成" },
+    { name = "label", type = "string", default = "OK", label = "文本" },
+    { name = "x", type = "number", default = 0, label = "X" },
+    { name = "y", type = "number", default = 0, label = "Y" },
+    { name = "width", type = "number", default = 100, label = "宽度" },
+    { name = "height", type = "number", default = 40, label = "高度" },
+    { name = "color", type = "color", default = "#ffffff", label = "文本颜色" },
+    { name = "font_size", type = "number", default = 16, label = "字体大小" },
+    { name = "alignment", type = "string", default = "center", label = "对齐方式" },
+    { name = "bg_color", type = "color", default = "#007acc", label = "背景色" },
+    { name = "enabled", type = "boolean", default = true, label = "启用" },
+    { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
+    
+    -- 数据配置 - 这些属性会被数据编辑器修改
+    { name = "bind_point", type = "string", default = "", label = "绑定数据点",
+      description = "例如: Device1.E, PLC1.D100" },
+    { name = "websocket_url", type = "string", default = "", label = "WebSocket",
+      description = "例如: ws://192.168.1.100:8080" },
+    { name = "http_data_type", type = "enum", default = "实时数据", 
+      options = {"实时数据", "历史数据", "批量数据", "告警数据", "统计数据"},
+      label = "HTTP" },
+    { name = "http_url", type = "string", default = "", label = "HTTP URL",
+      description = "例如: http://192.168.1.100/api/data" },
+    { name = "http_token", type = "string", default = "", label = "HTTP Token",
+      description = "认证令牌" },
+    
+    -- 事件配置 - 这些属性会被事件编辑器修改
+    { name = "event_action", type = "enum", default = "写入绑定数据点",
+      options = {"写入绑定数据点", "读取绑定数据点", "切换绑定数据点", 
+                 "写入自定义地址", "读取自定义地址", "连接WebSocket", "发送HTTP请求"},
+      label = "事件动作", description = "点击时执行的动作" },
+    { name = "custom_address", type = "string", default = "", label = "自定义地址",
+      description = "写入/读取自定义地址时使用" },
+    { name = "custom_value", type = "string", default = "1", label = "写入值",
+      description = "写入自定义地址时的值" },
+    
+    -- 原始代码事件处理（保持兼容）
+    { name = "on_clicked_handler", type = "code", default = "", label = "点击处理代码",
+      event = "clicked", description = "点击按钮时执行的Lua代码" },
+    { name = "on_single_clicked_handler", type = "code", default = "", label = "单击处理代码",
+      event = "single_clicked", description = "单击按钮时执行的Lua代码" },
+    { name = "on_double_clicked_handler", type = "code", default = "", label = "双击处理代码",
+      event = "double_clicked", description = "双击按钮时执行的Lua代码" },
+  },
+  events = { "clicked", "single_clicked", "double_clicked" },
+}
+
+-- 辅助函数：解析颜色
+local function parse_color(c)
+    if type(c) == "string" and c:match("^#%x%x%x%x%x%x$") then
+        return tonumber(c:sub(2), 16)
+    elseif type(c) == "number" then
+        return c
+    end
+    return 0xffffff
+end
+
+-- 应用样式（新增函数）
+local function apply_styles(self)
+    -- 背景色
+    local bg_color = parse_color(self.props.bg_color or "#007acc")
+    if self.btn and self.btn.set_style_bg_color then
+        if self.props.enabled then
+            self.btn:set_style_bg_color(bg_color, 0)
+        else
+            self.btn:set_style_bg_color(0x888888, 0)
+        end
+    end
+    
+    -- 文本颜色
+    local text_color = parse_color(self.props.color or "#ffffff")
+    if self.label and self.label.set_style_text_color then
+        self.label:set_style_text_color(text_color, 0)
+    end
+end
+
+-- new(parent, state)
+function Button.new(parent, state)
+    state = state or {}
+    local self = {}
+
+    -- 初始化属性
+    self.props = {}
+    for _, p in ipairs(Button.__widget_meta.properties) do
+        if state[p.name] ~= nil then
+            self.props[p.name] = state[p.name]
+        else
+            self.props[p.name] = p.default
+        end
+    end
+    
+    -- 创建 lv 按钮与标签
+    self.btn = lv.button_create(parent)
+    self.btn:set_size(self.props.width, self.props.height)
+    self.btn:set_pos(self.props.x, self.props.y)
+
+    self.label = lv.label_create(self.btn)
+    self.label:set_text(self.props.label)
+    self.label:center()
+    
+    -- 应用样式
+    apply_styles(self)
+    
+    -- 保存回调
+    self._callbacks = {}
+    
+    -- 事件订阅：统一接口 on(event_name, callback)
+    function self.on(self, event_name, callback)
+        local function create_safe_callback()
+            return function(e)
+                if not self.props.enabled then return end
+                if self.props.design_mode then 
+                    print("[Button] 设计模式，忽略事件")
+                    return 
+                end
+                local ok, err = pcall(callback, self, e)
+                if not ok then 
+                    print("[button] callback error:", err) 
+                end
+            end
+        end
+
+        -- 处理普通点击 (Clicked)
+        if event_name == "clicked" then
+            local evt_cb = create_safe_callback()
+            self._callbacks.clicked = evt_cb
+            
+            local ev_code = lv.EVENT_CLICKED
+            if self.btn.add_event_cb then
+                self.btn:add_event_cb(evt_cb, ev_code, nil)
+            elseif lv.obj_add_event_cb then
+                lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
+            end
+        end
+
+        -- 处理单次点击
+        if event_name == "single_clicked" then
+            local evt_cb = create_safe_callback()
+            self._callbacks.single_clicked = evt_cb
+            
+            local ev_code = lv.EVENT_SINGLE_CLICKED
+            if self.btn.add_event_cb then
+                self.btn:add_event_cb(evt_cb, ev_code, nil)
+            elseif lv.obj_add_event_cb then
+                lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
+            end
+        end
+
+        -- 处理双击事件
+        if event_name == "double_clicked" then
+            local evt_cb = create_safe_callback()
+            self._callbacks.double_clicked = evt_cb
+            
+            local ev_code = lv.EVENT_DOUBLE_CLICKED
+            if self.btn.add_event_cb then
+                self.btn:add_event_cb(evt_cb, ev_code, nil)
+            elseif lv.obj_add_event_cb then
+                lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
+            end
+        end
+    end
+
+    function self.get_property(self, name)
+        return self.props[name]
+    end
+
+    function self.set_property(self, name, value)
+        local old_value = self.props[name]
+        self.props[name] = value
+        
+        -- 处理UI属性变化
+        if name == "label" then
+            if self.label and self.label.set_text then
+                self.label:set_text(value)
+            end
+        elseif name == "color" or name == "bg_color" or name == "enabled" then
+            apply_styles(self)
+        elseif name == "x" or name == "y" then
+            self.btn:set_pos(self.props.x, self.props.y)
+        elseif name == "width" or name == "height" then
+            self.btn:set_size(self.props.width, self.props.height)
+        end
+        
+        -- 如果事件动作发生变化，可以重新绑定默认行为
+        if name == "event_action" and value ~= old_value then
+            print("[Button] 事件动作更新为: " .. tostring(value))
+            -- 如果不是设计模式，重新绑定事件
+            if not self.props.design_mode then
+                self:_bind_event()
+            end
+        end
+        
+        return true
+    end
+
+    function self.get_properties(self)
+        local out = {}
+        for k, v in pairs(self.props) do out[k] = v end
+        return out
+    end
+
+    function self.apply_properties(self, props_table)
+        for k, v in pairs(props_table) do
+            self:set_property(k, v)
+        end
+        return true
+    end
+
+    function self.to_state(self)
+        return self:get_properties()
+    end
+
+    -- 获取控件ID（用于DataAction注册）
+    function self.get_id(self)
+        if self.props.instance_name and self.props.instance_name ~= "" then
+            return self.props.instance_name
+        end
+        return tostring(self)
+    end
+    
+    -- 绑定事件（内部使用）- 修改为与简化版DataAction兼容
+    function self._bind_event(self)
+        local event_action = self.props.event_action
+        local bind_point = self.props.bind_point
+        local value = self.props.custom_value or "1"
+        local url = self.props.websocket_url
+        
+        -- 根据事件类型创建对应的回调
+        if event_action == "写入绑定数据点" and bind_point and bind_point ~= "" then
+            -- 使用简化版的 create_callback
+            local callback = DataAction.create_callback(event_action, {
+                bind_point = bind_point,
+                value = value
+            })
+            
+            if callback then
+                self:on("clicked", callback)
+                print("[Button] 已绑定写入事件: " .. bind_point .. " = " .. value)
+            end
+        elseif event_action == "读取绑定数据点" and bind_point and bind_point ~= "" then
+            local callback = DataAction.create_callback(event_action, {
+                bind_point = bind_point
+            })
+            
+            if callback then
+                self:on("clicked", callback)
+                print("[Button] 已绑定读取事件: " .. bind_point)
+            end
+        elseif event_action == "连接WebSocket" and url and url ~= "" then
+            local callback = DataAction.create_callback(event_action, {
+                url = url
+            })
+            
+            if callback then
+                self:on("clicked", callback)
+                print("[Button] 已绑定连接事件: " .. url)
+            end
+        else
+            print("[Button] 未绑定事件: 条件不满足")
+        end
+    end
+
+    -- 自动绑定事件（如果不是设计模式）
+    if not self.props.design_mode then
+        self:_bind_event()
+    end
+
+    return self
+end
+
+return Button

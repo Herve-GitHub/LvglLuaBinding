@@ -7,7 +7,7 @@ local PropertyPageEditor = require("editor.PropertyPageEditor")
 local PropertyWidgetEditor = require("editor.PropertyWidgetEditor")
 local PropertyGlobalEditor = require("editor.PropertyGlobalEditor")
 local PropertyDataEditor = require("editor.PropertyDataEditor")
-local PropertyEventEditor = require("editor.PropertyEventEditor")
+local PropertyEvent = require("editor.PropertyEvent")
 
 local PropertyArea = {}
 PropertyArea.__index = PropertyArea
@@ -269,9 +269,9 @@ function PropertyArea:_show_event_page()
     
     if #selectedItems > 0 then
         -- 如果有选中的控件，显示事件编辑器
-        if PropertyEventEditor and PropertyEventEditor.create_events_table then
+        if PropertyEvent and PropertyEvent.display then
             local meta = selectedItems[1].meta or {}
-            PropertyEventEditor.create_events_table(self, 10, selectedItems[1], meta)
+            PropertyEvent.create_events_table(self, 10, selectedItems[1], meta)
         else
             local placeholder = lv.label_create(self.content)
             placeholder:set_text("事件绑定页面\n\n正在开发中...")
@@ -479,40 +479,32 @@ function PropertyArea:onSelectedPage(page_data, page_index, page_meta)
 end
 
 -- 选中全局组件时调用
-function PropertyArea:onSelectedGlobal(global_entry)
-    selectedItems = {}
-    selectedPage = nil
-    selectedPageIndex = 0
+-- 显示事件页面
+function PropertyArea:_show_event_page()
+    self:_clear_content_area()
     
-    if global_entry == nil then
-        print("[属性窗口] 取消选中全局组件")
-        selectedGlobal = nil
-        if currentTab == TAB_TYPE.PROPERTY then
-            self:_refresh_current_selection()
-        elseif currentTab == TAB_TYPE.DATA then
-            self:_show_data_page()
+    if #selectedItems > 0 then
+        -- 如果有选中的控件，显示事件编辑器
+        if PropertyEvent and PropertyEvent.display then
+            PropertyEvent.display(self)  -- 调用 display 方法，传入 property_area 实例
         else
-            self:_show_event_page()
+            local placeholder = lv.label_create(self.content)
+            placeholder:set_text("事件绑定页面\n\n正在开发中...")
+            placeholder:set_style_text_color(self.props.text_color, 0)
+            placeholder:set_long_mode(lv.LABEL_LONG_WRAP)
+            placeholder:set_width(self.props.width - 20)
+            placeholder:align(lv.ALIGN_TOP_MID, 0, 50)
         end
-        return
-    end
-    
-    selectedGlobal = global_entry
-    
-    local name = "未知"
-    if global_entry.module and global_entry.module.__widget_meta then
-        name = global_entry.module.__widget_meta.name or global_entry.module.__widget_meta.id
-    end
-    print("[属性窗口] 选中全局组件: " .. name)
-    if currentTab == TAB_TYPE.PROPERTY then
-        self:_refresh_current_selection()
-    elseif currentTab == TAB_TYPE.DATA then
-        self:_show_data_page()
     else
-        self:_show_event_page()
+        -- 如果没有选中控件，显示提示
+        local placeholder = lv.label_create(self.content)
+        placeholder:set_text("请先选择一个控件\n\n然后在事件页面配置该控件的事件绑定")
+        placeholder:set_style_text_color(self.props.text_inactive_color, 0)
+        placeholder:set_long_mode(lv.LABEL_LONG_WRAP)
+        placeholder:set_width(self.props.width - 20)
+        placeholder:align(lv.ALIGN_TOP_MID, 0, 50)
     end
 end
-
 -- 获取当前选中的全局组件
 function PropertyArea:get_selected_global()
     return selectedGlobal

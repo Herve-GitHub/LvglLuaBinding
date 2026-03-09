@@ -146,9 +146,11 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="VduEditor.cpp" />
+    <ClCompile Include="websocket\test_websocket.lua" />
   </ItemGroup>
   <ItemGroup>
     <None Include="lua\actions\page_navigation.lua" />
+    <None Include="lua\actions\DataOperation.lua" />
     <None Include="lua\editor\clipboard.lua" />
     <None Include="lua\demo_button.lua" />
     <None Include="lua\demo_trend_chart.lua" />
@@ -157,7 +159,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\editor\CanvasArea.lua" />
     <None Include="lua\editor\CanvasList.lua" />
     <None Include="lua\editor\ColorDialog.lua" />
-    <None Include="lua\editor\DataBindingManager.lua" />
+    <None Include="lua\editor\DataAction.lua" />
     <None Include="lua\editor\FileDialog.lua" />
     <None Include="lua\editor\icons.lua" />
     <None Include="lua\editor\json.lua" />
@@ -182,8 +184,11 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\widgets\checkbox.lua" />
     <None Include="lua\widgets\dropdown.lua" />
     <None Include="lua\widgets\label.lua" />
+    <None Include="lua\widgets\new_button.lua" />
+    <None Include="lua\widgets\image.lua" />
     <None Include="lua\widgets\slider.lua" />
     <None Include="lua\widgets\status_bar.lua" />
+    <None Include="lua\widgets\switch.lua" />
     <None Include="lua\widgets\trend_chart.lua" />
     <None Include="lua\widgets\valve.lua" />
     <None Include="projects\project.json" />
@@ -191,6 +196,8 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="projects\project20260116.json" />
     <None Include="projects\project20260116.lua" />
     <None Include="websocket\http.lua" />
+    <None Include="websocket\picture.lua" />
+    <None Include="websocket\test.lua" />
     <None Include="websocket\websocket.lua" />
   </ItemGroup>
   <ItemGroup>

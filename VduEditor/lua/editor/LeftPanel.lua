@@ -30,7 +30,7 @@ LeftPanel.__page_meta = {
 
 -- 默认工具列表
 LeftPanel.DEFAULT_TOOLS = {
-    { id = "button", name = "按钮", icon = "BTN", module_path = "widgets.button" },
+    { id = "button", name = "按钮", icon = "BTN", module_path = "widgets.new_button" },
     { id = "label", name = "标签", icon = "LBL", module_path = "widgets.label" },
     { id = "checkbox", name = "复选框", icon = "CHK", module_path = "widgets.checkbox" },
     { id = "dropdown", name = "下拉框", icon = "DDL", module_path = "widgets.dropdown" },
@@ -38,6 +38,8 @@ LeftPanel.DEFAULT_TOOLS = {
     { id = "valve", name = "阀门", icon = "VLV", module_path = "widgets.valve" },
     { id = "trend_chart", name = "趋势图", icon = "CHT", module_path = "widgets.trend_chart" },
     { id = "status_bar", name = "状态栏", icon = "STA", module_path = "widgets.status_bar" },
+    { id = "switch", name = "开关", icon = "SWT", module_path = "widgets.switch" },
+    { id = "image", name = "图像", icon = "IMG", module_path = "widgets.image" },
 }
 
 -- 构造函数

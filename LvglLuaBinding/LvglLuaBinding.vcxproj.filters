@@ -1908,6 +1908,12 @@
     <ClInclude Include="lvgl_lua_bindings_internal.h">
       <Filter>lvglluabinding</Filter>
     </ClInclude>
+    <ClInclude Include="cJSON.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mongoose.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lua\lapi.c">
@@ -3607,6 +3613,18 @@
     </ClCompile>
     <ClCompile Include="lvgl_textarea_lua_bindings.c">
       <Filter>lvglluabinding</Filter>
+    </ClCompile>
+    <ClCompile Include="lvgl_lua_mongoose.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="cJSON.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mongoose.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="lvgl_picture_lua_bingdings.c">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
