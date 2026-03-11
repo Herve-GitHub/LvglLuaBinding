@@ -11,7 +11,7 @@ extern "C" {
 }
 // 窗口尺寸
 static const int WINDOW_WIDTH = 1280;
-static const int WINDOW_HEIGHT = 960;
+static const int WINDOW_HEIGHT = 960;//960
 
 // 默认脚本路径（相对于可执行文件目录）
 //static const char* DEFAULT_SCRIPT_PATH = "websocket\\picture.lua";  // 修改为 websocket 测试脚本

@@ -1,7 +1,7 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-03-09 08:59:43
+-- 生成时间: 2026-03-10 16:02:20
 -- 工程版本: 1.0
 -- ==============================================
 
@@ -13,6 +13,7 @@ local widgets_new_button = require("widgets.new_button")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
+local editor_DataAction = require("editor.DataAction")
 
 -- 获取活动屏幕
 local scr = lv.scr_act()
@@ -39,33 +40,33 @@ local function create_page_1(parent)
 
     -- 控件 1: custom_button
     local widget_1 = widgets_new_button.new(container, {
-        bind_point = "user.tag0001",
-        event_action = "写入绑定数据点",
-        http_data_type = "实时数据",
-        font_size = 16,
-        on_single_clicked_handler = "",
-        bg_color = "#007acc",
-        height = 40,
-        http_url = "",
-        http_token = "",
-        x = 262,
         color = "#ffffff",
-        y = 132,
-        enabled = true,
-        on_clicked_handler = "",
-        design_mode = false,
-        width = 100,
-        instance_name = "",
-        websocket_url = "ws://192.168.0.60:8085/ws/",
-        custom_value = "42",
-        on_double_clicked_handler = "",
-        label = "OK",
-        custom_address = "",
-        alignment = "center",
         event_config = {
-            event_type = "写入绑定数据点",
-            action_type = "write_bind_point"
-        }
+            event_type = "读取绑定数据点",
+            action_type = "read_bind_point"
+        },
+        websocket_url = "ws://192.168.0.60:8085/ws/",
+        height = 40,
+        on_clicked_handler = "",
+        alignment = "center",
+        bind_point = "user.tag0001",
+        custom_address = "",
+        font_size = 16,
+        event_action = "读取绑定数据点",
+        y = 156,
+        x = 314,
+        enabled = true,
+        http_url = "",
+        http_data_type = "实时数据",
+        design_mode = false,
+        http_token = "",
+        custom_value = "",
+        bg_color = "#007acc",
+        width = 100,
+        label = "OK",
+        instance_name = "",
+        on_single_clicked_handler = "",
+        on_double_clicked_handler = ""
     })
 
     return container

@@ -22,8 +22,8 @@ function CanvasArea.new(parent, props)
     self.props = {
         x = props.x or 0,
         y = props.y or 40,
-        width = props.width or 800,
-        height = props.height or 600,
+        width = props.width or 800,--800
+        height = props.height or 600,--600
         bg_color = props.bg_color or 0x1E1E1E,
         grid_color = props.grid_color or 0x2A2A2A,
         grid_size = props.grid_size or 20,

@@ -2,7 +2,7 @@
 -- 带元数据的按钮示例，添加数据配置支持
 local lv = require("lvgl")
 local gen = require("general")
-local DataAction = require("editor.DataAction")  -- 添加这行
+local DataAction = require("editor.DataAction")
 
 local Button = {}
 
@@ -48,7 +48,7 @@ Button.__widget_meta = {
       label = "事件动作", description = "点击时执行的动作" },
     { name = "custom_address", type = "string", default = "", label = "自定义地址",
       description = "写入/读取自定义地址时使用" },
-    { name = "custom_value", type = "string", default = "1", label = "写入值",
+    { name = "custom_value", type = "string", default = "", label = "写入值",
       description = "写入自定义地址时的值" },
     
     -- 原始代码事件处理（保持兼容）
@@ -72,7 +72,7 @@ local function parse_color(c)
     return 0xffffff
 end
 
--- 应用样式（新增函数）
+-- 应用样式
 local function apply_styles(self)
     -- 背景色
     local bg_color = parse_color(self.props.bg_color or "#007acc")
@@ -121,7 +121,9 @@ function Button.new(parent, state)
     -- 保存回调
     self._callbacks = {}
     
-    -- 事件订阅：统一接口 on(event_name, callback)
+    -- ===== 必须实现的标准接口 =====
+    
+    -- on: 事件订阅
     function self.on(self, event_name, callback)
         local function create_safe_callback()
             return function(e)
@@ -137,55 +139,45 @@ function Button.new(parent, state)
             end
         end
 
-        -- 处理普通点击 (Clicked)
         if event_name == "clicked" then
             local evt_cb = create_safe_callback()
             self._callbacks.clicked = evt_cb
-            
             local ev_code = lv.EVENT_CLICKED
             if self.btn.add_event_cb then
                 self.btn:add_event_cb(evt_cb, ev_code, nil)
-            elseif lv.obj_add_event_cb then
-                lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
             end
-        end
-
-        -- 处理单次点击
-        if event_name == "single_clicked" then
+        elseif event_name == "single_clicked" then
             local evt_cb = create_safe_callback()
             self._callbacks.single_clicked = evt_cb
-            
             local ev_code = lv.EVENT_SINGLE_CLICKED
             if self.btn.add_event_cb then
                 self.btn:add_event_cb(evt_cb, ev_code, nil)
-            elseif lv.obj_add_event_cb then
-                lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
             end
-        end
-
-        -- 处理双击事件
-        if event_name == "double_clicked" then
+        elseif event_name == "double_clicked" then
             local evt_cb = create_safe_callback()
             self._callbacks.double_clicked = evt_cb
-            
             local ev_code = lv.EVENT_DOUBLE_CLICKED
             if self.btn.add_event_cb then
                 self.btn:add_event_cb(evt_cb, ev_code, nil)
-            elseif lv.obj_add_event_cb then
-                lv.obj_add_event_cb(self.btn, evt_cb, ev_code, nil)
             end
         end
     end
-
+    
+    -- get_container: 获取LVGL容器对象
+    function self.get_container(self)
+        return self.btn
+    end
+    
+    -- get_property: 获取属性值
     function self.get_property(self, name)
         return self.props[name]
     end
-
+    
+    -- set_property: 设置属性值
     function self.set_property(self, name, value)
         local old_value = self.props[name]
         self.props[name] = value
         
-        -- 处理UI属性变化
         if name == "label" then
             if self.label and self.label.set_text then
                 self.label:set_text(value)
@@ -196,12 +188,8 @@ function Button.new(parent, state)
             self.btn:set_pos(self.props.x, self.props.y)
         elseif name == "width" or name == "height" then
             self.btn:set_size(self.props.width, self.props.height)
-        end
-        
-        -- 如果事件动作发生变化，可以重新绑定默认行为
-        if name == "event_action" and value ~= old_value then
+        elseif name == "event_action" and value ~= old_value then
             print("[Button] 事件动作更新为: " .. tostring(value))
-            -- 如果不是设计模式，重新绑定事件
             if not self.props.design_mode then
                 self:_bind_event()
             end
@@ -209,25 +197,28 @@ function Button.new(parent, state)
         
         return true
     end
-
+    
+    -- get_properties: 获取所有属性
     function self.get_properties(self)
         local out = {}
         for k, v in pairs(self.props) do out[k] = v end
         return out
     end
-
+    
+    -- apply_properties: 批量应用属性
     function self.apply_properties(self, props_table)
         for k, v in pairs(props_table) do
             self:set_property(k, v)
         end
         return true
     end
-
+    
+    -- to_state: 导出状态
     function self.to_state(self)
         return self:get_properties()
     end
-
-    -- 获取控件ID（用于DataAction注册）
+    
+    -- get_id: 获取控件ID
     function self.get_id(self)
         if self.props.instance_name and self.props.instance_name ~= "" then
             return self.props.instance_name
@@ -235,39 +226,48 @@ function Button.new(parent, state)
         return tostring(self)
     end
     
-    -- 绑定事件（内部使用）- 修改为与简化版DataAction兼容
+    -- 设置标签的便捷方法
+    function self.set_label(self, new_text)
+        if self.label and self.label.set_text then
+            self.label:set_text(new_text)
+            self.props.label = new_text
+            print("[Button] 标签已更新: " .. new_text)
+        end
+    end
+    
+    -- 绑定事件（内部使用）
     function self._bind_event(self)
         local event_action = self.props.event_action
         local bind_point = self.props.bind_point
         local value = self.props.custom_value or "1"
         local url = self.props.websocket_url
         
-        -- 根据事件类型创建对应的回调
         if event_action == "写入绑定数据点" and bind_point and bind_point ~= "" then
-            -- 使用简化版的 create_callback
             local callback = DataAction.create_callback(event_action, {
                 bind_point = bind_point,
-                value = value
+                value = value,
+                websocket_url = url,
+                button = self
             })
-            
             if callback then
                 self:on("clicked", callback)
                 print("[Button] 已绑定写入事件: " .. bind_point .. " = " .. value)
             end
         elseif event_action == "读取绑定数据点" and bind_point and bind_point ~= "" then
             local callback = DataAction.create_callback(event_action, {
-                bind_point = bind_point
+                bind_point = bind_point,
+                websocket_url = url,
+                button = self
             })
-            
             if callback then
                 self:on("clicked", callback)
                 print("[Button] 已绑定读取事件: " .. bind_point)
             end
         elseif event_action == "连接WebSocket" and url and url ~= "" then
             local callback = DataAction.create_callback(event_action, {
-                url = url
+                websocket_url = url,
+                button = self
             })
-            
             if callback then
                 self:on("clicked", callback)
                 print("[Button] 已绑定连接事件: " .. url)

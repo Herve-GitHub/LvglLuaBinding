@@ -113,6 +113,7 @@
     <None Include="lua\widgets\switch.lua" />
     <None Include="websocket\picture.lua" />
     <None Include="lua\widgets\image.lua" />
+    <None Include="lua\widgets\new_label.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

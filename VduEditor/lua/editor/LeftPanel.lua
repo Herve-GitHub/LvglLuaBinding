@@ -31,7 +31,7 @@ LeftPanel.__page_meta = {
 -- 默认工具列表
 LeftPanel.DEFAULT_TOOLS = {
     { id = "button", name = "按钮", icon = "BTN", module_path = "widgets.new_button" },
-    { id = "label", name = "标签", icon = "LBL", module_path = "widgets.label" },
+    { id = "label", name = "标签", icon = "LBL", module_path = "widgets.new_label" },
     { id = "checkbox", name = "复选框", icon = "CHK", module_path = "widgets.checkbox" },
     { id = "dropdown", name = "下拉框", icon = "DDL", module_path = "widgets.dropdown" },
     { id = "slider", name = "滑块", icon = "SLD", module_path = "widgets.slider" },
