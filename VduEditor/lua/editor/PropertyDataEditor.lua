@@ -46,7 +46,7 @@ function PropertyDataEditor.display(property_area)
     -- 获取当前配置
     local bind_point = instance:get_property("bind_point") or ""
     local websocket_url = instance:get_property("websocket_url") or ""
-    local custom_value = instance:get_property("custom_value") or "1"
+    local custom_value = instance:get_property("custom_value") or ""
     
     -- ===== WebSocket URL =====
     local url_label = lv.label_create(content)

@@ -149,8 +149,10 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <ClCompile Include="websocket\test_websocket.lua" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="lua\actions\LabelAction.lua" />
     <None Include="lua\actions\page_navigation.lua" />
     <None Include="lua\actions\DataOperation.lua" />
+    <None Include="lua\actions\SitwchAction.lua" />
     <None Include="lua\editor\clipboard.lua" />
     <None Include="lua\demo_button.lua" />
     <None Include="lua\demo_trend_chart.lua" />

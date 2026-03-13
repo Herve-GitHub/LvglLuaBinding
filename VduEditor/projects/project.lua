@@ -1,19 +1,25 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-03-10 16:02:20
+-- 生成时间: 2026-03-13 09:37:29
 -- 工程版本: 1.0
 -- ==============================================
+
+-- 启动网络服务
+lvgl.start_network_service(100)
+lvgl.connect("ws://192.168.0.60:8085/ws/", 3000)
 
 -- 引用 LVGL
 local lv = require("lvgl")
 
 -- 引用控件模块
-local widgets_new_button = require("widgets.new_button")
+local widgets_new_label = require("widgets.new_label")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
 local editor_DataAction = require("editor.DataAction")
+local actions_LabelAction = require("actions.LabelAction")
+local actions_SitwchAction = require("actions.SitwchAction")
 
 -- 获取活动屏幕
 local scr = lv.scr_act()
@@ -38,35 +44,31 @@ local function create_page_1(parent)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
 
-    -- 控件 1: custom_button
-    local widget_1 = widgets_new_button.new(container, {
-        color = "#ffffff",
-        event_config = {
-            event_type = "读取绑定数据点",
-            action_type = "read_bind_point"
-        },
-        websocket_url = "ws://192.168.0.60:8085/ws/",
-        height = 40,
-        on_clicked_handler = "",
-        alignment = "center",
+    -- 控件 1: label
+    local widget_1 = widgets_new_label.new(container, {
+        bg_opa = 0,
         bind_point = "user.tag0001",
+        alignment = "left",
+        height = 30,
+        text_color = "#FFFFFF",
+        http_token = "",
+        y = 143,
+        bg_color = "#00000000",
+        x = 272,
+        text = "Label",
+        design_mode = false,
         custom_address = "",
         font_size = 16,
-        event_action = "读取绑定数据点",
-        y = 156,
-        x = 314,
-        enabled = true,
-        http_url = "",
-        http_data_type = "实时数据",
-        design_mode = false,
-        http_token = "",
-        custom_value = "",
-        bg_color = "#007acc",
         width = 100,
-        label = "OK",
+        visible = true,
         instance_name = "",
-        on_single_clicked_handler = "",
-        on_double_clicked_handler = ""
+        http_data_type = "实时数据",
+        custom_value = "",
+        event_action = "读取绑定数据点",
+        on_clicked_handler = "",
+        http_url = "",
+        long_mode = "wrap",
+        websocket_url = "ws://192.168.0.60:8085/ws/"
     })
 
     return container

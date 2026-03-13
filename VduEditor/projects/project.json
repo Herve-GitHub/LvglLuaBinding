@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-03-10 16:02:20",
+  "created_at": "2026-03-13 09:37:29",
   "current_page_index": 1,
-  "modified_at": "2026-03-10 16:02:20",
+  "modified_at": "2026-03-13 09:37:29",
   "pages": [
     {
       "bg_color": "#1E1E1E",
@@ -10,37 +10,33 @@
       "name": "图页 1",
       "widgets": [
         {
-          "module_path": "widgets.new_button",
+          "module_path": "widgets.new_label",
           "props": {
-            "alignment": "center",
-            "bg_color": "#007acc",
+            "alignment": "left",
+            "bg_color": "#00000000",
+            "bg_opa": 0,
             "bind_point": "user.tag0001",
-            "color": "#ffffff",
             "custom_address": "",
             "custom_value": "",
             "design_mode": true,
-            "enabled": true,
             "event_action": "读取绑定数据点",
-            "event_config": {
-              "action_type": "read_bind_point",
-              "event_type": "读取绑定数据点"
-            },
             "font_size": 16,
-            "height": 40,
+            "height": 30,
             "http_data_type": "实时数据",
             "http_token": "",
             "http_url": "",
             "instance_name": "",
-            "label": "OK",
+            "long_mode": "wrap",
             "on_clicked_handler": "",
-            "on_double_clicked_handler": "",
-            "on_single_clicked_handler": "",
+            "text": "Label",
+            "text_color": "#FFFFFF",
+            "visible": true,
             "websocket_url": "ws://192.168.0.60:8085/ws/",
             "width": 100,
-            "x": 314,
-            "y": 156
+            "x": 272,
+            "y": 143
           },
-          "type": "custom_button"
+          "type": "label"
         }
       ],
       "width": 800

@@ -28,7 +28,7 @@ Button.__widget_meta = {
     { name = "enabled", type = "boolean", default = true, label = "启用" },
     { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
     
-    -- 数据配置 - 这些属性会被数据编辑器修改
+   -- 数据配置 - 这些属性会被数据编辑器修改
     { name = "bind_point", type = "string", default = "", label = "绑定数据点",
       description = "例如: Device1.E, PLC1.D100" },
     { name = "websocket_url", type = "string", default = "", label = "WebSocket",
@@ -43,8 +43,8 @@ Button.__widget_meta = {
     
     -- 事件配置 - 这些属性会被事件编辑器修改
     { name = "event_action", type = "enum", default = "写入绑定数据点",
-      options = {"写入绑定数据点", "读取绑定数据点", "切换绑定数据点", 
-                 "写入自定义地址", "读取自定义地址", "连接WebSocket", "发送HTTP请求"},
+      options = {"写入绑定数据点", "读取绑定数据点", "读写数据点",  -- 将"连接WebSocket"改为"读写数据点"
+                 "写入自定义地址", "读取自定义地址", "发送HTTP请求"},
       label = "事件动作", description = "点击时执行的动作" },
     { name = "custom_address", type = "string", default = "", label = "自定义地址",
       description = "写入/读取自定义地址时使用" },
@@ -236,46 +236,101 @@ function Button.new(parent, state)
     end
     
     -- 绑定事件（内部使用）
-    function self._bind_event(self)
-        local event_action = self.props.event_action
-        local bind_point = self.props.bind_point
-        local value = self.props.custom_value or "1"
-        local url = self.props.websocket_url
+  -- 绑定事件（内部使用）
+function self._bind_event(self)
+    local event_action = self.props.event_action
+    local bind_point = self.props.bind_point
+    local value = self.props.custom_value or "1"
+    local url = self.props.websocket_url
+    
+    -- 先清除旧的回调
+    if self._callbacks.clicked then
+        -- 注意：这里无法直接移除事件回调，需要更复杂的处理
+        -- 简单起见，我们假设每次绑定前都是干净的
+    end
+    
+    if event_action == "写入绑定数据点" and bind_point and bind_point ~= "" then
+        local callback = DataAction.create_callback(event_action, {
+            bind_point = bind_point,
+            value = value,
+            websocket_url = url,
+            button = self
+        })
+        if callback then
+            self:on("clicked", callback)
+            print("[Button] 已绑定写入事件: " .. bind_point .. " = " .. value)
+        end
         
-        if event_action == "写入绑定数据点" and bind_point and bind_point ~= "" then
-            local callback = DataAction.create_callback(event_action, {
-                bind_point = bind_point,
-                value = value,
-                websocket_url = url,
-                button = self
-            })
-            if callback then
-                self:on("clicked", callback)
-                print("[Button] 已绑定写入事件: " .. bind_point .. " = " .. value)
+    elseif event_action == "读取绑定数据点" and bind_point and bind_point ~= "" then
+    
+    local callback = DataAction.create_callback(event_action, {
+        bind_point = bind_point,
+        websocket_url = url,
+        button = self
+    })
+    
+    if callback then
+        print("[Button] 设置自动读取: " .. bind_point)
+        
+        -- 添加执行标志
+        local executed = false
+        
+        lvgl.timer_create(function()
+            -- 如果已经执行过，直接返回
+            if executed then
+              --  print("[定时器] 已经执行过，忽略")
+                return
             end
-        elseif event_action == "读取绑定数据点" and bind_point and bind_point ~= "" then
-            local callback = DataAction.create_callback(event_action, {
-                bind_point = bind_point,
-                websocket_url = url,
-                button = self
-            })
-            if callback then
-                self:on("clicked", callback)
-                print("[Button] 已绑定读取事件: " .. bind_point)
+            
+            executed = true
+            print("[定时器] 第1次执行")
+            callback()
+        end, 500, nil)
+    end
+        
+    elseif event_action == "读写数据点" and bind_point and bind_point ~= "" then
+        -- 先初始化读写模式（注册按钮，开始接收数据）
+         local init_callback = DataAction.create_callback(event_action, {
+            bind_point = bind_point,
+            write_value = value,
+            websocket_url = url,
+            button = self
+        })
+        
+        if init_callback then
+            -- 执行初始化
+            init_callback()
+            print("[Button] 读写模式已初始化: " .. bind_point .. "，写入值: " .. value)
+        end 
+        
+        -- 绑定点击事件 - 直接执行写入操作
+        self:on("clicked", function()
+            print("[Button] 读写模式按钮点击，执行写入: " .. bind_point .. " = " .. value)
+            
+            -- 直接调用写入函数
+            if lvgl then
+                lvgl.write(bind_point, value)
+                lvgl.read(bind_point)
+            else
+                print("[Button] 错误: lvgl 不存在")
             end
-        elseif event_action == "连接WebSocket" and url and url ~= "" then
-            local callback = DataAction.create_callback(event_action, {
-                websocket_url = url,
-                button = self
-            })
-            if callback then
-                self:on("clicked", callback)
-                print("[Button] 已绑定连接事件: " .. url)
-            end
-        else
-            print("[Button] 未绑定事件: 条件不满足")
+        end)
+        
+        -- 立即执行一次读取，获取当前值
+       -- if lvgl then
+         --   print("[Button] 首次读取数据点: " .. bind_point)
+         --   lvgl.read(bind_point)
+      --  end
+        
+    else
+        if event_action ~= "写入绑定数据点" and event_action ~= "读取绑定数据点" and 
+           event_action ~= "读写数据点" then
+            print("[Button] 未绑定事件: " .. tostring(event_action))
+        elseif not bind_point or bind_point == "" then
+            print("[Button] 未绑定事件: 数据点为空")
         end
     end
+end
 
     -- 自动绑定事件（如果不是设计模式）
     if not self.props.design_mode then

@@ -15,6 +15,7 @@ local WIDGET_TYPE_TO_MODULE = {
     ["trend_chart"] = "widgets.trend_chart",
     ["status_bar"] = "widgets.status_bar",
     ["switch"] = "widgets.switch",
+    ["image"] = "widgets_image"
 }
 
 -- 控件类型对应的事件列表
@@ -44,8 +45,41 @@ local EVENT_DEFAULT_PARAMS = {
 -- actions 模块列表（需要引入到生成代码中）
 local ACTION_MODULES = {
     "actions.page_navigation",
-    "editor.DataAction"
+    "editor.DataAction" ,
+    "actions.LabelAction" ,
+    "actions.SitwchAction"
 }
+
+
+-- 在 compile 函数开头添加这段代码
+local function find_websocket_url(project_data)
+    -- 默认值
+    local websocket_url = "ws://192.168.0.60:8085/ws/"
+    local websocket_timeout = 3000
+    
+    -- 遍历所有页面和控件
+    if project_data.pages then
+        for _, page in ipairs(project_data.pages) do
+            if page.widgets then
+                for _, widget in ipairs(page.widgets) do
+                    -- 检查控件属性中是否有 websocket_url
+                    if widget.props and widget.props.websocket_url then
+                        websocket_url = widget.props.websocket_url
+                        print("[Compiler] 从控件找到 WebSocket URL: " .. websocket_url)
+                    end
+                    -- 可选：检查 timeout
+                    if widget.props and widget.props.websocket_timeout then
+                        websocket_timeout = widget.props.websocket_timeout
+                    end
+                end
+            end
+        end
+    end
+    
+    return websocket_url, websocket_timeout
+end
+
+
 
 -- 构造函数
 function ProjectCompiler.new()
@@ -166,6 +200,9 @@ local COLOR_PROPERTIES = {
     "text_color",
     "line_color",
     "fill_color",
+    "bg_color_off",
+    "bg_color_on"
+
 }
 
 -- 将数字颜色值转换为 #xxxxxx 格式字符串
@@ -332,7 +369,11 @@ function ProjectCompiler:compile(project_data)
     local lines = {}
     local all_required_modules = {}
     local has_status_bar = project_data.status_bar and project_data.status_bar.enabled
-    
+      -- 获取WebSocket配置
+    --local websocket_url = project_data.websocket_url or "ws://192.168.0.60:8085/ws/"
+    --local websocket_timeout = project_data.websocket_timeout or 3000
+       -- 从控件中查找 WebSocket 配置
+    local websocket_url, websocket_timeout = find_websocket_url(project_data)
     -- 文件头
     table.insert(lines, "-- ==============================================")
     table.insert(lines, "-- 自动生成的Lua脚本")
@@ -341,6 +382,18 @@ function ProjectCompiler:compile(project_data)
     table.insert(lines, "-- 工程版本: " .. (project_data.version or "1.0"))
     table.insert(lines, "-- ==============================================")
     table.insert(lines, "")
+
+       -- 启动网络服务（使用从工程数据读取的URL）
+    table.insert(lines, "-- 启动网络服务")
+    table.insert(lines, "lvgl.start_network_service(100)")
+    table.insert(lines, 'lvgl.connect("' .. escape_string(websocket_url) .. '", ' .. websocket_timeout .. ')')
+    table.insert(lines, "")
+
+    --[[table.insert(lines, "-- 启动网络服务")
+table.insert(lines, "lvgl.start_network_service(100)")
+table.insert(lines, 'lvgl.connect("ws://192.168.0.60:8085/ws/", 3000)')
+table.insert(lines, "")]]--
+    
     
     -- 先收集所有需要的模块
     if project_data.pages then
@@ -564,7 +617,9 @@ function ProjectCompiler:compile(project_data)
     end
     table.insert(lines, "}")
     table.insert(lines, "")
-    
+
+
+ 
     -- 启动代码
     local start_page = project_data.current_page_index or 1
     table.insert(lines, "-- ========== 启动 ==========")
@@ -579,6 +634,14 @@ function ProjectCompiler:compile(project_data)
         table.insert(lines, "")
     end
     
+    -- **在这里添加网络服务启动代码**
+--[[table.insert(lines, "-- 启动网络服务")
+table.insert(lines, "lvgl.start_network_service(100)")
+table.insert(lines, 'lvgl.connect("ws://192.168.0.60:8085/ws/", 3000)')
+table.insert(lines, "")]]--
+
+
+
     -- 预创建所有图页
     table.insert(lines, "-- 预创建所有图页")
     table.insert(lines, "PageManager.init()")

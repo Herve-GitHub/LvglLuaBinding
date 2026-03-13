@@ -659,9 +659,14 @@ local function start_simulator()
     print("[仿真] 脚本已复制到: " .. sim_script_path)
     
     -- 4. 构建命令行并启动仿真器
-    -- 使用 start 命令在新窗口中启动，并使用 wmic 获取进程ID
-    local script_arg = "lua\\" .. script_filename
-    local cmd = 'start "" "' .. sim_path .. '" "' .. script_arg .. '"'
+    -- 获取仿真器所在目录
+    local sim_dir = sim_path:match("(.*[\\/])") or ""
+    -- 获取仿真器文件名（不含路径）
+    local sim_exe = sim_path:match("([^\\/]+)$") or "vdu_sim.exe"
+    
+    -- 构建命令：先切换到仿真器目录，然后执行仿真器，传入脚本参数
+    -- 使用 start 命令在新窗口中启动
+    local cmd = 'start "" cmd /c "cd /d "' .. sim_dir .. '" && ' .. sim_exe .. ' lua\\' .. script_filename .. '"'
     
     print("[仿真] 执行命令: " .. cmd)
     os.execute(cmd)

@@ -1,18 +1,18 @@
-﻿-- editor/DataAction.lua
+﻿-- actions/LabelAction.lua
 -- 动作执行器
-local DataAction = {}
+local LabelAction = {}
 
 -- 全局连接状态
 local connected_websockets = {}
 
--- 存储等待数据更新的按钮
-local pending_reads = {}  -- key: bind_point, value: button
+-- 存储等待数据更新的标签
+local pending_reads = {}  -- key: bind_point, value: label
 
--- 存储所有已绑定的按钮
-local bound_buttons = {}  -- key: bind_point, value: button
+-- 存储所有已绑定的标签
+local bound_labels = {}  -- key: bind_point, value: label
 
--- 存储读写模式的按钮配置
-local read_write_buttons = {}  -- key: bind_point, value: {button=button, write_value="1"}
+-- 存储读写模式的标签配置
+local read_write_labels = {}  -- key: bind_point, value: {label=label, write_value="1"}
 
 -- 确保WebSocket连接
 local function ensure_websocket_connected(websocket)
@@ -52,25 +52,25 @@ local function setup_global_callback()
         function(device_id, value, status)
             print("[数据回调] 收到: " .. device_id .. " = " .. value)
             
-            -- 1. 更新等待读取的按钮
-            local pending_button = pending_reads[device_id]
-            if pending_button and pending_button.set_label then
-                pending_button:set_label(value)
+            -- 1. 更新等待读取的标签
+            local pending_label = pending_reads[device_id]
+            if pending_label and pending_label.set_text then
+                pending_label:set_text(value)
                 pending_reads[device_id] = nil
             end
             
-            -- 2. 更新所有已绑定的按钮
-            local bound_button = bound_buttons[device_id]
-            if bound_button and bound_button.set_label then
-                print("[自动更新] 更新按钮: " .. device_id .. " = " .. value)
-                bound_button:set_label(value)
+            -- 2. 更新所有已绑定的标签
+            local bound_label = bound_labels[device_id]
+            if bound_label and bound_label.set_text then
+                print("[自动更新] 更新标签: " .. device_id .. " = " .. value)
+                bound_label:set_text(value)
             end
             
-            -- 3. 更新读写模式的按钮
-            local rw_config = read_write_buttons[device_id]
-            if rw_config and rw_config.button and rw_config.button.set_label then
-                print("[读写模式] 更新按钮: " .. device_id .. " = " .. value)
-                rw_config.button:set_label(value)
+            -- 3. 更新读写模式的标签
+            local rw_config = read_write_labels[device_id]
+            if rw_config and rw_config.button and rw_config.label.set_text then
+                print("[读写模式] 更新标签: " .. device_id .. " = " .. value)
+                rw_config.label:set_text(value)
             end
         end
     )
@@ -107,7 +107,7 @@ end
 local function read_bind_point(params)
     local bind_point = params.bind_point
     local websocket = params.websocket_url or params.url or params.websocket
-    local button = params.button
+    local label = params.label
     
    --[[ if not bind_point or bind_point == "" then
         print("[错误] 读取操作失败：未配置数据点")
@@ -121,14 +121,14 @@ local function read_bind_point(params)
     setup_global_callback()
     
     if lvgl then
-        if button and button.set_label then
-           button:set_label("...")
+        if label and label.set_text then
+           label:set_text("...")
         end
         
-       if button and bind_point then
-            pending_reads[bind_point] = button
-            bound_buttons[bind_point] = button
-            print("[绑定] 按钮绑定到数据点: " .. bind_point)
+       if label and bind_point then
+            pending_reads[bind_point] = label
+            bound_labels[bind_point] = label
+            print("[绑定] 标签绑定到数据点: " .. bind_point)
         end
         
        -- print("[读取] 发起读取请求: " .. bind_point)]]--
@@ -142,7 +142,7 @@ end
 local function read_write_bind_point(params)
     local bind_point = params.bind_point
     local websocket = params.websocket_url or params.url or params.websocket
-    local button = params.button
+    local label = params.label
     local write_value = params.write_value or params.value or "1"
     
     print("[读写模式] 初始化: bind_point=" .. tostring(bind_point) .. 
@@ -159,18 +159,18 @@ local function read_write_bind_point(params)
     
     setup_global_callback()
     
-    -- 注册按钮
-    if button and bind_point then
+    -- 注册标签
+    if label and bind_point then
         -- 保存到读写模式表
-        read_write_buttons[bind_point] = {
-            button = button,
+        read_write_labels[bind_point] = {
+            label = label,
             write_value = write_value
         }
         
-        -- 同时也注册到bound_buttons，确保能接收数据更新
-        bound_buttons[bind_point] = button
+        -- 同时也注册到bound_labels，确保能接收数据更新
+        bound_labels[bind_point] = label
         
-        print("[读写模式] 按钮已注册到数据点: " .. bind_point .. "，写入值: " .. write_value)
+        print("[读写模式] 标签已注册到数据点: " .. bind_point .. "，写入值: " .. write_value)
         
         -- 立即发起第一次读取
         if lvgl then
@@ -186,9 +186,9 @@ local function read_write_bind_point(params)
 end
 
 -- 创建动作回调
-function DataAction.create_callback(action_type, params)
+function LabelAction.create_callback(action_type, params)
     return function()
-        print("[DataAction] 执行回调: " .. action_type)
+        print("[LabelAction] 执行回调: " .. action_type)
         
         if action_type == "写入绑定数据点" then
             return write_bind_point(params)
@@ -200,12 +200,12 @@ function DataAction.create_callback(action_type, params)
     end
 end
 
--- 解绑按钮的方法
-function DataAction.unbind_button(bind_point)
+-- 解绑标签的方法
+function LabelAction.unbind_button(bind_point)
     if bind_point then
-        bound_buttons[bind_point] = nil
+        bound_labels[bind_point] = nil
         pending_reads[bind_point] = nil
-        read_write_buttons[bind_point] = nil
+        read_write_labels[bind_point] = nil
         print("[解绑] 已解除数据点绑定: " .. bind_point)
     end
 end
@@ -214,4 +214,4 @@ end
 
 
 
-return DataAction
+return LabelAction

@@ -1,5 +1,7 @@
-﻿local lv = require("lvgl")
-local DataAction = require("editor.DataAction")
+﻿-- Label.lua - 完善版
+-- 文本标签控件，包含数据绑定和事件配置
+local lv = require("lvgl")
+local LabelAction = require("actions.LabelAction")
 
 local Label = {}
 Label.__index = Label
@@ -7,11 +9,13 @@ Label.__index = Label
 Label.__widget_meta = {
   id = "label",
   name = "Label",
-  description = "文本标签控件，支持数据绑定动态更新文本",
+  description = "文本标签控件，用于显示静态或动态文本",
   schema_version = "1.0",
   version = "1.0",
   properties = {
-    { name = "instance_name", type = "string", default = "", label = "实例名称" },
+    -- 实例名称（用于编译时变量命名）
+    { name = "instance_name", type = "string", default = "", label = "实例名称",
+      description = "用于编译时的变量名，留空则自动生成" },
     { name = "text", type = "string", default = "Label", label = "文本" },
     { name = "x", type = "number", default = 0, label = "X" },
     { name = "y", type = "number", default = 0, label = "Y" },
@@ -22,67 +26,114 @@ Label.__widget_meta = {
     { name = "bg_opa", type = "number", default = 0, label = "背景透明度", min = 0, max = 255 },
     { name = "font_size", type = "number", default = 16, label = "字体大小" },
     { name = "alignment", type = "enum", default = "left", label = "对齐方式",
-      options = { { value = "left", label = "左对齐" }, { value = "center", label = "居中" }, { value = "right", label = "右对齐" } }
+      options = {
+        { value = "left", label = "左对齐" },
+        { value = "center", label = "居中" },
+        { value = "right", label = "右对齐" },
+      }
     },
     { name = "long_mode", type = "enum", default = "wrap", label = "长文本模式",
-      options = { { value = "wrap", label = "自动换行" }, { value = "scroll", label = "滚动" }, { value = "dot", label = "省略号" }, { value = "clip", label = "裁剪" } }
+      options = {
+        { value = "wrap", label = "自动换行" },
+        { value = "scroll", label = "滚动" },
+        { value = "dot", label = "省略号" },
+        { value = "clip", label = "裁剪" },
+      }
     },
     { name = "visible", type = "boolean", default = true, label = "可见" },
     { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
+
+    -- 数据配置 - 这些属性会被数据编辑器修改
+    { name = "bind_point", type = "string", default = "", label = "绑定数据点",
+      description = "例如: Device1.E, PLC1.D100" },
+    { name = "websocket_url", type = "string", default = "", label = "WebSocket",
+      description = "例如: ws://192.168.1.100:8080" },
+    { name = "http_data_type", type = "enum", default = "实时数据", 
+      options = {"实时数据", "历史数据", "批量数据", "告警数据", "统计数据"},
+      label = "HTTP" },
+    { name = "http_url", type = "string", default = "", label = "HTTP URL",
+      description = "例如: http://192.168.1.100/api/data" },
+    { name = "http_token", type = "string", default = "", label = "HTTP Token",
+      description = "认证令牌" },
     
-    { name = "bind_point", type = "string", default = "", label = "绑定数据点" },
-    { name = "display_format", type = "string", default = "%s", label = "显示格式" },
-    { name = "websocket_url", type = "string", default = "", label = "WebSocket" },
-    
-    { name = "event_action", type = "enum", default = "读取绑定数据点",
-      options = {"无动作", "读取绑定数据点", "读取自定义地址", "连接WebSocket", "发送HTTP请求"},
-      label = "事件动作" },
-    { name = "custom_address", type = "string", default = "", label = "自定义地址" },
-    { name = "click_value", type = "string", default = "1", label = "点击值" },
-    
-    { name = "on_clicked_handler", type = "code", default = "", label = "点击处理代码", event = "clicked" },
-    { name = "on_data_updated_handler", type = "code", default = "", label = "数据更新处理代码", event = "data_updated" },
+    -- 事件配置 - 这些属性会被事件编辑器修改
+    { name = "event_action", type = "enum", default = "写入绑定数据点",
+      options = {"写入绑定数据点", "读取绑定数据点", "读写数据点",
+                 "写入自定义地址", "读取自定义地址", "发送HTTP请求"},
+      label = "事件动作", description = "点击时执行的动作" },
+    { name = "custom_address", type = "string", default = "", label = "自定义地址",
+      description = "写入/读取自定义地址时使用" },
+    { name = "custom_value", type = "string", default = "", label = "写入值",
+      description = "写入自定义地址时的值" },
+
+    -- 事件处理代码属性
+    { name = "on_clicked_handler", type = "code", default = "", label = "点击处理代码",
+      event = "clicked", description = "点击标签时执行的Lua代码" },
   },
-  events = { "clicked", "data_updated" },
+  events = { "clicked" },
 }
 
+-- 解析颜色值（支持 "#RRGGBB" 或 "#AARRGGBB" 字符串或数字）
 local function parse_color(c)
   if type(c) == "string" then
-    if c:match("^#%x%x%x%x%x%x%x%x$") then return tonumber(c:sub(4), 16)
-    elseif c:match("^#%x%x%x%x%x%x$") then return tonumber(c:sub(2), 16) end
-  elseif type(c) == "number" then return c end
+    if c:match("^#%x%x%x%x%x%x%x%x$") then
+      -- #AARRGGBB 格式，忽略 alpha
+      return tonumber(c:sub(4), 16)
+    elseif c:match("^#%x%x%x%x%x%x$") then
+      return tonumber(c:sub(2), 16)
+    end
+  elseif type(c) == "number" then
+    return c
+  end
   return 0xFFFFFF
 end
 
+-- 获取 long_mode 枚举值
 local function get_long_mode(mode)
-  if mode == "wrap" then return lv.LABEL_LONG_MODE_WRAP or lv.LABEL_LONG_WRAP or 0
-  elseif mode == "scroll" then return lv.LABEL_LONG_MODE_SCROLL or lv.LABEL_LONG_SCROLL or 1
-  elseif mode == "dot" then return lv.LABEL_LONG_MODE_DOT or lv.LABEL_LONG_DOT or 2
-  elseif mode == "clip" then return lv.LABEL_LONG_MODE_CLIP or lv.LABEL_LONG_CLIP or 3 end
+  if mode == "wrap" then
+    return lv.LABEL_LONG_MODE_WRAP or lv.LABEL_LONG_WRAP or 0
+  elseif mode == "scroll" then
+    return lv.LABEL_LONG_MODE_SCROLL or lv.LABEL_LONG_SCROLL or 1
+  elseif mode == "dot" then
+    return lv.LABEL_LONG_MODE_DOT or lv.LABEL_LONG_DOT or 2
+  elseif mode == "clip" then
+    return lv.LABEL_LONG_MODE_CLIP or lv.LABEL_LONG_CLIP or 3
+  end
   return 0
 end
 
+-- 获取文本对齐枚举值
 local function get_text_align(align)
-  if align == "left" then return lv.TEXT_ALIGN_LEFT or 0
-  elseif align == "center" then return lv.TEXT_ALIGN_CENTER or 1
-  elseif align == "right" then return lv.TEXT_ALIGN_RIGHT or 2 end
+  if align == "left" then
+    return lv.TEXT_ALIGN_LEFT or 0
+  elseif align == "center" then
+    return lv.TEXT_ALIGN_CENTER or 1
+  elseif align == "right" then
+    return lv.TEXT_ALIGN_RIGHT or 2
+  end
   return lv.TEXT_ALIGN_LEFT or 0
 end
 
+-- 构造函数
 function Label.new(parent, state)
   state = state or {}
   local self = setmetatable({}, Label)
   
+  -- 初始化属性
   self.props = {}
   for _, p in ipairs(Label.__widget_meta.properties) do
-    self.props[p.name] = state[p.name] ~= nil and state[p.name] or p.default
+    if state[p.name] ~= nil then
+      self.props[p.name] = state[p.name]
+    else
+      self.props[p.name] = p.default
+    end
   end
   
+  -- 事件监听器
   self._event_listeners = {}
-  self._callbacks = {}
-  self._update_timer = nil
-  self._last_value = nil
+  self._data_timer = nil  -- 用于定时读取的计时器
   
+  -- 创建容器（用于设置背景和尺寸）
   self.container = lv.obj_create(parent)
   self.container:set_pos(self.props.x, self.props.y)
   self.container:set_size(self.props.width, self.props.height)
@@ -94,152 +145,217 @@ function Label.new(parent, state)
   self.container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
   self.container:clear_layout()
   
+  -- 创建标签
   self.label = lv.label_create(self.container)
   self.label:set_text(self.props.text)
   self.label:set_style_text_color(parse_color(self.props.text_color), 0)
+  
+  -- 设置标签尺寸与容器一致
   self.label:set_size(self.props.width, self.props.height)
   
+  -- 设置长文本模式
   if self.label.set_long_mode then
     self.label:set_long_mode(get_long_mode(self.props.long_mode))
   end
   
+  -- 设置文本对齐方式
   self:_apply_alignment()
   
+  -- 设置可见性
   if not self.props.visible then
     self.container:add_flag(lv.OBJ_FLAG_HIDDEN)
   end
   
+  -- 设置点击事件
   local this = self
   self.container:add_event_cb(function(e)
-    if self.props.design_mode then return end
-    this:_on_clicked()
+    if not this.props.design_mode then
+      this:_emit("clicked")
+    end
   end, lv.EVENT_CLICKED, nil)
   
+  -- 自动绑定事件（如果不是设计模式）
   if not self.props.design_mode then
-    self:_start_data_updates()
+    self:_bind_event()
   end
   
   return self
 end
 
-function Label:_on_clicked()
-  self:_emit("clicked")
-  
-  local event_action = self.props.event_action
-  if event_action and event_action ~= "无动作" then
-    if event_action == "读取绑定数据点" and self.props.bind_point ~= "" then
-      local callback = DataAction.create_callback(event_action, { bind_point = self.props.bind_point })
-      if callback then pcall(callback) end
-    elseif event_action == "读取自定义地址" and self.props.custom_address ~= "" then
-      local callback = DataAction.create_callback(event_action, { address = self.props.custom_address })
-      if callback then pcall(callback) end
-    elseif event_action == "连接WebSocket" and self.props.websocket_url ~= "" then
-      local callback = DataAction.create_callback(event_action, { url = self.props.websocket_url })
-      if callback then pcall(callback) end
-    end
-  end
-end
-
-function Label:_start_data_updates()
-  if self.props.bind_point and self.props.bind_point ~= "" then
-    self:_update_data()
-  end
-end
-
-function Label:_update_data()
-  if not self.props.bind_point or self.props.bind_point == "" then return end
-  
-  local callback = DataAction.create_callback("读取绑定数据点", {
-    
-    bind_point = self.props.bind_point,
-    callback = function(data) self:_on_data_received(data) end
-  })
-  
-  if callback then pcall(callback) end
-end
-
-function Label:_on_data_received(data)
-  if data == nil or data == self._last_value then return end
-  self._last_value = data
-  
-  local display_text = tostring(data)
-  if self.props.display_format and self.props.display_format ~= "%s" then
-    local success, result = pcall(string.format, self.props.display_format, data)
-    if success then display_text = result end
-  end
-  
-  if self.label and self.label.set_text then
-    self.label:set_text(display_text)
-  end
-  
-  self:_emit("data_updated", { value = data, display_text = display_text })
-  
-  if self._callbacks.data_updated then
-    pcall(self._callbacks.data_updated, self, { value = data, display_text = display_text })
-  end
-end
-
+-- 应用对齐方式
 function Label:_apply_alignment()
   if not self.label then return end
   
+  local align = self.props.alignment
+  
+  -- 使用 set_style_text_align 设置文本对齐
   if self.label.set_style_text_align then
-    self.label:set_style_text_align(get_text_align(self.props.alignment), 0)
+    self.label:set_style_text_align(get_text_align(align), 0)
   end
   
+  -- 同时设置标签在容器中的垂直居中位置
   self.label:set_pos(0, 0)
   self.label:align(lv.ALIGN_CENTER, 0, 0)
 end
 
+-- 事件订阅
 function Label:on(event_name, callback)
-  if event_name == "clicked" then
-    self._callbacks.clicked = callback
-  elseif event_name == "data_updated" then
-    self._callbacks.data_updated = callback
-  end
-  
   if not self._event_listeners[event_name] then
     self._event_listeners[event_name] = {}
   end
   table.insert(self._event_listeners[event_name], callback)
   
+  -- 如果是点击事件，确保容器可点击
   if event_name == "clicked" and not self.props.design_mode then
     self.container:add_flag(lv.OBJ_FLAG_CLICKABLE)
   end
 end
 
+-- 触发事件
 function Label:_emit(event_name, ...)
   local listeners = self._event_listeners[event_name]
   if listeners then
     for _, cb in ipairs(listeners) do
       local ok, err = pcall(cb, self, ...)
-      if not ok then print("[Label] 事件回调错误:", err) end
+      if not ok then
+        print("[Label] 事件回调错误:", err)
+      end
     end
   end
 end
 
+-- 绑定数据事件
+function Label:_bind_event()
+  local event_action = self.props.event_action
+  local bind_point = self.props.bind_point
+  local value = self.props.custom_value or "1"
+  local url = self.props.websocket_url
+  
+  print("[Label] 绑定事件: " .. tostring(event_action) .. " 到数据点: " .. tostring(bind_point))
+  
+  -- 清除旧的定时器
+  if self._data_timer then
+    self._data_timer:delete()
+    self._data_timer = nil
+  end
+  
+  -- 根据事件动作创建回调
+  if event_action == "读取绑定数据点" and bind_point and bind_point ~= "" then
+    -- 创建读取回调
+    local callback = LabelAction.create_callback(event_action, {
+      bind_point = bind_point,
+      websocket_url = url,
+      label = self  -- 将标签自身作为目标控件
+    })
+    
+        if callback then
+        print("[label] 设置自动读取: " .. bind_point)
+        
+        -- 添加执行标志
+        local executed = false
+        
+        lvgl.timer_create(function()
+            -- 如果已经执行过，直接返回
+            if executed then
+              --  print("[定时器] 已经执行过，忽略")
+                return
+            end
+            
+            executed = true
+            print("[定时器] 第1次执行")
+            callback()
+        end, 500, nil)
+    end
+    
+  elseif event_action == "写入绑定数据点" and bind_point and bind_point ~= "" then
+    -- 创建写入回调，绑定到点击事件
+    local callback = LabelAction.create_callback(event_action, {
+      bind_point = bind_point,
+      value = value,
+      websocket_url = url
+    })
+    
+    if callback then
+      self:on("clicked", callback)
+      print("[Label] 已绑定写入事件: " .. bind_point .. " = " .. value)
+    end
+    
+  elseif event_action == "读写数据点" and bind_point and bind_point ~= "" then
+    -- 初始化读写模式
+    local init_callback = LabelAction.create_callback(event_action, {
+      bind_point = bind_point,
+      write_value = value,
+      websocket_url = url,
+      label = self
+    })
+    
+    if init_callback then
+      -- 执行初始化（设置数据变化监听）
+      init_callback()
+      print("[Label] 读写模式已初始化: " .. bind_point)
+      
+      -- 绑定点击事件执行写入
+      self:on("clicked", function()
+        print("[Label] 点击执行写入: " .. bind_point .. " = " .. value)
+        if lvgl then
+                lvgl.write(bind_point, value)
+                lvgl.read(bind_point)
+        end
+      end)
+    end
+    
+  
+  end
+end
+
+-- 获取属性
 function Label:get_property(name)
   return self.props[name]
 end
 
+-- 设置属性
 function Label:set_property(name, value)
+  local old_value = self.props[name]
   self.props[name] = value
   
   if name == "text" then
-    if self.label then self.label:set_text(value) end
+    if self.label and self.label.set_text then
+      self.label:set_text(value)
+    end
   elseif name == "text_color" then
-    if self.label then self.label:set_style_text_color(parse_color(value), 0) end
+    local color = parse_color(value)
+    if self.label then
+      self.label:set_style_text_color(color, 0)
+    end
   elseif name == "bg_color" then
-    if self.container then self.container:set_style_bg_color(parse_color(value), 0) end
+    local color = parse_color(value)
+    if self.container then
+      self.container:set_style_bg_color(color, 0)
+    end
   elseif name == "bg_opa" then
-    if self.container then self.container:set_style_bg_opa(value, 0) end
+    if self.container then
+      self.container:set_style_bg_opa(value, 0)
+    end
   elseif name == "x" or name == "y" then
-    if self.container then self.container:set_pos(self.props.x, self.props.y) end
+    if self.container then
+      self.container:set_pos(self.props.x, self.props.y)
+    end
   elseif name == "width" then
-    if self.container then self.container:set_width(value) end
-    if self.label then self.label:set_width(value); self:_apply_alignment() end
+    if self.container then
+      self.container:set_width(value)
+    end
+    if self.label then
+      self.label:set_width(value)
+      self:_apply_alignment()
+    end
   elseif name == "height" then
-    if self.container then self.container:set_height(value) end
-    if self.label then self.label:set_height(value); self:_apply_alignment() end
+    if self.container then
+      self.container:set_height(value)
+    end
+    if self.label then
+      self.label:set_height(value)
+      self:_apply_alignment()
+    end
   elseif name == "alignment" then
     self:_apply_alignment()
   elseif name == "long_mode" then
@@ -248,69 +364,91 @@ function Label:set_property(name, value)
     end
   elseif name == "visible" then
     if self.container then
-      if value then self.container:remove_flag(lv.OBJ_FLAG_HIDDEN)
-      else self.container:add_flag(lv.OBJ_FLAG_HIDDEN) end
+      if value then
+        self.container:remove_flag(lv.OBJ_FLAG_HIDDEN)
+      else
+        self.container:add_flag(lv.OBJ_FLAG_HIDDEN)
+      end
     end
   elseif name == "design_mode" then
+    -- 设计模式下禁用点击事件
     if value then
       self.container:remove_flag(lv.OBJ_FLAG_CLICKABLE)
-      if self._update_timer then lv.timer_del(self._update_timer); self._update_timer = nil end
     else
-      self:_start_data_updates()
+      -- 退出设计模式时重新绑定事件
+      self:_bind_event()
     end
-  elseif name == "bind_point" then
+  elseif name == "event_action" or name == "bind_point" or 
+         name == "custom_address" or name == "custom_value" then
+    -- 事件相关属性变化时，重新绑定
     if not self.props.design_mode then
-      self:_start_data_updates()
+      self:_bind_event()
     end
-  elseif name == "display_format" and self._last_value then
-    self:_on_data_received(self._last_value)
   end
   
   return true
 end
 
+-- 获取所有属性
 function Label:get_properties()
   local out = {}
-  for k, v in pairs(self.props) do out[k] = v end
+  for k, v in pairs(self.props) do
+    out[k] = v
+  end
   return out
 end
 
+-- 应用属性表
 function Label:apply_properties(props_table)
-  for k, v in pairs(props_table) do self:set_property(k, v) end
+  for k, v in pairs(props_table) do
+    self:set_property(k, v)
+  end
   return true
 end
 
+-- 导出状态（用于保存）
 function Label:to_state()
   return self:get_properties()
 end
 
+-- 获取容器对象
 function Label:get_container()
   return self.container
 end
 
+-- 设置文本（便捷方法）
 function Label:set_text(text)
   self:set_property("text", text)
 end
 
+-- 获取文本（便捷方法）
 function Label:get_text()
   return self.props.text
 end
 
+-- 显示
 function Label:show()
   self:set_property("visible", true)
 end
 
+-- 隐藏
 function Label:hide()
   self:set_property("visible", false)
 end
 
-function Label:refresh()
-  self:_update_data()
-end
-
+-- 销毁控件
 function Label:destroy()
-  if self._update_timer then lv.timer_del(self._update_timer); self._update_timer = nil end
-  if self.container then self.container:delete(); self.container = nil; self.label = nil end
+  -- 清理定时器
+  if self._data_timer then
+    self._data_timer:delete()
+    self._data_timer = nil
+  end
+  
+  if self.container then
+    self.container:delete()
+    self.container = nil
+    self.label = nil
+  end
 end
 
 return Label

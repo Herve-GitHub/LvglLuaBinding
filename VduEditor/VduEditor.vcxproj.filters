@@ -114,6 +114,8 @@
     <None Include="websocket\picture.lua" />
     <None Include="lua\widgets\image.lua" />
     <None Include="lua\widgets\new_label.lua" />
+    <None Include="lua\actions\SitwchAction.lua" />
+    <None Include="lua\actions\LabelAction.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">
