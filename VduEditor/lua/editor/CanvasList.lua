@@ -21,8 +21,8 @@ CanvasList.__page_meta = {
     version = "1.0",
     properties = {
         { name = "name", label = "名称", type = "string", default = "图页" },
-        { name = "width", label = "宽度", type = "number", default = 800, min = 100, max = 4096 },
-        { name = "height", label = "高度", type = "number", default = 600, min = 100, max = 4096 },
+        { name = "width", label = "宽度", type = "number", default = 800, min = 100, max = 4096 },--default::800
+        { name = "height", label = "高度", type = "number", default = 600, min = 100, max = 4096 },--default::600
         { name = "bg_color", label = "背景颜色", type = "color", default = 0x1E1E1E },
     },
 }

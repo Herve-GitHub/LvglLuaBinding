@@ -1,7 +1,7 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-03-13 09:37:29
+-- 生成时间: 2026-03-17 15:01:42
 -- 工程版本: 1.0
 -- ==============================================
 
@@ -13,7 +13,7 @@ lvgl.connect("ws://192.168.0.60:8085/ws/", 3000)
 local lv = require("lvgl")
 
 -- 引用控件模块
-local widgets_new_label = require("widgets.new_label")
+local widgets_switch = require("widgets.switch")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -44,31 +44,23 @@ local function create_page_1(parent)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
 
-    -- 控件 1: label
-    local widget_1 = widgets_new_label.new(container, {
-        bg_opa = 0,
-        bind_point = "user.tag0001",
-        alignment = "left",
-        height = 30,
-        text_color = "#FFFFFF",
-        http_token = "",
-        y = 143,
-        bg_color = "#00000000",
-        x = 272,
-        text = "Label",
-        design_mode = false,
-        custom_address = "",
-        font_size = 16,
-        width = 100,
-        visible = true,
+    -- 控件 1: custom_switch
+    local widget_1 = widgets_switch.new(container, {
+        width = 60,
+        y = 336,
+        websocket_url = "ws://192.168.0.60:8085/ws/",
+        on_value_changed_handler = "",
+        switch_state = true,
+        x = 385,
         instance_name = "",
-        http_data_type = "实时数据",
+        design_mode = false,
         custom_value = "",
-        event_action = "读取绑定数据点",
-        on_clicked_handler = "",
-        http_url = "",
-        long_mode = "wrap",
-        websocket_url = "ws://192.168.0.60:8085/ws/"
+        on_value = "1",
+        off_value = "0",
+        height = 30,
+        bind_point = "user.tag0001",
+        event_action = "读写数据点",
+        bg_color_off = "#888888"
     })
 
     return container

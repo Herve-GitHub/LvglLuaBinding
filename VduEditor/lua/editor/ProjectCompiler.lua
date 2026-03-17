@@ -68,9 +68,9 @@ local function find_websocket_url(project_data)
                         print("[Compiler] 从控件找到 WebSocket URL: " .. websocket_url)
                     end
                     -- 可选：检查 timeout
-                    if widget.props and widget.props.websocket_timeout then
-                        websocket_timeout = widget.props.websocket_timeout
-                    end
+                   -- if widget.props and widget.props.websocket_timeout then
+                         --websocket_timeout = widget.props.websocket_timeout
+                    --end
                 end
             end
         end
@@ -373,7 +373,7 @@ function ProjectCompiler:compile(project_data)
     --local websocket_url = project_data.websocket_url or "ws://192.168.0.60:8085/ws/"
     --local websocket_timeout = project_data.websocket_timeout or 3000
        -- 从控件中查找 WebSocket 配置
-    local websocket_url, websocket_timeout = find_websocket_url(project_data)
+   local websocket_url, websocket_timeout = find_websocket_url(project_data)
     -- 文件头
     table.insert(lines, "-- ==============================================")
     table.insert(lines, "-- 自动生成的Lua脚本")

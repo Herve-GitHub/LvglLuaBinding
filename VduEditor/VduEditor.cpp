@@ -374,7 +374,7 @@ int main(int argc, char* argv[])
     // 运行几个定时器周期，让 LVGL 完全初始化显示
     for (int i = 0; i < 10; i++) {
         lv_timer_handler();
-        Sleep(10);
+        
     }
 
     std::cout << "LVGL display initialized successfully" << std::endl;
@@ -416,6 +416,7 @@ int main(int argc, char* argv[])
     while (1) {
         uint32_t time_till_next = lv_timer_handler();
         lv_delay_ms(time_till_next);
+        Sleep(10);
     }
 
     // 清理资源（在此示例中永远不会执行到这里）

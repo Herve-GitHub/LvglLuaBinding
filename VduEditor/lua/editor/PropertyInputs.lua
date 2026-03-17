@@ -127,6 +127,52 @@ function PropertyInputs.create_text_input(ctx, prop_name, value, is_read_only, w
     return textarea
 end
 
+
+-- 创建图片路径选择控件
+function PropertyInputs.create_image_path_input(ctx, prop_name, value, is_read_only, widget_entry, y_pos)
+    -- 路径显示label
+    local path_label = lv.label_create(ctx.content)
+    path_label:set_text(tostring(value or ""))
+    path_label:set_style_text_color(0xFFFFFF, 0)
+    path_label:set_pos(95, y_pos + 2)
+    path_label:set_width(185)
+
+    -- 按钮
+    local btn = lv.button_create(ctx.content)
+    btn:set_pos(285, y_pos)
+    btn:set_size(80, 22)
+    local btn_label = lv.label_create(btn)
+    btn_label:set_text("选择图片")
+    btn_label:align(lv.ALIGN.CENTER, 0, 0)
+
+    if is_read_only then
+        btn:add_state(lv.STATE_DISABLED)
+    else
+        btn:add_event_cb(function()
+            local FileDialog = require("FileDialog")
+            FileDialog.new(ctx.content, {
+                mode = "open",
+                title = "选择图片文件",
+                filter = "*.png;*.jpg;*.jpeg;*.bmp",
+                callback = function(filepath)
+                    if filepath and filepath ~= "" then
+                        path_label:set_text(filepath)
+                        if widget_entry.instance and widget_entry.instance.set_property then
+                            widget_entry.instance:set_property(prop_name, filepath)
+                        end
+                        ctx:_emit("property_changed", prop_name, filepath, widget_entry)
+                    end
+                end
+            })
+        end, lv.EVENT.CLICKED, nil)
+    end
+
+    -- 可以返回 label 和按钮（方便 future 布局升级）
+    return path_label, btn
+end
+
+
+
 -- 创建多行文本输入框
 function PropertyInputs.create_multiline_text_input(ctx, prop_name, value, is_read_only, widget_entry, y_pos, lines)
     lines = lines or 3

@@ -55,6 +55,13 @@ Label.__widget_meta = {
       description = "例如: http://192.168.1.100/api/data" },
     { name = "http_token", type = "string", default = "", label = "HTTP Token",
       description = "认证令牌" },
+      -- 在控件的 __widget_meta.properties 中添加
+{ name = "compare_operator", type = "string", default = "大于", label = "比较运算符" },
+{ name = "compare_value", type = "string", default = "0", label = "比较值" },
+{ name = "true_color", type = "color", default = "#ffffff", label = "条件满足时文本颜色" },
+{ name = "false_color", type = "color", default = "#ffffff", label = "条件不满足时文本颜色" },
+{ name = "true_bg_color", type = "color", default = "#ffffff", label = "条件满足时背景颜色" },
+{ name = "false_bg_color", type = "color", default = "#ffffff", label = "条件不满足时背景颜色" },
     
     -- 事件配置 - 这些属性会被事件编辑器修改
     { name = "event_action", type = "enum", default = "写入绑定数据点",

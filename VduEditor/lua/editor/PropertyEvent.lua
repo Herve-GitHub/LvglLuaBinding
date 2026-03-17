@@ -3,6 +3,8 @@
 
 local lv = require("lvgl")
 local DataAction = require("editor.DataAction")
+local PropertyInputs = require("editor.PropertyInputs")
+
 
 local PropertyEvent = {}
 
@@ -10,7 +12,8 @@ local PropertyEvent = {}
 local EVENT_TYPES = {
     "写入绑定数据点",
     "读取绑定数据点", 
-    "读写数据点"
+    "读写数据点" ,
+    "值变化"
 }
 
 function PropertyEvent.display(property_area)
@@ -134,5 +137,13 @@ function PropertyEvent.display(property_area)
     status:set_style_text_color(0xAAAAAA, 0)
     status:set_pos(10, y)
 end
+
+
+
+
+
+
+
+
 
 return PropertyEvent

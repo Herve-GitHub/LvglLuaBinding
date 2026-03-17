@@ -3,6 +3,8 @@
 local lv = require("lvgl")
 local gen = require("general")
 
+
+
 -- 获取应用程序目录（由 C++ 设置的全局变量）
 local APP_DIR = _G.APP_DIR or ""
 

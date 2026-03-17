@@ -1,5 +1,6 @@
 ﻿-- actions/LabelAction.lua
 -- 动作执行器
+local DataManager = require("editor.DataManager")
 local LabelAction = {}
 
 -- 全局连接状态
@@ -38,7 +39,7 @@ end
 -- 设置全局数据接收回调
 local function setup_global_callback()
     -- 检查是否已经设置过
-    if _G._data_callback_set then
+    if _G._label_action_callback_set then
         return
     end
     
@@ -58,6 +59,7 @@ local function setup_global_callback()
                 pending_label:set_text(value)
                 pending_reads[device_id] = nil
             end
+
             
             -- 2. 更新所有已绑定的标签
             local bound_label = bound_labels[device_id]
@@ -68,14 +70,14 @@ local function setup_global_callback()
             
             -- 3. 更新读写模式的标签
             local rw_config = read_write_labels[device_id]
-            if rw_config and rw_config.button and rw_config.label.set_text then
+            if rw_config and rw_config.label and rw_config.label.set_text then
                 print("[读写模式] 更新标签: " .. device_id .. " = " .. value)
                 rw_config.label:set_text(value)
             end
         end
     )
     
-    _G._data_callback_set = true
+    _G._label_action_callback_set = true
 end
 
 -- 执行写入操作
@@ -121,9 +123,9 @@ local function read_bind_point(params)
     setup_global_callback()
     
     if lvgl then
-        if label and label.set_text then
-           label:set_text("...")
-        end
+        --if label and label.set_text then
+         --  label:set_text("...")
+       -- end
         
        if label and bind_point then
             pending_reads[bind_point] = label
@@ -186,7 +188,7 @@ local function read_write_bind_point(params)
 end
 
 -- 创建动作回调
-function LabelAction.create_callback(action_type, params)
+--[[function LabelAction.create_callback(action_type, params)
     return function()
         print("[LabelAction] 执行回调: " .. action_type)
         
@@ -196,6 +198,31 @@ function LabelAction.create_callback(action_type, params)
             return read_bind_point(params)
         elseif action_type == "读写数据点" then
             return read_write_bind_point(params)
+        end
+    end
+end]]--
+
+
+function LabelAction.create_callback(action_type, params)
+    return function()
+        print("[LabelAction] 执行回调: " .. action_type)
+        
+        if action_type == "写入绑定数据点" then
+            if params.bind_point then
+                DataManager.write(params.bind_point, params.value or "1")
+            end
+            
+        elseif action_type == "读取绑定数据点" then
+            if params.label and params.bind_point then
+                DataManager.register_label(params.bind_point, params.label)
+                DataManager.read(params.bind_point)
+            end
+            
+        elseif action_type == "读写数据点" then
+            if params.label and params.bind_point then
+                DataManager.register_label(params.bind_point, params.label)
+                DataManager.read(params.bind_point)
+            end
         end
     end
 end

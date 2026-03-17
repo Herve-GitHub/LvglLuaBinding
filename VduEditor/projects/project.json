@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-03-13 09:37:29",
+  "created_at": "2026-03-17 15:01:42",
   "current_page_index": 1,
-  "modified_at": "2026-03-13 09:37:29",
+  "modified_at": "2026-03-17 15:01:42",
   "pages": [
     {
       "bg_color": "#1E1E1E",
@@ -10,33 +10,24 @@
       "name": "图页 1",
       "widgets": [
         {
-          "module_path": "widgets.new_label",
+          "module_path": "widgets.switch",
           "props": {
-            "alignment": "left",
-            "bg_color": "#00000000",
-            "bg_opa": 0,
+            "bg_color_off": "#888888",
             "bind_point": "user.tag0001",
-            "custom_address": "",
             "custom_value": "",
-            "design_mode": true,
-            "event_action": "读取绑定数据点",
-            "font_size": 16,
+            "event_action": "读写数据点",
             "height": 30,
-            "http_data_type": "实时数据",
-            "http_token": "",
-            "http_url": "",
             "instance_name": "",
-            "long_mode": "wrap",
-            "on_clicked_handler": "",
-            "text": "Label",
-            "text_color": "#FFFFFF",
-            "visible": true,
+            "off_value": "0",
+            "on_value": "1",
+            "on_value_changed_handler": "",
+            "switch_state": true,
             "websocket_url": "ws://192.168.0.60:8085/ws/",
-            "width": 100,
-            "x": 272,
-            "y": 143
+            "width": 60,
+            "x": 385,
+            "y": 336
           },
-          "type": "label"
+          "type": "custom_switch"
         }
       ],
       "width": 800

@@ -101,6 +101,9 @@ function PropertyWidgetEditor.create_properties_table(ctx, y_pos, widget_entry, 
         if prop_name == "design_mode" or prop_name == "instance_name" then
             goto continue
         end
+        if prop_name == "bind_point" or prop_name == "websocket_url"or prop_name == "http_data_type"or prop_name == "http_url"or prop_name == "http_token" or prop_name == "event_action" or prop_name == "custom_address" or prop_name == "custom_value"or prop_name == "compare_operator"or prop_name == "compare_value"or prop_name == "true_color"or prop_name == "false_color"or prop_name == "true_bg_color"or prop_name == "false_bg_color"then
+            goto continue
+        end
         
         -- 跳过事件相关属性（在事件编辑器中显示）
         if prop_def.type == "action" or prop_def.type == "action_params" or prop_def.type == "code" then
@@ -120,6 +123,7 @@ function PropertyWidgetEditor.create_properties_table(ctx, y_pos, widget_entry, 
         
         -- 计算此属性占用的高度
         local current_item_height = item_height
+
         
         if prop_type == "string" then
             -- 检查是否是多行文本

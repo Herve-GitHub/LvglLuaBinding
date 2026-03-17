@@ -116,6 +116,9 @@
     <None Include="lua\widgets\new_label.lua" />
     <None Include="lua\actions\SitwchAction.lua" />
     <None Include="lua\actions\LabelAction.lua" />
+    <None Include="lua\actions\ValueChange.lua" />
+    <None Include="lua\widgets\new_tanchuang.lua" />
+    <None Include="lua\editor\DataManager.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

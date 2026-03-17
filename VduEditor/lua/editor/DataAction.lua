@@ -1,5 +1,6 @@
 ﻿-- editor/DataAction.lua
 -- 动作执行器
+local DataManager = require("editor.DataManager")
 local DataAction = {}
 
 -- 全局连接状态
@@ -38,7 +39,7 @@ end
 -- 设置全局数据接收回调
 local function setup_global_callback()
     -- 检查是否已经设置过
-    if _G._data_callback_set then
+    if _G._data_action_callback_set then
         return
     end
     
@@ -75,7 +76,7 @@ local function setup_global_callback()
         end
     )
     
-    _G._data_callback_set = true
+    _G._data_action_callback_set = true
 end
 
 -- 执行写入操作
@@ -121,9 +122,9 @@ local function read_bind_point(params)
     setup_global_callback()
     
     if lvgl then
-        if button and button.set_label then
-           button:set_label("...")
-        end
+       -- if button and button.set_label then
+        --   button:set_label("...")
+       -- end
         
        if button and bind_point then
             pending_reads[bind_point] = button
@@ -191,11 +192,22 @@ function DataAction.create_callback(action_type, params)
         print("[DataAction] 执行回调: " .. action_type)
         
         if action_type == "写入绑定数据点" then
-            return write_bind_point(params)
+            if params.bind_point then
+                DataManager.write(params.bind_point, params.value or "1")
+            end
+            
         elseif action_type == "读取绑定数据点" then
-            return read_bind_point(params)
+            if params.button and params.bind_point then
+                DataManager.register_button(params.bind_point, params.button)
+                DataManager.read(params.bind_point)
+            end
+            
         elseif action_type == "读写数据点" then
-            return read_write_bind_point(params)
+            if params.button and params.bind_point then
+                DataManager.register_button(params.bind_point, params.button)
+                DataManager.read(params.bind_point)
+                -- 写入逻辑在按钮点击时单独处理
+            end
         end
     end
 end

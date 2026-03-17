@@ -151,36 +151,56 @@ function Switch.new(parent, state)
     self._callbacks = {}
     
     -- 创建值改变事件回调
-    local function on_value_changed(e)
-        -- 获取当前状态
-        local new_state = false
-        if self.switch.has_state then
-            new_state = self.switch:has_state(lv.STATE_CHECKED)
+-- 创建值改变事件回调
+local function on_value_changed(e)
+    -- 获取当前状态
+    local new_state = false
+    if self.switch.has_state then
+        new_state = self.switch:has_state(lv.STATE_CHECKED)
+    end
+    
+    -- 更新 props
+    self.props.switch_state = new_state
+    
+    -- 更新颜色
+    local bg_color_off = parse_color(self.props.bg_color_off or "#888888")
+    local bg_color_on = parse_color(self.props.bg_color_on or "#4CAF50")
+    local new_color = new_state and bg_color_on or bg_color_off
+    set_indicator_color(self, new_color)
+    
+    -- 如果是设计模式，只更新状态，不执行后续动作
+    if self.props.design_mode then
+        if self._callbacks.property_changed then
+            self._callbacks.property_changed("switch_state", new_state)
         end
+        return
+    end
+    
+    -- ===== 修改：支持读写模式的状态改变写入 =====
+    -- 执行数据动作：开关状态改变时写入对应的值
+    if self.props.event_action == "写入绑定数据点" and self.props.bind_point and self.props.bind_point ~= "" then
+        local value = new_state and self.props.on_value or self.props.off_value
+        print("[Switch] 状态改变，写入: " .. self.props.bind_point .. " = " .. value)
         
-        -- 更新 props
-        self.props.switch_state = new_state
-        
-        -- 更新颜色
-        local bg_color_off = parse_color(self.props.bg_color_off or "#888888")
-        local bg_color_on = parse_color(self.props.bg_color_on or "#4CAF50")
-        local new_color = new_state and bg_color_on or bg_color_off
-        set_indicator_color(self, new_color)
-        
-        -- 如果是设计模式，只更新状态，不执行后续动作
-        if self.props.design_mode then
-            if self._callbacks.property_changed then
-                self._callbacks.property_changed("switch_state", new_state)
-            end
-            return
+        -- 调用 SitwchAction
+        local callback = SitwchAction.create_callback("写入绑定数据点", {
+            bind_point = self.props.bind_point,
+            value = value,
+            websocket_url = self.props.websocket_url
+        })
+        if callback then
+            pcall(callback)
         end
-        
-        -- 执行数据动作：开关状态改变时写入对应的值
-        if self.props.event_action == "写入绑定数据点" and self.props.bind_point and self.props.bind_point ~= "" then
+    elseif self.props.event_action == "读写数据点" and self.props.bind_point and self.props.bind_point ~= "" then
+        -- 读写模式：状态改变时也写入数据
+        if self._write_callback then
+            print("[Switch] 读写模式状态改变，执行写入")
+            pcall(self._write_callback, new_state)
+        else
+            -- 如果没有保存的写入回调，动态创建
             local value = new_state and self.props.on_value or self.props.off_value
-            print("[Switch] 状态改变，写入: " .. self.props.bind_point .. " = " .. value)
+            print("[Switch] 读写模式状态改变，动态写入: " .. self.props.bind_point .. " = " .. value)
             
-            -- 调用 SitwchAction
             local callback = SitwchAction.create_callback("写入绑定数据点", {
                 bind_point = self.props.bind_point,
                 value = value,
@@ -190,12 +210,14 @@ function Switch.new(parent, state)
                 pcall(callback)
             end
         end
-        
-        -- 调用用户回调
-        if self._callbacks.value_changed then
-            pcall(self._callbacks.value_changed, self, {state = new_state})
-        end
     end
+    -- ===== 修改结束 =====
+    
+    -- 调用用户回调
+    if self._callbacks.value_changed then
+        pcall(self._callbacks.value_changed, self, {state = new_state})
+    end
+end
     
     -- 注册事件
     if self.switch.add_event_cb then
@@ -203,62 +225,76 @@ function Switch.new(parent, state)
     end
     
     -- ========== 绑定事件方法（内部使用）==========
-    function self._bind_event(self)
-        local event_action = self.props.event_action
-        local bind_point = self.props.bind_point
-        local on_value = self.props.on_value
-        local off_value = self.props.off_value
-        local url = self.props.websocket_url
+-- ========== 绑定事件方法（内部使用）==========
+function self._bind_event(self)
+    local event_action = self.props.event_action
+    local bind_point = self.props.bind_point
+    local on_value = self.props.on_value
+    local off_value = self.props.off_value
+    local url = self.props.websocket_url
+    
+    print("[Switch] 绑定事件: " .. (event_action or "none") .. ", 数据点: " .. (bind_point or "none"))
+    
+    if event_action == "读取绑定数据点" and bind_point and bind_point ~= "" then
+        -- 读取模式：根据数据点值自动更新开关状态
+        print("[Switch] 设置读取模式: " .. bind_point)
         
-        print("[Switch] 绑定事件: " .. (event_action or "none") .. ", 数据点: " .. (bind_point or "none"))
+        -- 注册读取回调
+        local callback = SitwchAction.create_callback("读取绑定数据点", {
+            bind_point = bind_point,
+            websocket_url = url,
+            switch = self  -- 传入 switch 实例，用于更新状态
+        })
         
-        if event_action == "读取绑定数据点" and bind_point and bind_point ~= "" then
-            -- 读取模式：根据数据点值自动更新开关状态
-            print("[Switch] 设置读取模式: " .. bind_point)
-            
-            -- 注册读取回调
-            local callback = SitwchAction.create_callback("读取绑定数据点", {
-                bind_point = bind_point,
-                websocket_url = url,
-                switch = self  -- 传入 switch 实例，用于更新状态
-            })
-            
-            -- 存储回调以便后续使用
-            self._read_callback = callback
-            
-            -- 立即执行一次读取
-                -- 延迟执行，确保WebSocket已连接
-    if lvgl and lvgl.timer_create then
+        -- 存储回调以便后续使用
+self._read_callback = callback
+
+-- 立即执行一次读取
+-- 延迟执行，确保WebSocket已连接
+if lvgl and lvgl.timer_create then
+    if callback then
+        print("[Switch] 设置自动读取: " .. bind_point)
+        
+        -- 添加执行标志，确保只执行一次
+        local executed = false
+        
         lvgl.timer_create(function()
-            if callback then
-                callback()  -- 延迟执行读取
-                print("[Switch] 延迟读取数据点: " .. bind_point)
+            -- 如果已经执行过，直接返回
+            if executed then
+                -- print("[定时器] 已经执行过，忽略")
+                return
             end
+            
+            executed = true
+            print("[Switch] 延迟读取数据点: " .. bind_point)
+            callback()  -- 执行读取
         end, 500, nil)  -- 500ms后自动读取
-    else
-        -- 如果没有 timer_create，立即执行
+    end
+else
+    -- 如果没有 timer_create，立即执行
+    if callback then
+        print("[Switch] 立即读取数据点: " .. bind_point)
+        callback()
+    end
+end
+        
+    elseif event_action == "读写数据点" and bind_point and bind_point ~= "" then
+        -- 读写模式：既能写入又能读取
+        print("[Switch] 设置读写模式: " .. bind_point)
+        
+        -- 注册读写回调
+        local callback = SitwchAction.create_callback("读写数据点", {
+            bind_point = bind_point,
+            write_value = {on = on_value, off = off_value},
+            websocket_url = url,
+            switch = self
+        })
+        
         if callback then
-            callback()
+            callback()  -- 执行初始化
         end
     end
-            
-        elseif event_action == "读写数据点" and bind_point and bind_point ~= "" then
-            -- 读写模式：既能写入又能读取
-            print("[Switch] 设置读写模式: " .. bind_point)
-            
-            -- 注册读写回调
-            local callback = SitwchAction.create_callback("读写数据点", {
-                bind_point = bind_point,
-                write_value = {on = on_value, off = off_value},
-                websocket_url = url,
-                switch = self
-            })
-            
-            if callback then
-                callback()  -- 执行初始化
-            end
-        end
-    end
+end
     
     -- ========== 必须实现的标准接口 ==========
     

@@ -102,6 +102,8 @@ function PropertyGlobalEditor.create_properties_table(ctx, y_pos, global_entry, 
             goto continue
         end
         
+
+        
         -- 跳过事件相关属性（在事件编辑器中显示）
         if prop_def.type == "action" or prop_def.type == "action_params" or prop_def.type == "code" then
             goto continue
@@ -120,8 +122,10 @@ function PropertyGlobalEditor.create_properties_table(ctx, y_pos, global_entry, 
         
         -- 计算此属性占用的高度
         local current_item_height = item_height
+        if prop_name == "src" then
+            PropertyInputs.create_image_path_input(ctx, prop_name, prop_value, is_read_only, global_entry, y_pos)
         
-        if prop_type == "string" then
+        elseif prop_type == "string" then
             -- 检查是否是多行文本
             if prop_def.multiline then
                 local lines = prop_def.lines or 3

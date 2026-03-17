@@ -153,6 +153,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\actions\page_navigation.lua" />
     <None Include="lua\actions\DataOperation.lua" />
     <None Include="lua\actions\SitwchAction.lua" />
+    <None Include="lua\actions\ValueChange.lua" />
     <None Include="lua\editor\clipboard.lua" />
     <None Include="lua\demo_button.lua" />
     <None Include="lua\demo_trend_chart.lua" />
@@ -162,6 +163,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\editor\CanvasList.lua" />
     <None Include="lua\editor\ColorDialog.lua" />
     <None Include="lua\editor\DataAction.lua" />
+    <None Include="lua\editor\DataManager.lua" />
     <None Include="lua\editor\FileDialog.lua" />
     <None Include="lua\editor\icons.lua" />
     <None Include="lua\editor\json.lua" />
@@ -189,6 +191,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\widgets\new_button.lua" />
     <None Include="lua\widgets\image.lua" />
     <None Include="lua\widgets\new_label.lua" />
+    <None Include="lua\widgets\new_tanchuang.lua" />
     <None Include="lua\widgets\slider.lua" />
     <None Include="lua\widgets\status_bar.lua" />
     <None Include="lua\widgets\switch.lua" />
