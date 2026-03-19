@@ -32,6 +32,9 @@ PopupButton.__widget_meta = {
   events = { "confirm", "cancel" },
 }
 
+-- 存储所有创建的PopupButton实例，用于数据回调更新
+PopupButton.instances = {}
+
 local function parse_color(c)
      if type(c) == "string"  and c:match("^#%x%x%x%x%x%x$")   then 
            return tonumber(c:sub(2), 16)
@@ -53,6 +56,18 @@ local function apply_styles(self)
     if self.label_widget and self.label_widget.set_style_text_color then 
         self.label_widget:set_style_text_color(text_color, 0)
     end
+end
+
+-- 更新按钮标签显示（包含绑定数据点和当前值）
+local function update_button_label(self)
+    local label_text = ""
+    -- 有数据点值 → 显示数值；无值 → 显示默认按钮文本
+    if self.bind_point_value and self.bind_point_value ~= "" then
+        label_text = self.bind_point_value
+    else
+        label_text = self.props.label
+    end
+    self.label_widget:set_text(label_text)
 end
 
 local function create_popup(self, parent)
@@ -131,7 +146,12 @@ local function create_popup(self, parent)
     self._popup_textarea = textarea
 
     function self:show_popup()
-        self._popup_textarea:set_text("")
+        -- 显示弹窗时，将当前数据点值填入输入框
+        if self.bind_point_value then
+            self._popup_textarea:set_text(self.bind_point_value)
+        else
+            self._popup_textarea:set_text("")
+        end
         self._popup_mask:remove_flag(lv.OBJ_FLAG_HIDDEN)
     end
 
@@ -152,9 +172,14 @@ local function create_popup(self, parent)
         if self.props.bind_point and self.props.bind_point ~= "" then
             print("[PopupButton] 发送数据到数据点: " .. self.props.bind_point .. " = " .. value)
             
+            -- 更新本地存储的值
+            self.bind_point_value = value
+            -- 更新按钮显示
+            update_button_label(self)
+            
             -- 使用 DataAction 发送数据
-            if lvgl then
-                lvgl.write(self.props.bind_point, value)
+            if lv then
+                lv.write(self.props.bind_point, value)
             else
                 print("[PopupButton] 错误: lvgl 不存在")
             end
@@ -188,40 +213,69 @@ local function create_popup(self, parent)
     end, lv.EVENT_CLICKED, nil)
 end
 
+-- 全局数据接收处理函数
+local function handle_data_received(device_id, value, status)
+    print("[PopupButton] 接收数据:", device_id, "=", value, "(status:", status, ")")
+    -- 遍历所有实例，更新对应数据点的值
+    for _, instance in ipairs(PopupButton.instances) do
+        if instance.props.bind_point == device_id then
+            instance.bind_point_value = value
+            update_button_label(instance)
+        end
+    end
+end
 
-
-
-
-
+-- 初始化网络和数据监听
+local function init_network()
+    -- 启动网络服务（如果还没启动）
+    if lv and not lv._network_started then
+        lv.start_network_service(100)
+        lv._network_started = true
+        
+        -- 设置数据回调
+        lv.set_callbacks(
+            -- 连接状态回调
+            function(connected)
+                if connected then
+                    print("[PopupButton] 网络已连接")
+                    -- 连接成功后，读取所有绑定的数据点
+                    for _, instance in ipairs(PopupButton.instances) do
+                        if instance.props.bind_point and instance.props.bind_point ~= "" then
+                            lv.read(instance.props.bind_point)
+                        end
+                    end
+                else
+                    print("[PopupButton] 网络连接断开")
+                end
+            end,
+            -- 数据接收回调
+            handle_data_received
+        )
+    end
+end
 
 function PopupButton.new(parent, state)
     state = state or {}
     local self = {}
     self.props = {}
+    self.bind_point_value = ""  -- 存储绑定数据点的当前值
+    
+    -- 初始化属性
     for _, p in ipairs(PopupButton.__widget_meta.properties) do
         self.props[p.name] = state[p.name] ~= nil and state[p.name] or p.default
     end
 
     self._callbacks = {}
 
+    -- 创建按钮
     self.btn = lv.button_create(parent)
     self.btn:set_size(self.props.width, self.props.height)
     self.btn:set_pos(self.props.x, self.props.y)
     self.label_widget = lv.label_create(self.btn)
-    self.label_widget:set_text(self.props.label)
+    update_button_label(self)  -- 初始化标签显示
     self.label_widget:center()
 
     apply_styles(self)
-
-    -- 显示当前绑定数据点信息（如果有）
-    local function update_button_label()
-        local label_text = self.props.label
-        if self.props.bind_point and self.props.bind_point ~= "" then
-            label_text = label_text .. " [" .. self.props.bind_point .. "]"
-        end
-        self.label_widget:set_text(label_text)
-    end
-    update_button_label()
 
     -- 事件订阅接口
     function self.on(self, event_name, callback)
@@ -240,20 +294,15 @@ function PopupButton.new(parent, state)
         self.props[name] = value
         
         if name == "label" then 
-            local label_text = value
-            if self.props.bind_point and self.props.bind_point ~= "" then
-                label_text = label_text .. " [" .. self.props.bind_point .. "]"
-            end
-            self.label_widget:set_text(label_text) 
+            update_button_label(self)
         end
-       -- if name == "bind_point" then
-            -- 更新按钮文本显示绑定点信息
-          --  local label_text = self.props.label
-          --  if value and value ~= "" then
-          --      label_text = label_text .. " [" .. value .. "]"
-         --   end
-         --   self.label_widget:set_text(label_text)
-       -- end
+        if name == "bind_point" then
+            -- 更新绑定数据点后，立即读取新数据点的值
+            update_button_label(self)
+            if value and value ~= "" and lv then
+                lv.read(value)
+            end
+        end
         if name == "x" or name == "y" then 
             self.btn:set_pos(self.props.x, self.props.y) 
         end
@@ -300,7 +349,19 @@ function PopupButton.new(parent, state)
         self:show_popup()
     end, lv.EVENT_CLICKED, nil)
 
+    -- 将实例加入全局列表
+    table.insert(PopupButton.instances, self)
+    
+    -- 初始化网络
+    init_network()
+    
+    -- 如果配置了websocket，尝试连接
+    if self.props.websocket_url and self.props.websocket_url ~= "" and lv then
+        lv.connect(self.props.websocket_url, 3000)
+    end
+
     return self
 end
 
+-- 导出模块
 return PopupButton

@@ -1,19 +1,23 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-03-18 16:58:01
+-- 生成时间: 2026-03-19 13:50:08
 -- 工程版本: 1.0
 -- ==============================================
 
 -- 启动网络服务
 lvgl.start_network_service(100)
-lvgl.connect("ws://192.168.0.16:8085/ws/", 3000)
+lvgl.connect("ws://192.168.0.80:8085/ws/", 3000)
 
 -- 引用 LVGL
 local lv = require("lvgl")
 
 -- 引用控件模块
 local widgets_PopupButton = require("widgets.PopupButton")
+local widgets_new_button = require("widgets.new_button")
+local widgets_new_label = require("widgets.new_label")
+local widgets_switch = require("widgets.switch")
+local widgets_image = require("widgets.image")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -44,23 +48,193 @@ local function create_page_1(parent)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
 
-    -- 控件 1: popup_button_simple
-    local widget_1 = widgets_PopupButton.new(container, {
-        height = 40,
-        alignment = "center",
-        font_size = 16,
-        bind_point = "Device2.tag0001",
-        label = "弹窗按钮",
-        x = 320,
-        y = 258,
-        color = "#ffffff",
+    -- 控件 1: custom_image
+    local widget_1 = widgets_image.new(container, {
+        rotation = 0,
+        scale = 256,
+        instance_name = "",
         design_mode = false,
-        websocket_url = "ws://192.168.0.16:8085/ws/",
-        bg_color = "#007acc",
-        popup_title = "请输入",
+        on_loaded_handler = "",
+        width = 800,
+        src = "C:/Test/LUATEST2/ahu3.png",
+        scale_x = 256,
+        height = 600,
+        x = 0,
+        opa = 255,
+        y = 0,
+        scale_y = 256,
+        mode = "normal"
+    })
+
+    -- 控件 2: custom_button
+    local widget_2 = widgets_new_button.new(container, {
+        http_url = "",
+        instance_name = "",
+        design_mode = false,
+        false_color = "#ffffff",
+        width = 80,
+        on_clicked_handler = "",
+        font_size = 16,
+        height = 30,
+        true_bg_color = "#ffffff",
+        bg_color = "#5C400E",
+        http_token = "",
+        bind_point = "THmeter.AirRoomTemp1",
+        label = "OK",
+        alignment = "center",
+        enabled = true,
+        color = "#ffffff",
+        http_data_type = "实时数据",
+        custom_address = "",
+        websocket_url = "ws://192.168.0.80:8085/ws/",
+        on_single_clicked_handler = "",
+        compare_operator = "大于",
+        event_action = "读取绑定数据点",
+        compare_value = "0",
+        true_color = "#ffffff",
         custom_value = "",
+        x = 289,
+        y = 20,
+        false_bg_color = "#ffffff",
+        on_double_clicked_handler = ""
+    })
+
+    -- 控件 3: label
+    local widget_3 = widgets_new_label.new(container, {
+        http_url = "",
+        bind_point = "",
+        design_mode = false,
+        instance_name = "",
+        text = "温度",
+        on_clicked_handler = "",
+        font_size = 16,
+        height = 30,
+        true_bg_color = "#ffffff",
+        bg_opa = 0,
+        text_color = "#FFFFFF",
+        visible = true,
+        bg_color = "#00000000",
+        websocket_url = "",
+        true_color = "#ffffff",
+        custom_address = "",
         width = 100,
-        input_hint = "请输入..."
+        long_mode = "wrap",
+        http_token = "",
+        custom_value = "",
+        compare_operator = "大于",
+        event_action = "写入绑定数据点",
+        compare_value = "0",
+        alignment = "left",
+        false_color = "#ffffff",
+        x = 249,
+        y = 29,
+        http_data_type = "实时数据",
+        false_bg_color = "#ffffff"
+    })
+
+    -- 控件 4: popup_button_simple
+    local widget_4 = widgets_PopupButton.new(container, {
+        bind_point = "THmeter.AirRoomTemp1",
+        design_mode = false,
+        popup_title = "请输入",
+        color = "#ffffff",
+        websocket_url = "ws://192.168.0.80:8085/ws/",
+        width = 80,
+        alignment = "center",
+        input_hint = "请输入...",
+        height = 30,
+        y = 72,
+        bg_color = "#5C400E",
+        font_size = 16,
+        x = 292,
+        label = "OK"
+    })
+
+    -- 控件 5: label
+    local widget_5 = widgets_new_label.new(container, {
+        http_url = "",
+        bind_point = "",
+        design_mode = false,
+        instance_name = "",
+        text = "℃",
+        on_clicked_handler = "",
+        font_size = 16,
+        height = 30,
+        true_bg_color = "#ffffff",
+        bg_opa = 0,
+        text_color = "#FFFFFF",
+        visible = true,
+        bg_color = "#00000000",
+        websocket_url = "",
+        true_color = "#ffffff",
+        custom_address = "",
+        width = 100,
+        long_mode = "wrap",
+        http_token = "",
+        custom_value = "",
+        compare_operator = "大于",
+        event_action = "写入绑定数据点",
+        compare_value = "0",
+        alignment = "left",
+        false_color = "#ffffff",
+        x = 371,
+        y = 28,
+        http_data_type = "实时数据",
+        false_bg_color = "#ffffff"
+    })
+
+    -- 控件 6: popup_button_simple
+    local widget_6 = widgets_PopupButton.new(container, {
+        bind_point = "THmeter.AirRoomTemp2",
+        design_mode = false,
+        popup_title = "请输入",
+        color = "#ffffff",
+        websocket_url = "ws://192.168.0.80:8085/ws/",
+        width = 80,
+        alignment = "center",
+        input_hint = "请输入...",
+        height = 30,
+        y = 127,
+        bg_color = "#5C400E",
+        font_size = 16,
+        x = 291,
+        label = "OK"
+    })
+
+    -- 控件 7: custom_image
+    local widget_7 = widgets_image.new(container, {
+        rotation = 0,
+        scale = 256,
+        instance_name = "",
+        design_mode = false,
+        on_loaded_handler = "",
+        width = 100,
+        src = "jjjj.png",
+        scale_x = 256,
+        height = 100,
+        x = 547,
+        opa = 255,
+        y = 114,
+        scale_y = 256,
+        mode = "normal"
+    })
+
+    -- 控件 8: custom_switch
+    local widget_8 = widgets_switch.new(container, {
+        bind_point = "THmeter.AirRoomTemp3",
+        design_mode = false,
+        instance_name = "",
+        switch_state = true,
+        bg_color_off = "#888888",
+        width = 60,
+        on_value_changed_handler = "",
+        websocket_url = "ws://192.168.0.80:8085/ws/",
+        height = 30,
+        x = 503,
+        on_value = "1",
+        y = 128,
+        off_value = "0",
+        event_action = "读取绑定数据点"
     })
 
     return container
