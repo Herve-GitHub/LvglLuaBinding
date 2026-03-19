@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-03-17 15:01:42",
+  "created_at": "2026-03-18 16:58:01",
   "current_page_index": 1,
-  "modified_at": "2026-03-17 15:01:42",
+  "modified_at": "2026-03-18 16:58:01",
   "pages": [
     {
       "bg_color": "#1E1E1E",
@@ -10,24 +10,25 @@
       "name": "图页 1",
       "widgets": [
         {
-          "module_path": "widgets.switch",
+          "module_path": "widgets.PopupButton",
           "props": {
-            "bg_color_off": "#888888",
-            "bind_point": "user.tag0001",
+            "alignment": "center",
+            "bg_color": "#007acc",
+            "bind_point": "Device2.tag0001",
+            "color": "#ffffff",
             "custom_value": "",
-            "event_action": "读写数据点",
-            "height": 30,
-            "instance_name": "",
-            "off_value": "0",
-            "on_value": "1",
-            "on_value_changed_handler": "",
-            "switch_state": true,
-            "websocket_url": "ws://192.168.0.60:8085/ws/",
-            "width": 60,
-            "x": 385,
-            "y": 336
+            "design_mode": true,
+            "font_size": 16,
+            "height": 40,
+            "input_hint": "请输入...",
+            "label": "弹窗按钮",
+            "popup_title": "请输入",
+            "websocket_url": "ws://192.168.0.16:8085/ws/",
+            "width": 100,
+            "x": 320,
+            "y": 258
           },
-          "type": "custom_switch"
+          "type": "popup_button_simple"
         }
       ],
       "width": 800

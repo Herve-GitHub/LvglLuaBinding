@@ -185,6 +185,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\print_widget_meta.lua" />
     <None Include="lua\test_lua\websocket.lua" />
     <None Include="lua\widgets\button.lua" />
+    <None Include="lua\widgets\PopupButton.lua" />
     <None Include="lua\widgets\checkbox.lua" />
     <None Include="lua\widgets\dropdown.lua" />
     <None Include="lua\widgets\label.lua" />

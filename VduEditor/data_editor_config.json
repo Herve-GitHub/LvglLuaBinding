@@ -1,0 +1,1 @@
+{"data_points": ["Device1.tag0001","Device1.tag0002","Device2.tag0001","user.tag0001","Device2.humidity","System.status"],"websocket_urls": ["ws://192.168.0.100:8085/ws","ws://192.168.0.60:8085/ws","ws://192.168.0.99:8085/ws","ws://localhost:8085/ws","ws://192.168.0.16:8085/ws/"]}

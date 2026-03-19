@@ -15,7 +15,8 @@ local WIDGET_TYPE_TO_MODULE = {
     ["trend_chart"] = "widgets.trend_chart",
     ["status_bar"] = "widgets.status_bar",
     ["switch"] = "widgets.switch",
-    ["image"] = "widgets_image"
+    ["image"] = "widgets.image" ,
+    ["PopupButton"] = "widgets.PopupButton" 
 }
 
 -- 控件类型对应的事件列表

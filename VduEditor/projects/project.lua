@@ -1,19 +1,19 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-03-17 15:01:42
+-- 生成时间: 2026-03-18 16:58:01
 -- 工程版本: 1.0
 -- ==============================================
 
 -- 启动网络服务
 lvgl.start_network_service(100)
-lvgl.connect("ws://192.168.0.60:8085/ws/", 3000)
+lvgl.connect("ws://192.168.0.16:8085/ws/", 3000)
 
 -- 引用 LVGL
 local lv = require("lvgl")
 
 -- 引用控件模块
-local widgets_switch = require("widgets.switch")
+local widgets_PopupButton = require("widgets.PopupButton")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -44,23 +44,23 @@ local function create_page_1(parent)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
 
-    -- 控件 1: custom_switch
-    local widget_1 = widgets_switch.new(container, {
-        width = 60,
-        y = 336,
-        websocket_url = "ws://192.168.0.60:8085/ws/",
-        on_value_changed_handler = "",
-        switch_state = true,
-        x = 385,
-        instance_name = "",
+    -- 控件 1: popup_button_simple
+    local widget_1 = widgets_PopupButton.new(container, {
+        height = 40,
+        alignment = "center",
+        font_size = 16,
+        bind_point = "Device2.tag0001",
+        label = "弹窗按钮",
+        x = 320,
+        y = 258,
+        color = "#ffffff",
         design_mode = false,
+        websocket_url = "ws://192.168.0.16:8085/ws/",
+        bg_color = "#007acc",
+        popup_title = "请输入",
         custom_value = "",
-        on_value = "1",
-        off_value = "0",
-        height = 30,
-        bind_point = "user.tag0001",
-        event_action = "读写数据点",
-        bg_color_off = "#888888"
+        width = 100,
+        input_hint = "请输入..."
     })
 
     return container
