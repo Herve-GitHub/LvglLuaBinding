@@ -392,7 +392,7 @@
 #define LV_USE_IMGFONT 0
 #define LV_USE_OBSERVER 1
 #define LV_USE_IME_PINYIN 0
-#define LV_USE_FILE_EXPLORER 0
+#define LV_USE_FILE_EXPLORER 1
 #define LV_USE_FONT_MANAGER 0
 #define LV_USE_TEST 0
 #define LV_USE_XML    0

@@ -16,6 +16,7 @@ static const int WINDOW_HEIGHT = 960;//960
 // 默认脚本路径（相对于可执行文件目录）
 //static const char* DEFAULT_SCRIPT_PATH = "websocket\\picture.lua";  // 修改为 websocket 测试脚本
 static const char* DEFAULT_SCRIPT_PATH = "lua\\editor\\main_editor.lua";  // 修改为 websocket 测试脚本
+ //static const char* DEFAULT_SCRIPT_PATH = "projects\\project.lua";  // 修改为 websocket 测试脚本
 // 默认 Lua 搜索路径（相对于可执行文件目录）
 static const char* DEFAULT_LUA_PATH_TEMPLATE =
 "%slua\\editor\\?.lua;"

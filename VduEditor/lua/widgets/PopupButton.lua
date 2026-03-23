@@ -1,6 +1,8 @@
-﻿-- 按钮点击弹出带标题和输入框的弹窗（含确认/取消按钮），弹窗贴近按钮，无del/destroy
+﻿-- PopupButton.lua
 local lv = require("lvgl")
 local DataAction = require("editor.DataAction")
+-- 引入 DataManager（核心：复用其全局回调）
+local DataManager = require("editor.DataManager")
 
 local PopupButton = {}
 
@@ -22,8 +24,6 @@ PopupButton.__widget_meta = {
     { name = "bg_color", type = "color", default = "#007acc", label = "背景色" },
     { name = "popup_title", type = "string", default = "请输入", label = "弹窗标题" },
     { name = "input_hint", type = "string", default = "请输入...", label = "输入框提示" },
-    
-    -- 新增数据点绑定属性
     { name = "bind_point", type = "string", default = "", label = "绑定数据点",
       description = "例如: Device1.E, PLC1.D100" },
     { name = "websocket_url", type = "string", default = "", label = "WebSocket",
@@ -32,11 +32,11 @@ PopupButton.__widget_meta = {
   events = { "confirm", "cancel" },
 }
 
--- 存储所有创建的PopupButton实例，用于数据回调更新
+-- 仅保留实例列表用于手动清理（不再用于回调）
 PopupButton.instances = {}
 
 local function parse_color(c)
-     if type(c) == "string"  and c:match("^#%x%x%x%x%x%x$")   then 
+     if type(c) == "string" and c:match("^#%x%x%x%x%x%x$") then 
            return tonumber(c:sub(2), 16)
      elseif type(c) == "number" then 
            return c
@@ -45,27 +45,22 @@ local function parse_color(c)
 end
 
 local function apply_styles(self)
-    -- 背景色
     local bg_color = parse_color(self.props.bg_color or "#007acc")
     if self.btn and self.btn.set_style_bg_color then 
         self.btn:set_style_bg_color(bg_color, 0)
     end
 
-    -- 文本颜色
     local text_color = parse_color(self.props.color or "#ffffff")
     if self.label_widget and self.label_widget.set_style_text_color then 
         self.label_widget:set_style_text_color(text_color, 0)
     end
 end
 
--- 更新按钮标签显示（包含绑定数据点和当前值）
+-- 更新按钮标签显示
 local function update_button_label(self)
-    local label_text = ""
-    -- 有数据点值 → 显示数值；无值 → 显示默认按钮文本
+    local label_text = self.props.label
     if self.bind_point_value and self.bind_point_value ~= "" then
         label_text = self.bind_point_value
-    else
-        label_text = self.props.label
     end
     self.label_widget:set_text(label_text)
 end
@@ -79,27 +74,21 @@ local function create_popup(self, parent)
     mask:add_flag(lv.OBJ_FLAG_CLICKABLE)
     mask:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
 
-    -- 等比例缩放弹窗整体大小
+    -- 弹窗尺寸和位置
     local scale = 1.3
     local popup_w = math.floor(220 * scale)
     local popup_h = math.floor(120 * scale)
-
-    -- 弹窗主体
     local popup = lv.obj_create(mask)
     popup:set_size(popup_w+10, popup_h+10)
     popup:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
 
-    -- 获取按钮参数
     local btn_x = self.btn:get_x()
     local btn_y = self.btn:get_y()
     local btn_w = self.btn:get_width()
     local btn_h = self.btn:get_height()
-
-    -- 弹窗位置：水平居中对齐按钮，弹窗底部与按钮顶部对齐
     local popup_x = btn_x + (btn_w - popup_w) / 2
     local popup_y = btn_y - popup_h - 6
     if popup_y < 0 then popup_y = 0 end
-
     popup:set_pos(popup_x+500, popup_y+300)
 
     -- 标题
@@ -116,13 +105,12 @@ local function create_popup(self, parent)
     textarea:set_pos(textarea_margin-15, 36)
     textarea:set_placeholder_text(self.props.input_hint or "请输入...")
 
-    -- 按钮尺寸和位置
+    -- 确认/取消按钮
     local btn_w2 = math.floor(popup_w * 0.31)
     local btn_h2 = 32
     local btn_spacing = math.floor(popup_w * 0.08)
     local btn_y = popup_h - btn_h2 - 16
 
-    -- 确认按钮
     local confirm_btn = lv.button_create(popup)
     confirm_btn:set_size(btn_w2, btn_h2-5)
     confirm_btn:set_pos(btn_spacing-18, btn_y-3)
@@ -130,7 +118,6 @@ local function create_popup(self, parent)
     confirm_label:set_text("确认")
     confirm_label:center()
 
-    -- 取消按钮
     local cancel_btn = lv.button_create(popup)
     cancel_btn:set_size(btn_w2, btn_h2-5)
     cancel_btn:set_pos(popup_w - btn_w2 - btn_spacing-16, btn_y-3)
@@ -141,12 +128,11 @@ local function create_popup(self, parent)
     -- 蒙版初始隐藏
     mask:add_flag(lv.OBJ_FLAG_HIDDEN)
 
-    -- 公共句柄
+    -- 弹窗控制方法
     self._popup_mask = mask
     self._popup_textarea = textarea
 
     function self:show_popup()
-        -- 显示弹窗时，将当前数据点值填入输入框
         if self.bind_point_value then
             self._popup_textarea:set_text(self.bind_point_value)
         else
@@ -159,34 +145,22 @@ local function create_popup(self, parent)
         self._popup_mask:add_flag(lv.OBJ_FLAG_HIDDEN)
     end
 
-    -- 确认按钮事件
+    -- 确认按钮事件（核心：仅调用DataManager.write，不处理回调）
     confirm_btn:add_event_cb(function()
         local value = textarea:get_text()
         
-        -- 调用 confirm 回调
+        -- 触发confirm回调
         if self._callbacks and self._callbacks.confirm then
             pcall(self._callbacks.confirm, self, value)
         end
         
-        -- 如果绑定了数据点，发送数据
+        -- 仅通过DataManager写入数据（关键：让DataManager的中央回调处理所有更新）
         if self.props.bind_point and self.props.bind_point ~= "" then
             print("[PopupButton] 发送数据到数据点: " .. self.props.bind_point .. " = " .. value)
+            DataManager.write(self.props.bind_point, value)
             
-            -- 更新本地存储的值
-            self.bind_point_value = value
-            -- 更新按钮显示
-            update_button_label(self)
-            
-            -- 使用 DataAction 发送数据
-            if lv then
-                lv.write(self.props.bind_point, value)
-            else
-                print("[PopupButton] 错误: lvgl 不存在")
-            end
-            
-            -- 如果有 WebSocket 配置，也通过 WebSocket 发送
+            -- WebSocket逻辑（保留）
             if self.props.websocket_url and self.props.websocket_url ~= "" then
-                -- 这里可以添加 WebSocket 发送逻辑
                 print("[PopupButton] 通过 WebSocket 发送数据: " .. self.props.websocket_url)
             end
         end
@@ -202,8 +176,15 @@ local function create_popup(self, parent)
         self:hide_popup()
     end, lv.EVENT_CLICKED, nil)
 
-    -- 蒙版点击关闭
+    -- 蒙版点击关闭（修复事件参数）
     mask:add_event_cb(function(e)
+        if type(e) == "number" then
+            self:hide_popup()
+            if self._callbacks and self._callbacks.cancel then
+                pcall(self._callbacks.cancel, self)
+            end
+            return
+        end
         if e and e.get_target and e:get_target() == mask then
             self:hide_popup()
             if self._callbacks and self._callbacks.cancel then
@@ -213,52 +194,11 @@ local function create_popup(self, parent)
     end, lv.EVENT_CLICKED, nil)
 end
 
--- 全局数据接收处理函数
-local function handle_data_received(device_id, value, status)
-    print("[PopupButton] 接收数据:", device_id, "=", value, "(status:", status, ")")
-    -- 遍历所有实例，更新对应数据点的值
-    for _, instance in ipairs(PopupButton.instances) do
-        if instance.props.bind_point == device_id then
-            instance.bind_point_value = value
-            update_button_label(instance)
-        end
-    end
-end
-
--- 初始化网络和数据监听
-local function init_network()
-    -- 启动网络服务（如果还没启动）
-    if lv and not lv._network_started then
-        lv.start_network_service(100)
-        lv._network_started = true
-        
-        -- 设置数据回调
-        lv.set_callbacks(
-            -- 连接状态回调
-            function(connected)
-                if connected then
-                    print("[PopupButton] 网络已连接")
-                    -- 连接成功后，读取所有绑定的数据点
-                    for _, instance in ipairs(PopupButton.instances) do
-                        if instance.props.bind_point and instance.props.bind_point ~= "" then
-                            lv.read(instance.props.bind_point)
-                        end
-                    end
-                else
-                    print("[PopupButton] 网络连接断开")
-                end
-            end,
-            -- 数据接收回调
-            handle_data_received
-        )
-    end
-end
-
 function PopupButton.new(parent, state)
     state = state or {}
     local self = {}
     self.props = {}
-    self.bind_point_value = ""  -- 存储绑定数据点的当前值
+    self.bind_point_value = ""  -- 本地缓存值
     
     -- 初始化属性
     for _, p in ipairs(PopupButton.__widget_meta.properties) do
@@ -267,14 +207,13 @@ function PopupButton.new(parent, state)
 
     self._callbacks = {}
 
-    -- 创建按钮
+    -- 创建按钮UI
     self.btn = lv.button_create(parent)
     self.btn:set_size(self.props.width, self.props.height)
     self.btn:set_pos(self.props.x, self.props.y)
     self.label_widget = lv.label_create(self.btn)
-    update_button_label(self)  -- 初始化标签显示
+    update_button_label(self)
     self.label_widget:center()
-
     apply_styles(self)
 
     -- 事件订阅接口
@@ -282,86 +221,85 @@ function PopupButton.new(parent, state)
         self._callbacks[event_name] = callback
     end
 
-    -- 获取LVGL容器
+    -- 属性操作接口
     function self.get_container(self) return self.btn end
-    
-    -- 获取单个属性
     function self.get_property(self, name) return self.props[name] end
-    
-    -- 设置单个属性
     function self.set_property(self, name, value)
         local old_value = self.props[name]
         self.props[name] = value
         
-        if name == "label" then 
-            update_button_label(self)
-        end
+        if name == "label" then update_button_label(self) end
         if name == "bind_point" then
-            -- 更新绑定数据点后，立即读取新数据点的值
+            self.bind_point_value = ""
             update_button_label(self)
-            if value and value ~= "" and lv then
-                lv.read(value)
+            if value and value ~= "" then
+                -- 仅注册到DataManager，由DataManager处理数据更新
+                DataManager.register_button(value, {
+                    set_label = function(_, val)
+                        self.bind_point_value = val
+                        update_button_label(self)
+                    end,
+                    set_text = function(_, val)
+                        self.bind_point_value = val
+                        update_button_label(self)
+                    end
+                })
+                DataManager.read(value)
             end
         end
-        if name == "x" or name == "y" then 
-            self.btn:set_pos(self.props.x, self.props.y) 
-        end
-        if name == "width" or name == "height" then 
-            self.btn:set_size(self.props.width, self.props.height) 
-        end
-        if name == "color" or name =="bg_color" then 
-            apply_styles(self) 
-        end
+        if name == "x" or name == "y" then self.btn:set_pos(self.props.x, self.props.y) end
+        if name == "width" or name == "height" then self.btn:set_size(self.props.width, self.props.height) end
+        if name == "color" or name =="bg_color" then apply_styles(self) end
         
         return true
     end
-    
-    -- 获取所有属性
     function self.get_properties(self)
         local out = {}
         for k, v in pairs(self.props) do out[k] = v end
         return out
     end
-    
-    -- 批量应用属性
     function self.apply_properties(self, props_table)
-        for k, v in pairs(props_table) do 
-            self:set_property(k, v) 
-        end
+        for k, v in pairs(props_table) do self:set_property(k, v) end
         return true
     end
-    
-    -- 导出状态
-    function self.to_state(self) 
-        return self:get_properties() 
-    end
-    
-    -- 获取控件ID
-    function self.get_id(self) 
-        return tostring(self) 
-    end
+    function self.to_state(self) return self:get_properties() end
+    function self.get_id(self) return tostring(self) end
 
     -- 创建弹窗
     create_popup(self, lv.scr_act())
 
-    -- 按钮点击事件：显示弹窗
+    -- 按钮点击显示弹窗
     self.btn:add_event_cb(function()
         self:show_popup()
     end, lv.EVENT_CLICKED, nil)
 
-    -- 将实例加入全局列表
+    -- 加入实例列表
     table.insert(PopupButton.instances, self)
     
-    -- 初始化网络
-    init_network()
+    -- 初始化（仅调用DataManager.init，不注册任何LVGL回调）
+    DataManager.init()
     
-    -- 如果配置了websocket，尝试连接
-    if self.props.websocket_url and self.props.websocket_url ~= "" and lv then
-        lv.connect(self.props.websocket_url, 3000)
+    -- 注册到DataManager（核心：让DataManager的中央回调更新当前按钮）
+    if self.props.bind_point and self.props.bind_point ~= "" then
+        DataManager.register_button(self.props.bind_point, {
+            set_label = function(_, value)
+                self.bind_point_value = value
+                update_button_label(self)
+            end,
+            set_text = function(_, value)
+                self.bind_point_value = value
+                update_button_label(self)
+            end
+        })
+        DataManager.read(self.props.bind_point)
+
+        -- WebSocket连接（保留）
+        if self.props.websocket_url and self.props.websocket_url ~= "" and lv then
+            lv.connect(self.props.websocket_url, 3000)
+        end
     end
 
     return self
 end
 
--- 导出模块
 return PopupButton

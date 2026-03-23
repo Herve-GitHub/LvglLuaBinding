@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2013 Sergey Lyubka
+﻿// Copyright (c) 2004-2013 Sergey Lyubka
 // Copyright (c) 2013-2025 Cesanta Software Limited
 // All rights reserved
 //
@@ -9171,9 +9171,9 @@ static void write_conn(struct mg_connection *c) {
   char *buf = (char *) c->send.buf;
   size_t len = c->send.len;
   long n = c->is_tls ? mg_tls_send(c, buf, len) : mg_io_send(c, buf, len);
-  MG_DEBUG(("%lu %ld snd %ld/%ld rcv %ld/%ld n=%ld err=%d", c->id, c->fd,
-            (long) c->send.len, (long) c->send.size, (long) c->recv.len,
-            (long) c->recv.size, n, MG_SOCK_ERR(n)));
+ // MG_DEBUG(("%lu %ld snd %ld/%ld rcv %ld/%ld n=%ld err=%d", c->id, c->fd,
+   //         (long) c->send.len, (long) c->send.size, (long) c->recv.len,
+     //       (long) c->recv.size, n, MG_SOCK_ERR(n)));
   iolog(c, buf, n, false);
 }
 
@@ -20460,7 +20460,7 @@ static void mg_ws_cb(struct mg_connection *c, int ev, void *ev_data) {
           mg_call(c, MG_EV_WS_CTL, &m);
           break;
         case WEBSOCKET_OP_PING:
-          MG_DEBUG(("%s", "WS PONG"));
+          //MG_DEBUG(("%s", "WS PONG"));
           mg_ws_send(c, s, msg.data_len, WEBSOCKET_OP_PONG);
           mg_call(c, MG_EV_WS_CTL, &m);
           break;

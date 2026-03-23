@@ -120,6 +120,8 @@
     <None Include="lua\widgets\new_tanchuang.lua" />
     <None Include="lua\editor\DataManager.lua" />
     <None Include="lua\widgets\PopupButton.lua" />
+    <None Include="data_editor_config.json" />
+    <None Include="lua\widgets\config.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">
@@ -208,6 +210,9 @@
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="icons\ribbon\install.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="image\ahu3.png">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>

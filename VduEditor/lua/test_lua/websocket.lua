@@ -2,11 +2,11 @@
 local lvgl = require("lvgl")
 print("lvgl type:", type(lvgl))
 
+-- 引入DataManager（核心修改）
+local DataManager = require("editor.DataManager")
+
 -- 全局引用 label，以便在回调中使用
 local g_label = nil
-
--- 启动网络服务
-lvgl.start_network_service(100)
 
 -- 创建界面
 local scr = lvgl.scr_act()
@@ -28,59 +28,46 @@ g_label:set_pos(600, 200)
 g_label:set_style_bg_opa(lvgl.OPA_COVER, 0)  -- 完全不透明
 g_label:set_style_bg_color(0x4CAF50, 0)     -- 绿色背景
 
+-- 设置DataManager的外部回调（关键：保留你的自定义逻辑）
+DataManager.set_external_callback({
+    -- 连接状态回调
+    on_connect = function(connected)
+        if connected then
+            print("连接成功，开始读取数据...")
+            DataManager.read("THmeter.AirRoomTemp1")  -- 请求读取
+        else
+            if g_label then
+                g_label:set_text("连接断开")
+            end
+        end
+    end,
+    -- 数据接收回调
+    on_data = function(device_id, value, status)
+        print("📡 Received:", device_id, "=", value, "(status:", status, ")")
+        if g_label then
+            g_label:set_text(value)
+        end
+    end,
+    -- 错误回调
+    on_error = function(err)
+        print("⚠️ WebSocket error:", err)
+        if g_label then
+            g_label:set_text("错误:" .. tostring(err))
+        end
+    end
+})
 
 -- ✅ 为按钮添加点击事件回调
 btn:add_event_cb(function(event_code)
     if event_code == lvgl.EVENT_CLICKED then
         print("按钮被点击！正在写入...")
         
-        -- 执行写操作：Device2.tag0001 = "42"
-        local success = lvgl.write("Device1.E", "42")
-        
-        if success then
-            print("✅ 写入成功")
-        else
-            print("❌ 写入失败")
-        end
+        -- 改用DataManager写入（核心修改）
+        DataManager.write("Device1.E", "42")
+        print("✅ 写入请求已发送")
     end
 end, lvgl.EVENT_CLICKED)
 
-
-
-
-
-
-
-lvgl.set_callbacks(
-    -- 连接状态回调
-    function(connected)
-        if connected then
-         
-            lvgl.read("Device1.E")  -- 请求读取
-        else
-            
-            if g_label then
-                g_label:set_text("连接断开")
-            end
-        end
-    end,
-
-    -- 数据接收回调（关键！）
-    function(device_id, value, status)
-        print("📡 Received:", device_id, "=", value, "(status:", status, ")")
-       
-                g_label:set_text(value)
-            
-    end,
-
-    -- 错误回调
-    function(err)
-        print("⚠️ WebSocket error:", err)
-        if g_label then
-            g_label:set_text("错误:" .. tostring(err))
-        end
-    end
-)
-
 print("开始连接 WebSocket")
-lvgl.connect("ws://192.168.0.99:8085/ws/", 3000)
+-- DataManager.init() 会自动启动网络服务，无需手动调用
+lvgl.connect("ws://192.168.0.80:8085/ws/", 3000)

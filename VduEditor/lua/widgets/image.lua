@@ -1,5 +1,6 @@
 ﻿local lv = require("lvgl")
 local DataAction = require("editor.DataAction")
+local config = require("widgets.config") -- 设置图像的文件路径
 
 local Image = {}
 
@@ -15,7 +16,7 @@ Image.__widget_meta = {
     { name = "y", type = "number", default = 0, label = "Y" },
     { name = "width", type = "number", default = 100, label = "宽度" },
     { name = "height", type = "number", default = 100, label = "高度" },
-    { name = "src", type = "string", default = "", label = "图像路径" },
+    { name = "src", type = "string", default = "", label = "图像名称" },
     { name = "mode", type = "enum", default = "normal",
       options = {"normal", "cover", "contain", "stretch"}, label = "显示模式" },
     { name = "rotation", type = "number", default = 0, label = "旋转角度",
@@ -143,7 +144,7 @@ function Image.new(parent, state)
     function self.set_property(self, name, value)
         -- 对src属性进行路径修复
         if name == "src" and type(value) == "string" then
-            value = fix_path(value)
+            value = fix_path( config.image_path .. value)
         end
         
         self.props[name] = value

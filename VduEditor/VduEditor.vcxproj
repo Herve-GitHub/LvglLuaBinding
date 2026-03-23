@@ -149,6 +149,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <ClCompile Include="websocket\test_websocket.lua" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="data_editor_config.json" />
     <None Include="lua\actions\LabelAction.lua" />
     <None Include="lua\actions\page_navigation.lua" />
     <None Include="lua\actions\DataOperation.lua" />
@@ -185,6 +186,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\print_widget_meta.lua" />
     <None Include="lua\test_lua\websocket.lua" />
     <None Include="lua\widgets\button.lua" />
+    <None Include="lua\widgets\config.lua" />
     <None Include="lua\widgets\PopupButton.lua" />
     <None Include="lua\widgets\checkbox.lua" />
     <None Include="lua\widgets\dropdown.lua" />
@@ -240,6 +242,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <Image Include="icons\ribbon\zoom_in.png" />
     <Image Include="icons\ribbon\zoom_out.png" />
     <Image Include="icons\ribbon\zoom_reset.png" />
+    <Image Include="image\ahu3.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -386,7 +386,7 @@ function ProjectCompiler:compile(project_data)
 
        -- 启动网络服务（使用从工程数据读取的URL）
     table.insert(lines, "-- 启动网络服务")
-    table.insert(lines, "lvgl.start_network_service(100)")
+    table.insert(lines, "lvgl.start_network_service(3000)")
     table.insert(lines, 'lvgl.connect("' .. escape_string(websocket_url) .. '", ' .. websocket_timeout .. ')')
     table.insert(lines, "")
 
