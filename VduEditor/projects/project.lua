@@ -1,19 +1,19 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-03-24 11:13:08
+-- 生成时间: 2026-03-24 13:42:41
 -- 工程版本: 1.0
 -- ==============================================
 
 -- 启动网络服务
 lvgl.start_network_service(3000)
-lvgl.connect("", 3000)
+lvgl.connect("ws://192.168.0.60:8085/ws/", 3000)
 
 -- 引用 LVGL
 local lv = require("lvgl")
 
 -- 引用控件模块
-local widgets_new_button = require("widgets.new_button")
+local widgets_trend_chart = require("widgets.trend_chart")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -44,37 +44,25 @@ local function create_page_1(parent)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
 
-    -- 控件 1: custom_button
-    local widget_1 = widgets_new_button.new(container, {
-        false_bg_color = "#ffffff",
-        enabled = true,
-        font_size = 16,
-        height = 40,
-        event_action = "写入绑定数据点",
-        design_mode = false,
-        color = "#ffffff",
-        on_double_clicked_handler = "",
-        label = "OK",
-        y = 0,
-        x = 919,
+    -- 控件 1: trend_chart
+    local widget_1 = widgets_trend_chart.new(container, {
+        auto_update = true,
         instance_name = "",
-        alignment = "center",
-        false_color = "#ffffff",
-        true_color = "#ffffff",
-        http_token = "",
-        compare_value = "0",
-        compare_operator = "大于",
-        bg_color = "#007acc",
-        custom_value = "",
-        width = 100,
-        bind_point = "",
-        websocket_url = "",
-        on_clicked_handler = "",
-        custom_address = "",
-        true_bg_color = "#ffffff",
-        http_url = "",
-        on_single_clicked_handler = "",
-        http_data_type = "实时数据"
+        height = 120,
+        width = 300,
+        x_label_height = 20,
+        show_x_labels = true,
+        x_label_texts = {},
+        y = 158,
+        design_mode = false,
+        x = 402,
+        update_interval = 1000,
+        point_count = 300,
+        on_updated_handler = "",
+        x_label_color = 5605068,
+        range_min = 0,
+        x_label_count = 5,
+        range_max = 100
     })
 
     return container

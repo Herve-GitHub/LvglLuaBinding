@@ -10,7 +10,7 @@ extern "C" {
 #include "lvgl_lua_bindings.h"
 }
 // 窗口尺寸
-static const int WINDOW_WIDTH = 1024;
+static const int WINDOW_WIDTH = 1124;
 static const int WINDOW_HEIGHT = 600;//960
 
 // 默认脚本路径（相对于可执行文件目录）

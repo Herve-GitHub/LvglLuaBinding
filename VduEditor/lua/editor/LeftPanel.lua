@@ -1,5 +1,5 @@
 ﻿-- LeftPanel.lua
--- 左侧面板：包含工具箱和图页列表的Tab页
+-- 浮动左侧面板：悬浮在画布上方，包含工具箱和图页列表的Tab页，支持拖拽移动和折叠
 local lv = require("lvgl")
 
 local LeftPanel = {}
@@ -8,7 +8,7 @@ LeftPanel.__index = LeftPanel
 LeftPanel.__widget_meta = {
     id = "left_panel",
     name = "Left Panel",
-    description = "左侧面板，包含工具箱和图页列表Tab",
+    description = "浮动左侧面板，包含工具箱和图页列表Tab，支持拖拽和折叠",
     schema_version = "1.0",
     version = "1.0",
 }
@@ -22,7 +22,7 @@ LeftPanel.__page_meta = {
     version = "1.0",
     properties = {
         { name = "name", label = "名称", type = "string", default = "图页" },
-        { name = "width", label = "宽度", type = "number", default = 800, min = 100, max = 4096 },
+        { name = "width", label = "宽度", type = "number", default = 1024, min = 100, max = 4096 },
         { name = "height", label = "高度", type = "number", default = 600, min = 100, max = 4096 },
         { name = "bg_color", label = "背景颜色", type = "color", default = 0x1E1E1E },
     },
@@ -38,10 +38,27 @@ LeftPanel.DEFAULT_TOOLS = {
     { id = "valve", name = "阀门", icon = "VLV", module_path = "widgets.valve" },
     { id = "trend_chart", name = "趋势图", icon = "CHT", module_path = "widgets.trend_chart" },
     { id = "status_bar", name = "状态栏", icon = "STA", module_path = "widgets.status_bar" },
-    { id = "switch", name = "开关", icon = "SWT", module_path = "widgets.switch" },
+   { id = "switch", name = "开关", icon = "SWT", module_path = "widgets.switch" },
     { id = "image", name = "图像", icon = "IMG", module_path = "widgets.image" },
     { id = "tangchuang", name = "弹窗", icon = "TCZ", module_path = "widgets.PopupButton"},
 }
+
+-- 尝试获取中文字体
+local function get_cjk_font()
+    -- 优先使用 simsun 16 中文字体
+    if lv.font_simsun_16_cjk then
+        return lv.font_simsun_16_cjk
+    elseif lv.FONT_SIMSUN_16_CJK then
+        return lv.FONT_SIMSUN_16_CJK
+    end
+    -- 备选 simsun 14
+    if lv.font_simsun_14_cjk then
+        return lv.font_simsun_14_cjk
+    elseif lv.FONT_SIMSUN_14_CJK then
+        return lv.FONT_SIMSUN_14_CJK
+    end
+    return nil
+end
 
 -- 构造函数
 function LeftPanel.new(parent, props)
@@ -53,16 +70,18 @@ function LeftPanel.new(parent, props)
     
     -- 属性
     self.props = {
-        x = props.x or 0,
-        y = props.y or 0,
+        x = props.x or 10,
+        y = props.y or 50,
         width = props.width or 250,
-        height = props.height or 600,
+        title_height = props.title_height or 32,
         bg_color = props.bg_color or 0x2D2D2D,
-        tab_bg_color = props.tab_bg_color or 0x3D3D3D,
+        title_bg_color = props.title_bg_color or 0x3D3D3D,
         border_color = props.border_color or 0x555555,
         text_color = props.text_color or 0xFFFFFF,
         selected_color = props.selected_color or 0x007ACC,
         item_height = props.item_height or 32,
+        visible = props.visible ~= false,  -- 默认显示
+        collapsed = props.collapsed or false,  -- 折叠状态
     }
     
     -- 工具列表
@@ -83,6 +102,15 @@ function LeftPanel.new(parent, props)
     self._page_counter = 0
     self._page_items = {}
     
+    -- 标题栏拖拽状态
+    self._drag_state = {
+        is_dragging = false,
+        start_x = 0,
+        start_y = 0,
+        start_mouse_x = 0,
+        start_mouse_y = 0,
+    }
+    
     -- 工具拖拽状态
     self._tool_drag_state = {
         is_dragging = false,
@@ -96,19 +124,43 @@ function LeftPanel.new(parent, props)
     -- Tab 高度
     self._tab_height = 36
     
-    -- 创建主容器
+    -- 计算内容区域高度
+    self._toolbox_content_height = #self._tools * (self.props.item_height + 4) + 10
+    self._pages_content_height = 200  -- 初始高度，后续会根据内容调整
+    
+    -- 计算总高度（折叠时只显示标题栏）
+    self._total_height = self.props.title_height + self._tab_height + self._toolbox_content_height + 8
+    
+    -- 创建主容器（浮动窗口样式）
     self.container = lv.obj_create(parent)
     self.container:set_pos(self.props.x, self.props.y)
-    self.container:set_size(self.props.width, self.props.height)
+    self.container:set_size(self.props.width, self._total_height)
     self.container:set_style_bg_color(self.props.bg_color, 0)
-    self.container:set_style_radius(0, 0)
+    self.container:set_style_bg_opa(240, 0)  -- 略微透明
+    self.container:set_style_radius(6, 0)
     self.container:set_style_border_width(1, 0)
     self.container:set_style_border_color(self.props.border_color, 0)
-    self.container:set_style_pad_all(0, 0)
+    self.container:set_style_shadow_width(8, 0)
+    self.container:set_style_shadow_color(0x000000, 0)
+    self.container:set_style_shadow_opa(100, 0)
     self.container:set_style_text_color(self.props.text_color, 0)
+    self.container:set_style_pad_all(0, 0)
     self.container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     self.container:remove_flag(lv.OBJ_FLAG_GESTURE_BUBBLE)
     self.container:clear_layout()
+    
+    -- 创建标题栏
+    self:_create_title_bar()
+    
+    -- 创建主内容区域容器
+    self.main_content = lv.obj_create(self.container)
+    self.main_content:set_pos(0, self.props.title_height)
+    self.main_content:set_size(self.props.width, self._total_height - self.props.title_height)
+    self.main_content:set_style_bg_opa(0, 0)
+    self.main_content:set_style_border_width(0, 0)
+    self.main_content:set_style_pad_all(0, 0)
+    self.main_content:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    self.main_content:clear_layout()
     
     -- 创建 Tab 按钮区域
     self:_create_tab_buttons()
@@ -122,29 +174,165 @@ function LeftPanel.new(parent, props)
     -- 默认显示工具箱
     self:_switch_tab("toolbox")
     
+    -- 如果初始状态是折叠的，则折叠
+    if self.props.collapsed then
+        self:_apply_collapsed_state()
+    end
+    
     return self
+end
+
+-- 创建标题栏
+function LeftPanel:_create_title_bar()
+    local this = self
+    
+    self.title_bar = lv.obj_create(self.container)
+    self.title_bar:set_pos(0, 0)
+    self.title_bar:set_size(self.props.width, self.props.title_height)
+    self.title_bar:set_style_bg_color(self.props.title_bg_color, 0)
+    self.title_bar:set_style_radius(6, 0)
+    self.title_bar:set_style_border_width(0, 0)
+    self.title_bar:set_style_text_color(self.props.text_color, 0)
+    self.title_bar:set_style_pad_all(0, 0)
+    self.title_bar:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    self.title_bar:clear_layout()
+    
+    -- 折叠按钮 (▼/▶)
+    self.collapse_btn = lv.obj_create(self.title_bar)
+    self.collapse_btn:set_size(20, 20)
+    self.collapse_btn:set_pos(4, (self.props.title_height - 20) / 2)
+    self.collapse_btn:set_style_bg_color(0x505050, 0)
+    self.collapse_btn:set_style_radius(3, 0)
+    self.collapse_btn:set_style_border_width(0, 0)
+    self.collapse_btn:set_style_pad_all(0, 0)
+    self.collapse_btn:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    
+    self.collapse_label = lv.label_create(self.collapse_btn)
+    self.collapse_label:set_text(self.props.collapsed and "▶" or "▼")
+    self.collapse_label:set_style_text_color(self.props.text_color, 0)
+    self.collapse_label:center()
+    
+    -- 折叠按钮事件
+    self.collapse_btn:add_event_cb(function(e)
+        this:toggle_collapse()
+    end, lv.EVENT_CLICKED, nil)
+    
+    -- 标题文本
+    self.title_label = lv.label_create(self.title_bar)
+    self.title_label:set_text("左侧面板")
+    self.title_label:set_style_text_color(self.props.text_color, 0)
+    -- 设置中文字体
+    local cjk_font = get_cjk_font()
+    if cjk_font then
+        self.title_label:set_style_text_font(cjk_font, 0)
+    end
+    self.title_label:align(lv.ALIGN_LEFT_MID, 28, 0)
+    
+    -- 隐藏按钮 (X)
+    self.hide_btn = lv.obj_create(self.title_bar)
+    self.hide_btn:set_size(20, 20)
+    self.hide_btn:align(lv.ALIGN_RIGHT_MID, -4, 0)
+    self.hide_btn:set_style_bg_color(0x555555, 0)
+    self.hide_btn:set_style_radius(3, 0)
+    self.hide_btn:set_style_border_width(0, 0)
+    self.hide_btn:set_style_pad_all(0, 0)
+    self.hide_btn:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    self.hide_btn:add_flag(lv.OBJ_FLAG_HIDDEN)
+    
+    local hide_label = lv.label_create(self.hide_btn)
+    hide_label:set_text("")
+    hide_label:set_style_text_color(self.props.text_color, 0)
+    hide_label:center()
+    
+    -- 隐藏按钮事件
+   --[[ self.hide_btn:add_event_cb(function(e)
+        this:hide()
+    end, lv.EVENT_CLICKED, nil)]]--
+    
+    -- 标题栏拖拽事件
+    self.title_bar:add_event_cb(function(e)
+        this:_on_title_pressed()
+    end, lv.EVENT_PRESSED, nil)
+    
+    self.title_bar:add_event_cb(function(e)
+        this:_on_title_pressing()
+    end, lv.EVENT_PRESSING, nil)
+    
+    self.title_bar:add_event_cb(function(e)
+        this:_on_title_released()
+    end, lv.EVENT_RELEASED, nil)
+end
+
+-- 标题栏按下事件
+function LeftPanel:_on_title_pressed()
+    local mouse_x = lv.get_mouse_x()
+    local mouse_y = lv.get_mouse_y()
+    
+    self._drag_state.is_dragging = false
+    self._drag_state.start_x = self.props.x
+    self._drag_state.start_y = self.props.y
+    self._drag_state.start_mouse_x = mouse_x
+    self._drag_state.start_mouse_y = mouse_y
+end
+
+-- 标题栏拖动事件
+function LeftPanel:_on_title_pressing()
+    local mouse_x = lv.get_mouse_x()
+    local mouse_y = lv.get_mouse_y()
+    
+    local delta_x = mouse_x - self._drag_state.start_mouse_x
+    local delta_y = mouse_y - self._drag_state.start_mouse_y
+    
+    -- 检查是否开始拖拽
+    if not self._drag_state.is_dragging then
+        if math.abs(delta_x) > 3 or math.abs(delta_y) > 3 then
+            self._drag_state.is_dragging = true
+        else
+            return
+        end
+    end
+    
+    -- 计算新位置
+    local new_x = self._drag_state.start_x + delta_x
+    local new_y = self._drag_state.start_y + delta_y
+    
+    -- 限制在屏幕范围内
+    new_x = math.max(0, new_x)
+    new_y = math.max(0, new_y)
+    
+    -- 更新位置
+    self.props.x = new_x
+    self.props.y = new_y
+    self.container:set_pos(math.floor(new_x), math.floor(new_y))
+end
+
+-- 标题栏释放事件
+function LeftPanel:_on_title_released()
+    if self._drag_state.is_dragging then
+        self:_emit("position_changed", self.props.x, self.props.y)
+    end
+    self._drag_state.is_dragging = false
 end
 
 -- 创建 Tab 按钮
 function LeftPanel:_create_tab_buttons()
     local this = self
-    local tab_width = (self.props.width - 4) / 2
+    local tab_width = (self.props.width - 8) / 2
     
     -- Tab 按钮容器
-    self.tab_container = lv.obj_create(self.container)
+    self.tab_container = lv.obj_create(self.main_content)
     self.tab_container:set_pos(0, 0)
     self.tab_container:set_size(self.props.width, self._tab_height)
-    self.tab_container:set_style_bg_color(self.props.tab_bg_color, 0)
+    self.tab_container:set_style_bg_color(0x353535, 0)
     self.tab_container:set_style_radius(0, 0)
     self.tab_container:set_style_border_width(0, 0)
-    self.tab_container:set_style_border_color(self.props.border_color, 0)
     self.tab_container:set_style_pad_all(0, 0)
     self.tab_container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     self.tab_container:clear_layout()
     
     -- 工具箱 Tab 按钮
     self.toolbox_tab = lv.obj_create(self.tab_container)
-    self.toolbox_tab:set_pos(2, 4)
+    self.toolbox_tab:set_pos(4, 4)
     self.toolbox_tab:set_size(tab_width, self._tab_height - 8)
     self.toolbox_tab:set_style_bg_color(self.props.selected_color, 0)
     self.toolbox_tab:set_style_radius(4, 0)
@@ -165,7 +353,7 @@ function LeftPanel:_create_tab_buttons()
     
     -- 图页列表 Tab 按钮
     self.pages_tab = lv.obj_create(self.tab_container)
-    self.pages_tab:set_pos(tab_width + 2, 4)
+    self.pages_tab:set_pos(tab_width + 4, 4)
     self.pages_tab:set_size(tab_width, self._tab_height - 8)
     self.pages_tab:set_style_bg_color(0x404040, 0)
     self.pages_tab:set_style_radius(4, 0)
@@ -206,10 +394,10 @@ end
 
 -- 创建工具箱内容区域
 function LeftPanel:_create_toolbox_content()
-    local content_y = self._tab_height
-    local content_height = self.props.height - self._tab_height
+    local content_y = self._tab_height + 4
+    local content_height = self._toolbox_content_height
     
-    self.toolbox_content = lv.obj_create(self.container)
+    self.toolbox_content = lv.obj_create(self.main_content)
     self.toolbox_content:set_pos(0, content_y)
     self.toolbox_content:set_size(self.props.width, content_height)
     self.toolbox_content:set_style_bg_opa(0, 0)
@@ -262,6 +450,11 @@ function LeftPanel:_create_tool_item(tool, y_offset)
     local name_label = lv.label_create(item_container)
     name_label:set_text(tool.name)
     name_label:set_style_text_color(self.props.text_color, 0)
+    -- 设置中文字体
+    local cjk_font = get_cjk_font()
+    if cjk_font then
+        name_label:set_style_text_font(cjk_font, 0)
+    end
     name_label:align(lv.ALIGN_LEFT_MID, 46, 0)
     
     -- 工具项拖拽事件
@@ -387,12 +580,11 @@ end
 -- 创建图页列表内容区域
 function LeftPanel:_create_pages_content()
     local this = self
-    local content_y = self._tab_height
-    local content_height = self.props.height - self._tab_height
+    local content_y = self._tab_height + 4
     
-    self.pages_content = lv.obj_create(self.container)
+    self.pages_content = lv.obj_create(self.main_content)
     self.pages_content:set_pos(0, content_y)
-    self.pages_content:set_size(self.props.width, content_height)
+    self.pages_content:set_size(self.props.width, self._toolbox_content_height)
     self.pages_content:set_style_bg_opa(0, 0)
     self.pages_content:set_style_border_width(0, 0)
     self.pages_content:set_style_pad_all(0, 0)
@@ -406,7 +598,7 @@ function LeftPanel:_create_pages_content()
     self.pages_toolbar:set_pos(0, 0)
     self.pages_toolbar:set_size(self.props.width, toolbar_height)
     self.pages_toolbar:set_style_bg_color(0x353535, 0)
-    self.pages_toolbar:set_style_radius(0, 0)
+    self.pages_toolbar:set_style_radius(4, 0)
     self.pages_toolbar:set_style_border_width(0, 0)
     self.pages_toolbar:set_style_pad_all(0, 0)
     self.pages_toolbar:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
@@ -453,7 +645,7 @@ function LeftPanel:_create_pages_content()
     -- 图页列表区域
     self.pages_list = lv.obj_create(self.pages_content)
     self.pages_list:set_pos(0, toolbar_height)
-    self.pages_list:set_size(self.props.width, content_height - toolbar_height)
+    self.pages_list:set_size(self.props.width, self._toolbox_content_height - toolbar_height)
     self.pages_list:set_style_bg_opa(0, 0)
     self.pages_list:set_style_border_width(0, 0)
     self.pages_list:set_style_pad_all(5, 0)
@@ -473,7 +665,7 @@ function LeftPanel:add_page(name, page_props)
     local page_data = {
         id = page_id,
         name = page_name,
-        width = page_props.width or 800,
+        width = page_props.width or 1024,
         height = page_props.height or 600,
         bg_color = page_props.bg_color or 0x1E1E1E,
         widgets = {},
@@ -511,6 +703,11 @@ function LeftPanel:_create_page_item(page_data)
     local name_label = lv.label_create(item)
     name_label:set_text(page_data.name)
     name_label:set_style_text_color(self.props.text_color, 0)
+    -- 设置中文字体
+    local cjk_font = get_cjk_font()
+    if cjk_font then
+        name_label:set_style_text_font(cjk_font, 0)
+    end
     name_label:align(lv.ALIGN_LEFT_MID, 10, 0)
     
     self._page_items[page_id] = {
@@ -707,7 +904,6 @@ function LeftPanel:_emit(event_name, ...)
     end
 end
 
--- 设置高度
 function LeftPanel:set_height(height)
     if height and height > 0 then
         self.props.height = height
@@ -718,6 +914,92 @@ function LeftPanel:set_height(height)
         self.pages_content:set_height(content_height)
         self.pages_list:set_height(content_height - 36)
     end
+end
+
+
+
+
+-- 折叠/展开
+function LeftPanel:toggle_collapse()
+    self.props.collapsed = not self.props.collapsed
+    self:_apply_collapsed_state()
+    self:_emit("collapse_changed", self.props.collapsed)
+end
+
+-- 应用折叠状态
+function LeftPanel:_apply_collapsed_state()
+    if self.props.collapsed then
+        -- 折叠：只显示标题栏
+        self.main_content:add_flag(lv.OBJ_FLAG_HIDDEN)
+        self.container:set_height(self.props.title_height)
+        self.collapse_label:set_text(">")
+    else
+        -- 展开：显示全部
+        self.main_content:remove_flag(lv.OBJ_FLAG_HIDDEN)
+        self.container:set_height(self._total_height)
+        self.collapse_label:set_text("▼")
+    end
+end
+
+-- 折叠
+function LeftPanel:collapse()
+    if not self.props.collapsed then
+        self:toggle_collapse()
+    end
+end
+
+-- 展开
+function LeftPanel:expand()
+    if self.props.collapsed then
+        self:toggle_collapse()
+    end
+end
+
+-- 是否折叠
+function LeftPanel:is_collapsed()
+    return self.props.collapsed
+end
+
+-- 显示面板
+function LeftPanel:show()
+    self.props.visible = true
+    self.container:remove_flag(lv.OBJ_FLAG_HIDDEN)
+    self:_emit("visibility_changed", true)
+    print("[左侧面板] 显示")
+end
+
+-- 隐藏面板
+function LeftPanel:hide()
+    self.props.visible = false
+    self.container:add_flag(lv.OBJ_FLAG_HIDDEN)
+    self:_emit("visibility_changed", false)
+    print("[左侧面板] 隐藏")
+end
+
+-- 切换显示/隐藏
+function LeftPanel:toggle()
+    if self.props.visible then
+        self:hide()
+    else
+        self:show()
+    end
+end
+
+-- 是否可见
+function LeftPanel:is_visible()
+    return self.props.visible
+end
+
+-- 设置位置
+function LeftPanel:set_pos(x, y)
+    self.props.x = x
+    self.props.y = y
+    self.container:set_pos(x, y)
+end
+
+-- 获取位置
+function LeftPanel:get_pos()
+    return self.props.x, self.props.y
 end
 
 -- 获取容器

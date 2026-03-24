@@ -93,7 +93,7 @@ function CanvasArea.new(parent, props)
     self.container:set_style_border_width(1, 0)
     self.container:set_style_border_color(0x3C3C3C, 0)
     self.container:set_style_pad_all(0, 0)
-    self.container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    self.container:add_flag(lv.OBJ_FLAG_SCROLLABLE)
     self.container:remove_flag(lv.OBJ_FLAG_GESTURE_BUBBLE)
     self.container:clear_layout()
     

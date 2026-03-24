@@ -170,11 +170,11 @@ local menu_bar = MenuBar.new(scr, {
 -- 从菜单栏获取实际高度
 local MENUBAR_HEIGHT = menu_bar:get_height()
 
--- 计算画布区域
+-- 计算画布区域（全屏，从最左侧开始）
 local function get_canvas_bounds()
-    local canvas_x = LEFT_PANEL_WIDTH
+    local canvas_x = 0  -- 从最左侧开始
     local canvas_y = MENUBAR_HEIGHT
-    local canvas_width = WINDOW_WIDTH - LEFT_PANEL_WIDTH - RIGHT_PANEL_WIDTH
+    local canvas_width = WINDOW_WIDTH  -- 全屏宽度
     local canvas_height = WINDOW_HEIGHT - MENUBAR_HEIGHT
     
     if status_bar then
@@ -184,23 +184,8 @@ local function get_canvas_bounds()
     return canvas_x, canvas_y, canvas_width, canvas_height
 end
 
--- ========== 创建左侧面板（工具箱+图页列表）==========
-local left_panel = LeftPanel.new(scr, {
-    x = 0,
-    y = MENUBAR_HEIGHT,
-    width = LEFT_PANEL_WIDTH,
-    height = WINDOW_HEIGHT - MENUBAR_HEIGHT,
-})
 
--- ========== 创建右侧属性面板 ==========
-local property_area = PropertyArea.new(scr, {
-    x = WINDOW_WIDTH - RIGHT_PANEL_WIDTH,
-    y = MENUBAR_HEIGHT,
-    width = RIGHT_PANEL_WIDTH,
-    height = WINDOW_HEIGHT - MENUBAR_HEIGHT,
-})
-
--- ========== 创建画布区域 ==========
+-- ========== 创建画布区域（先创建，作为背景）==========
 local canvas_x, canvas_y, canvas_width, canvas_height = get_canvas_bounds()
 local canvas = CanvasArea.new(scr, {
     x = canvas_x,
@@ -210,6 +195,25 @@ local canvas = CanvasArea.new(scr, {
     show_grid = false,
     snap_to_grid = false,
     grid_size = 20,
+})
+
+-- ========== 创建左侧面板（浮动样式，后创建，显示在画布上方）==========
+local left_panel = LeftPanel.new(scr, {
+    x = 10,  -- 距离左边10像素
+    y = MENUBAR_HEIGHT + 10,  -- 距离菜单栏10像素
+    width = LEFT_PANEL_WIDTH,
+    height = WINDOW_HEIGHT - MENUBAR_HEIGHT - 20,  -- 留出上下边距
+    collapsed = false,
+    visible = true,
+})
+
+-- ========== 创建右侧属性面板（浮动样式）==========
+local property_area = PropertyArea.new(scr, {
+    x = WINDOW_WIDTH - RIGHT_PANEL_WIDTH - 10,  -- 距离右边10像素
+    y = MENUBAR_HEIGHT + 10,
+    width = RIGHT_PANEL_WIDTH,
+    height = WINDOW_HEIGHT - MENUBAR_HEIGHT - 20,
+    visible = true,
 })
 
 -- ========== 窗口大小变化监听 ==========
