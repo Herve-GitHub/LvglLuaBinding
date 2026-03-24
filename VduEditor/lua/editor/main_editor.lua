@@ -393,7 +393,7 @@ current_page_index = 1
 -- 初始化画布的图页边界线（使用默认图页的宽高）
 local default_page_data = left_panel:get_page_data(1)
 if default_page_data then
-    canvas:update_page_border(default_page_data.width or 800, default_page_data.height or 600)
+    canvas:update_page_border(default_page_data.width or 1024, default_page_data.height or 600)
 end
 
 -- 同步菜单栏状态
@@ -907,7 +907,7 @@ left_panel:on("page_selected", function(self, page_data, index)
     end
     
     -- 更新画布的图页边界线（使用图页的宽高）
-    local page_width = page_data.width or 800
+    local page_width = page_data.width or 1024
     local page_height = page_data.height or 600
     canvas:update_page_border(page_width, page_height)
     

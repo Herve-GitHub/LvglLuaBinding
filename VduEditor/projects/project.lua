@@ -1,19 +1,19 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-03-23 10:01:02
+-- 生成时间: 2026-03-24 11:13:08
 -- 工程版本: 1.0
 -- ==============================================
 
 -- 启动网络服务
 lvgl.start_network_service(3000)
-lvgl.connect("ws://192.168.0.80:8085/ws/", 3000)
+lvgl.connect("", 3000)
 
 -- 引用 LVGL
 local lv = require("lvgl")
 
 -- 引用控件模块
-local widgets_switch = require("widgets.switch")
+local widgets_new_button = require("widgets.new_button")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -32,35 +32,49 @@ local scr_width = scr:get_width()
 local scr_height = scr:get_height()
 
 -- ========== 图页 1: 图页 1 ==========
--- 图页尺寸: 800x600
+-- 图页尺寸: 1024x600
 -- 背景颜色: 0x1E1E1E
 local function create_page_1(parent)
     -- 创建图页容器
     local container = lv.obj_create(parent)
     container:set_pos(0, 0)
-    container:set_size(800, 600)
+    container:set_size(1024, 600)
     container:set_style_bg_color(0x1E1E1E, 0)
     container:set_style_border_width(0, 0)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
 
-    -- 控件 1: custom_switch
-    local widget_1 = widgets_switch.new(container, {
-        bg_color_off = "#888888",
-        websocket_url = "ws://192.168.0.80:8085/ws/",
+    -- 控件 1: custom_button
+    local widget_1 = widgets_new_button.new(container, {
+        false_bg_color = "#ffffff",
+        enabled = true,
+        font_size = 16,
+        height = 40,
+        event_action = "写入绑定数据点",
         design_mode = false,
-        x = 285,
-        width = 60,
-        height = 30,
-        y = 246,
-        bind_point = "THmeter.AirRoomTemp1",
-        off_value = "0",
-        event_action = "读写数据点",
+        color = "#ffffff",
+        on_double_clicked_handler = "",
+        label = "OK",
+        y = 0,
+        x = 919,
         instance_name = "",
+        alignment = "center",
+        false_color = "#ffffff",
+        true_color = "#ffffff",
+        http_token = "",
+        compare_value = "0",
+        compare_operator = "大于",
+        bg_color = "#007acc",
         custom_value = "",
-        on_value = "1",
-        switch_state = false,
-        on_value_changed_handler = ""
+        width = 100,
+        bind_point = "",
+        websocket_url = "",
+        on_clicked_handler = "",
+        custom_address = "",
+        true_bg_color = "#ffffff",
+        http_url = "",
+        on_single_clicked_handler = "",
+        http_data_type = "实时数据"
     })
 
     return container

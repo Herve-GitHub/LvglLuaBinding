@@ -22,7 +22,7 @@ function CanvasArea.new(parent, props)
     self.props = {
         x = props.x or 0,
         y = props.y or 40,
-        width = props.width or 800,--800
+        width = props.width or 1024,--800
         height = props.height or 600,--600
         bg_color = props.bg_color or 0x1E1E1E,
         grid_color = props.grid_color or 0x2A2A2A,
@@ -30,7 +30,7 @@ function CanvasArea.new(parent, props)
         show_grid = props.show_grid ~= false,
         snap_to_grid = props.snap_to_grid ~= false,
         -- 图页边界属性
-        page_width = props.page_width or 800,
+        page_width = props.page_width or 1024,
         page_height = props.page_height or 600,
         show_page_border = props.show_page_border ~= false,  -- 默认显示边界线
         page_border_color = props.page_border_color or 0xFF6600,  -- 橙色边界线
