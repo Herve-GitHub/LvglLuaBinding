@@ -122,6 +122,7 @@
     <None Include="lua\widgets\PopupButton.lua" />
     <None Include="data_editor_config.json" />
     <None Include="lua\widgets\config.lua" />
+    <None Include="lua\editor\install_config.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

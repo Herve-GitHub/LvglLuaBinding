@@ -167,6 +167,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\editor\DataManager.lua" />
     <None Include="lua\editor\FileDialog.lua" />
     <None Include="lua\editor\icons.lua" />
+    <None Include="lua\editor\install_config.lua" />
     <None Include="lua\editor\json.lua" />
     <None Include="lua\editor\LeftPanel.lua" />
     <None Include="lua\editor\main_editor.lua" />

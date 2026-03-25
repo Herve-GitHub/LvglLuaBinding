@@ -714,6 +714,169 @@ end
     
     return true
 end]]--
+
+-- ========== 下装功能 ==============
+-- ========== 下装功能 ==========
+
+-- ========== 下装功能 ==========
+-- 加载配置文件的函数
+local function load_install_config()
+    local ok, config = pcall(require, "install_config")
+    if ok and config then
+        print("[配置] 加载配置文件成功")
+        return config
+    else
+        print("[配置] 未找到配置文件，使用默认配置")
+        -- 默认配置
+        return {
+            remote_host = "192.168.1.230",
+            remote_user = "root",
+            remote_path = "/root/",
+            password = "LM&PASSw0rdl",
+            local_base_dir = "C:\\Users\\86188\\Desktop\\LvgLuaBling\\git\\LvglLuaBinding\\Output\\Binaries\\Debug\\x64\\",
+            sshpass_exe = "sshpass.exe",
+            lua_file = "lua\\project.lua",
+            compile_before_install = true,
+            verbose = true
+        }
+    end
+end
+
+-- 加载配置
+local install_cfg = load_install_config()
+
+-- 修改后的 start_install 函数
+local function start_install()
+    if install_cfg.verbose then
+        print("[下装] ========== 启动下装 ==========")
+    end
+    
+    -- 1. 可选：编译工程
+    if install_cfg.compile_before_install then
+        if install_cfg.verbose then
+            print("[下装] 编译工程...")
+        end
+        local compile_success, compiled_script_path = compile_project()
+        if not compile_success or not compiled_script_path then
+            print("[下装] 编译失败，终止下装")
+            return false
+        end
+        if install_cfg.verbose then
+            print("[下装] 编译成功: " .. compiled_script_path)
+        end
+    end
+    
+    -- 2. 从配置获取文件路径
+    local x64_dir = install_cfg.local_base_dir
+    local sshpass_path = x64_dir .. install_cfg.sshpass_exe
+    local lua_file = x64_dir .. install_cfg.lua_file
+    local remote = install_cfg.remote_user .. "@" .. install_cfg.remote_host .. ":" .. install_cfg.remote_path
+    local password = install_cfg.password
+    
+    if install_cfg.verbose then
+        print("[下装] 配置信息:")
+        print("  本地目录: " .. x64_dir)
+        print("  sshpass: " .. sshpass_path)
+        print("  上传文件: " .. lua_file)
+        print("  远程地址: " .. remote)
+    end
+    
+    -- 3. 检查文件是否存在
+    local f = io.open(sshpass_path, "r")
+    if not f then
+        print("[下装] 错误: 找不到 sshpass.exe - " .. sshpass_path)
+        return false
+    end
+    f:close()
+    
+    f = io.open(lua_file, "r")
+    if not f then
+        print("[下装] 错误: 找不到 project.lua - " .. lua_file)
+        return false
+    end
+    f:close()
+    
+    -- 4. 构建命令并执行
+    local cmd = 'cd /d "' .. x64_dir .. '" && ' ..
+                install_cfg.sshpass_exe .. ' -p"' .. password .. '" scp ' .. install_cfg.lua_file .. ' ' .. remote
+    
+    if install_cfg.verbose then
+        print("[下装] 执行命令: " .. cmd)
+    end
+    
+    local result = os.execute(cmd)
+    
+    if result then
+        print("[下装] ========== 下装成功 ==========")
+        return true
+    else
+        print("[下装] ========== 下装失败 ==========")
+        return false
+    end
+end
+
+--[[local function start_install()
+    print("[下装] ========== 启动下装 ==========")
+    
+    -- 1. 先编译工程
+    print("[下装] 编译工程...")
+    local compile_success, compiled_script_path = compile_project()
+    if not compile_success or not compiled_script_path then
+        print("[下装] 编译失败，终止下装")
+        return false
+    end
+    print("[下装] 编译成功: " .. compiled_script_path)
+    
+    -- 2. 获取文件路径
+    local x64_dir = "C:\\Users\\86188\\Desktop\\LvgLuaBling\\git\\LvglLuaBinding\\Output\\Binaries\\Debug\\x64\\"
+    local sshpass_path = x64_dir .. "sshpass.exe"
+    local lua_file = x64_dir .. "lua\\project.lua"
+    local remote = "root@192.168.1.230:/root/"
+    local password = "LM&PASSw0rdl"
+    
+    -- 3. 检查文件是否存在
+    local f = io.open(sshpass_path, "r")
+    if not f then
+        print("[下装] 错误: 找不到 sshpass.exe - " .. sshpass_path)
+        return false
+    end
+    f:close()
+    
+    f = io.open(lua_file, "r")
+    if not f then
+        print("[下装] 错误: 找不到 project.lua - " .. lua_file)
+        return false
+    end
+    f:close()
+    
+    -- 4. 构建命令并执行
+    -- 先切换到 x64 目录，然后执行 sshpass
+    local cmd = 'cd /d "' .. x64_dir .. '" && ' ..
+                'sshpass.exe -p"' .. password .. '" scp lua\\project.lua ' .. remote
+    
+    print("[下装] 执行命令: " .. cmd)
+    
+    -- 使用 os.execute 执行
+    local result = os.execute(cmd)
+    
+    if result then
+        print("[下装] ========== 下装成功 ==========")
+        return true
+    else
+        print("[下装] ========== 下装失败 ==========")
+        return false
+    end
+end
+
+local function stop_install()
+    print("[下装] 停止下装")
+    -- 可以在这里添加停止下装的逻辑，比如杀掉 scp 进程
+    os.execute('taskkill /F /IM scp.exe 2>nul')
+    print("[下装] 已停止")
+end]]--
+
+
+
 -- ========== 菜单事件处理 ==========
 menu_bar:on("menu_action", function(self, menu_key, item_id)
     print("[Ribbon] 按钮点击: " .. tostring(item_id))
@@ -780,10 +943,13 @@ menu_bar:on("menu_action", function(self, menu_key, item_id)
         print("导出图片")
     elseif item_id == "compile" then
         -- 编译工程
-        compile_project()
+        start_simulator()
+        --compile_project()
     elseif item_id == "startInstall" then
+        start_install()
         print("启动下装")
     elseif item_id == "stopInstall" then
+        stop_install()
         print("停止下装")
     elseif item_id == "startSim" then
         -- 启动仿真

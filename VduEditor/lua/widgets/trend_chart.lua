@@ -26,8 +26,8 @@ TrendChart.__widget_meta = {
         { name = "show_x_labels", type = "boolean", default = true, label = "显示X轴标签" },
         { name = "x_label_count", type = "number", default = 5, label = "X轴标签数量", min = 2, max = 20 },
         { name = "x_label_height", type = "number", default = 20, label = "X轴标签高度" },
-        { name = "x_label_texts", type = "table", default = {}, label = "X轴自定义标签文本",
-          description = "自定义标签文本列表，如{\"0s\",\"5s\",\"10s\"}，数量不足时自动补数字" },
+        { name = "x_label_texts", type = "string", default = "0s,5s,10s", label = "X轴自定义",
+          description = "自定义标签文本，用逗号分隔，如：0s,5s,10s"   },
         { name = "x_label_color", type = "color", default = "#CCCCCC", label = "X轴标签颜色",
           description = "支持#RRGGBB格式或16进制数字" },
         -- 事件处理代码属性
@@ -97,53 +97,112 @@ function TrendChart.new(parent, props)
     end
 
     -- ========== 创建/更新X轴标签（纯自定义，无动态数据关联） ==========
-    function self.update_x_labels(self)
-        -- 删除旧标签容器
-        if self.label_container then
-            self.label_container:delete()
-            self.label_container = nil
-            self.x_labels = {}
-        end
-        
-        -- 如果不显示标签，直接返回
-        if not self.props.show_x_labels then
-            return
-        end
-        
-        -- 创建标签容器
-        self.label_container = lv.obj_create(self._parent)
-        self.label_container:set_size(self.props.width, self.props.x_label_height + 15)
-        self.label_container:set_pos(self.props.x, self.props.y + self.props.height)
-        self.label_container:set_style_bg_opa(0, 0)
-        self.label_container:set_style_border_opa(0, 0)
-        self.label_container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
-        
-        -- 计算标签基础参数
-        local label_count = self.props.x_label_count
-        local label_spacing = self.props.width / label_count
-        local custom_texts = self.props.x_label_texts or {}
-        local label_color = parse_color(self.props.x_label_color)
-        
-        -- 创建标签（纯自定义逻辑）
-        for i = 0, label_count - 1 do
-            local label = lv.label_create(self.label_container)
-            
-            -- 设置标签样式
-            label:set_style_text_color(label_color, 0)
-            label:set_style_text_align(lv.TEXT_ALIGN_CENTER, 0)
-            
-            -- 计算标签位置（居中显示）
-            local label_x = i * label_spacing - label:get_width() / 2
-            label:set_pos(math.max(0, label_x), 0)  -- 防止超出左边界
-            
-            -- 获取标签文本（优先用自定义，不足则补数字）
-            local label_text = custom_texts[i + 1] or tostring(math.floor(i * (self.props.point_count / (label_count - 1))))
-            
-            -- 设置标签文本
-            label:set_text(label_text)
-            table.insert(self.x_labels, label)
+-- ========== 创建/更新X轴标签（纯自定义，无动态数据关联） ==========
+-- ========== 创建/更新X轴标签（纯自定义，无动态数据关联） ==========
+-- ========== 创建/更新X轴标签 ==========
+function self.update_x_labels(self)
+    -- 删除旧标签容器
+    if self.label_container then
+        self.label_container:delete()
+        self.label_container = nil
+        self.x_labels = {}
+    end
+    
+    -- 如果不显示标签，直接返回
+    if not self.props.show_x_labels then
+        return
+    end
+    
+    -- 创建标签容器
+    self.label_container = lv.obj_create(self._parent)
+    self.label_container:set_size(self.props.width+50, self.props.x_label_height + 15)
+    self.label_container:set_pos(math.floor(self.props.x-25), math.floor(self.props.y + self.props.height))
+    self.label_container:set_style_bg_opa(0, 0)
+    self.label_container:set_style_border_opa(0, 0)
+    self.label_container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    
+    -- 解析自定义标签文本（从逗号分隔的字符串）
+    local custom_texts = {}
+    if self.props.x_label_texts and self.props.x_label_texts ~= "" then
+        -- 按逗号分割，并去除前后空格
+        for text in string.gmatch(self.props.x_label_texts, "([^,]+)") do
+            local trimmed = text:match("^%s*(.-)%s*$")  -- 去除前后空格
+            if trimmed ~= "" then
+                table.insert(custom_texts, trimmed)
+            end
         end
     end
+    
+    -- 调试输出
+    print("Custom texts:", table.concat(custom_texts, ", "))
+    
+    -- 确定使用的标签数量和文本
+    local label_count
+    local label_texts = {}
+    
+    if #custom_texts > 0 then
+        -- 使用完全自定义
+        label_count = #custom_texts
+        label_texts = custom_texts
+        print("Using custom labels, count:", label_count)
+    else
+        -- 使用自动生成（注意：这里不需要+1）
+        label_count = self.props.x_label_count
+        for i = 0, label_count - 1 do
+            label_texts[i + 1] = tostring(math.floor(i * (self.props.point_count / (label_count - 1))))
+        end
+        print("Using auto labels, count:", label_count)
+    end
+    
+    -- 计算标签间距
+    local label_spacing = self.props.width / (label_count - 1)
+    local label_color = parse_color(self.props.x_label_color)
+    
+    -- 先创建所有标签并设置文本，然后再调整位置
+    local temp_labels = {}
+    
+    -- 第一步：创建所有标签并设置文本
+    for i = 1, label_count do
+        local label = lv.label_create(self.label_container)
+        
+        -- 设置标签样式
+        label:set_style_text_color(label_color, 0)
+        label:set_style_text_align(lv.TEXT_ALIGN_CENTER, 0)
+        
+        -- 设置标签文本
+        label:set_text(label_texts[i])
+        
+        -- 临时存储
+        table.insert(temp_labels, label)
+    end
+    
+    -- 第二步：调整所有标签的位置
+    for i = 1, label_count do
+        local label = temp_labels[i]
+        
+        -- 获取标签的实际宽度
+        local label_width = label:get_width()
+        
+        -- 计算标签位置（居中显示）
+        local label_x = (i - 1) * label_spacing - label_width / 2
+        
+        -- 取整（四舍五入）
+        label_x = math.floor(label_x + 0.5)
+        
+        -- 确保标签不超出边界
+        if label_x < 0 then
+            label_x = 0
+        elseif label_x + label_width > self.props.width then
+            label_x = self.props.width - label_width
+        end
+        
+        -- 调试输出
+        print(string.format("Label %d: text='%s', width=%d, x=%d", i, label_texts[i], label_width, label_x))
+        
+        label:set_pos(label_x, 0)
+        table.insert(self.x_labels, label)
+    end
+end
 
     -- ========== 公共方法 ==========
     function self.update(self)
