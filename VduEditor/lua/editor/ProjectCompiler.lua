@@ -48,12 +48,13 @@ local ACTION_MODULES = {
     "actions.page_navigation",
     "editor.DataAction" ,
     "actions.LabelAction" ,
-    "actions.SitwchAction"
+    "actions.SitwchAction",
+    "editor.DataManager"
 }
 
 
 -- 在 compile 函数开头添加这段代码
-local function find_websocket_url(project_data)
+--[[local function find_websocket_url(project_data)
     -- 默认值
     local websocket_url = "ws://192.168.0.60:8085/ws/"
     local websocket_timeout = 3000
@@ -77,6 +78,31 @@ local function find_websocket_url(project_data)
         end
     end
     
+    return websocket_url, websocket_timeout
+end]]--
+local function find_websocket_url(project_data)
+    local websocket_url = nil
+    local websocket_timeout = 3000
+    
+    -- 查找第一个有效的websocket_url
+    if project_data.pages then
+        for _, page in ipairs(project_data.pages) do
+            if page.widgets then
+                for _, widget in ipairs(page.widgets) do
+                    if widget.props and widget.props.websocket_url then
+                        websocket_url = widget.props.websocket_url
+                        print("[Compiler] 使用WebSocket地址: " .. websocket_url)
+                        -- 找到第一个就退出
+                        return websocket_url, websocket_timeout
+                    end
+                end
+            end
+        end
+    end
+    
+    -- 没有找到，使用默认值
+    websocket_url = "ws://192.168.0.60:8085/ws/"
+    print("[Compiler] 使用默认WebSocket地址: " .. websocket_url)
     return websocket_url, websocket_timeout
 end
 
@@ -371,8 +397,8 @@ function ProjectCompiler:compile(project_data)
     local all_required_modules = {}
     local has_status_bar = project_data.status_bar and project_data.status_bar.enabled
       -- 获取WebSocket配置
-    --local websocket_url = project_data.websocket_url or "ws://192.168.0.60:8085/ws/"
-    --local websocket_timeout = project_data.websocket_timeout or 3000
+  --  local websocket_url = project_data.websocket_url or "ws://192.168.0.60:8085/ws/"
+  --  local websocket_timeout = project_data.websocket_timeout or 3000
        -- 从控件中查找 WebSocket 配置
    local websocket_url, websocket_timeout = find_websocket_url(project_data)
     -- 文件头
@@ -387,7 +413,7 @@ function ProjectCompiler:compile(project_data)
        -- 启动网络服务（使用从工程数据读取的URL）
     table.insert(lines, "-- 启动网络服务")
     table.insert(lines, "lvgl.start_network_service(3000)")
-    table.insert(lines, 'lvgl.connect("' .. escape_string(websocket_url) .. '", ' .. websocket_timeout .. ')')
+   table.insert(lines, 'lvgl.connect("' .. escape_string(websocket_url) .. '", ' .. websocket_timeout .. ')')
     table.insert(lines, "")
 
     --[[table.insert(lines, "-- 启动网络服务")

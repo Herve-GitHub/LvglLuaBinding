@@ -273,6 +273,11 @@ static int l_lv_textarea_create(lua_State* L) {
     push_lv_obj(L, lv_textarea_create(check_lv_obj(L, 1)));
     return 1;
 }
+// lv.textarea_create(parent)
+static int l_lv_keyboard_create(lua_State* L) {
+    push_lv_obj(L, lv_keyboard_create(check_lv_obj(L, 1)));
+    return 1;
+}
 
 // lv.checkbox_create(parent)
 static int l_lv_checkbox_create(lua_State* L) {
@@ -422,6 +427,7 @@ static const luaL_Reg lvgl_funcs[] = {
     {"tabview_create", l_lv_tabview_create},
     {"textarea_create", l_lv_textarea_create},
     {"textarea_get_text", l_lv_textarea_get_text},
+    {"keyboard_create", l_lv_keyboard_create},
     {"checkbox_create", l_lv_checkbox_create},
     {"dropdown_create", l_lv_dropdown_create},
     {"slider_create", l_lv_slider_create},

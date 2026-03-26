@@ -105,6 +105,33 @@ local function create_popup(self, parent)
     textarea:set_pos(textarea_margin-15, 36)
     textarea:set_placeholder_text(self.props.input_hint or "请输入...")
 
+    --创建键盘
+    local keyboard = lv.keyboard_create(scr)
+   -- keyboard : set_size(500,500)
+
+    -- 初始隐藏键盘
+    keyboard:add_flag(lvgl.OBJ_FLAG_HIDDEN)
+
+-- 3. 为文本框添加事件（回调函数直接接收事件代码）
+    textarea:add_event_cb(function(code)
+         if code == lvgl.EVENT_CLICKED then
+        keyboard:keyboard_set_textarea(textarea, keyboard)
+        keyboard:remove_flag(lvgl.OBJ_FLAG_HIDDEN)
+    --elseif code == lvgl.EVENT_DEFOCUSED then
+       -- keyboard:add_flag(lvgl.OBJ_FLAG_HIDDEN)
+    end
+end, 0)
+
+-- 4. 键盘取消按钮事件
+keyboard:add_event_cb(function(code)
+    if code == lvgl.EVENT_CANCEL then
+        keyboard:add_flag(lvgl.OBJ_FLAG_HIDDEN)
+    end
+end, 0)
+
+
+
+
     -- 确认/取消按钮
     local btn_w2 = math.floor(popup_w * 0.31)
     local btn_h2 = 32
@@ -294,9 +321,9 @@ function PopupButton.new(parent, state)
         DataManager.read(self.props.bind_point)
 
         -- WebSocket连接（保留）
-        if self.props.websocket_url and self.props.websocket_url ~= "" and lv then
-            lv.connect(self.props.websocket_url, 3000)
-        end
+       -- if self.props.websocket_url and self.props.websocket_url ~= "" and lv then
+           -- lv.connect(self.props.websocket_url, 3000)
+       -- end
     end
 
     return self

@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-03-25 11:02:57",
+  "created_at": "2026-03-26 11:11:35",
   "current_page_index": 1,
-  "modified_at": "2026-03-25 11:02:57",
+  "modified_at": "2026-03-26 11:11:35",
   "pages": [
     {
       "bg_color": "#1E1E1E",
@@ -39,8 +39,8 @@
             "true_color": "#ffffff",
             "websocket_url": "",
             "width": 100,
-            "x": 290,
-            "y": 110
+            "x": 358,
+            "y": 103
           },
           "type": "custom_button"
         },
@@ -74,8 +74,8 @@
             "visible": true,
             "websocket_url": "",
             "width": 100,
-            "x": 319,
-            "y": 180
+            "x": 598,
+            "y": 164
           },
           "type": "label"
         },
@@ -94,10 +94,110 @@
             "text": "选项",
             "text_color": "#FFFFFF",
             "width": 120,
-            "x": 475,
-            "y": 111
+            "x": 440,
+            "y": 237
           },
           "type": "checkbox"
+        }
+      ],
+      "width": 1024
+    },
+    {
+      "bg_color": "#1E1E1E",
+      "height": 600,
+      "id": "page_2",
+      "name": "图页 2",
+      "widgets": [
+        {
+          "module_path": "widgets.new_button",
+          "props": {
+            "alignment": "center",
+            "bg_color": "#007acc",
+            "bind_point": "",
+            "color": "#ffffff",
+            "compare_operator": "大于",
+            "compare_value": "0",
+            "custom_address": "",
+            "custom_value": "",
+            "design_mode": true,
+            "enabled": true,
+            "event_action": "写入绑定数据点",
+            "false_bg_color": "#ffffff",
+            "false_color": "#ffffff",
+            "font_size": 16,
+            "height": 40,
+            "http_data_type": "实时数据",
+            "http_token": "",
+            "http_url": "",
+            "instance_name": "",
+            "label": "OK",
+            "on_clicked_handler": "",
+            "on_double_clicked_handler": "",
+            "on_single_clicked_handler": "",
+            "true_bg_color": "#ffffff",
+            "true_color": "#ffffff",
+            "websocket_url": "",
+            "width": 100,
+            "x": 432,
+            "y": 116
+          },
+          "type": "custom_button"
+        },
+        {
+          "module_path": "widgets.new_label",
+          "props": {
+            "alignment": "left",
+            "bg_color": "#00000000",
+            "bg_opa": 0,
+            "bind_point": "",
+            "compare_operator": "大于",
+            "compare_value": "0",
+            "custom_address": "",
+            "custom_value": "",
+            "design_mode": true,
+            "event_action": "写入绑定数据点",
+            "false_bg_color": "#ffffff",
+            "false_color": "#ffffff",
+            "font_size": 16,
+            "height": 30,
+            "http_data_type": "实时数据",
+            "http_token": "",
+            "http_url": "",
+            "instance_name": "",
+            "long_mode": "wrap",
+            "on_clicked_handler": "",
+            "text": "Label",
+            "text_color": "#FFFFFF",
+            "true_bg_color": "#ffffff",
+            "true_color": "#ffffff",
+            "visible": true,
+            "websocket_url": "",
+            "width": 100,
+            "x": 443,
+            "y": 210
+          },
+          "type": "label"
+        },
+        {
+          "module_path": "widgets.dropdown",
+          "props": {
+            "bg_color": "#3C3C3C",
+            "border_color": "#555555",
+            "design_mode": true,
+            "enabled": true,
+            "height": 32,
+            "instance_name": "",
+            "list_bg_color": "#2D2D2D",
+            "on_changed_handler": "",
+            "options": "选项1\n选项2\n选项3",
+            "selected_color": "#007ACC",
+            "selected_index": 0,
+            "text_color": "#FFFFFF",
+            "width": 150,
+            "x": 427,
+            "y": 271
+          },
+          "type": "dropdown"
         }
       ],
       "width": 1024

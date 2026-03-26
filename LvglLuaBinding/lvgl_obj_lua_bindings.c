@@ -6,6 +6,13 @@
 #include "lvgl_lua_bindings_internal.h"
 
 // ========== Object Methods (for obj:method() syntax) ==========
+// keyboard:set_textarea(textarea)
+static int l_keyboard_set_textarea(lua_State* L) {
+    lv_obj_t* kb = check_lv_obj(L, 1);
+    lv_obj_t* ta = check_lv_obj(L, 2);
+    if (kb && ta) lv_keyboard_set_textarea(kb, ta);
+    return 0;
+}
 
 // obj:set_pos(x, y)
 static int l_obj_set_pos(lua_State* L) {
@@ -719,6 +726,7 @@ static int l_obj_has_state(lua_State* L) {
 
 // ========== Object Methods Table ==========
 static const luaL_Reg lv_obj_methods[] = {
+    {"keyboard_set_textarea", l_keyboard_set_textarea},
     {"set_pos", l_obj_set_pos},
     {"set_size", l_obj_set_size},
     {"set_width", l_obj_set_width},
