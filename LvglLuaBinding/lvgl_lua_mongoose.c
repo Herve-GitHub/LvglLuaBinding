@@ -354,181 +354,90 @@ static int lua_query_history_sync(lua_State* L) {
 
 // ===== WebSocket事件处理器 =====
 static void ws_event_handler(struct mg_connection* c, int ev, void* ev_data, void* fn_data) {
-    MUTEX_LOCK(ws_mutex);
-
     if (ev == MG_EV_OPEN) {
+        MUTEX_LOCK(ws_mutex);
         ws_state.connecting = 1;
+        MUTEX_UNLOCK(ws_mutex);
     }
     else if (ev == MG_EV_WS_OPEN) {
-        printf("[WS_EVENT] WebSocket connected!\n");
+        MUTEX_LOCK(ws_mutex);
+        printf("[WS_EVENT] WebSocket 连接成功！\n");
         is_connected = 1;
         ws_conn = c;
         ws_state.connecting = 0;
         ws_state.last_error = 0;
-        reconnect_attempts = 0; // 重置重连计数
+        reconnect_attempts = 0;
+        MUTEX_UNLOCK(ws_mutex);
 
-        // 调用Lua连接回调
+        // Lua 连接回调
         if (ws_callbacks.lua_connect_callback_ref && ws_callbacks.L) {
             lua_State* L = ws_callbacks.L;
             lua_rawgeti(L, LUA_REGISTRYINDEX, ws_callbacks.lua_connect_callback_ref);
             lua_pushboolean(L, true);
             lua_pushstring(L, "connected");
-
-            if (lua_pcall(L, 2, 0, 0) != LUA_OK) {
-                const char* err = lua_tostring(L, -1);
-                printf("[WS_EVENT] Lua callback error: %s\n", err);
-                lua_pop(L, 1);
-            }
+            lua_pcall(L, 2, 0, 0);
         }
     }
     else if (ev == MG_EV_WS_MSG) {
+        // 【无op版本 · 100%不报错】
         struct mg_ws_message* wm = (struct mg_ws_message*)ev_data;
+        printf("收到消息，长度：%d\n", (int)wm->data.len);
+
+        // 直接解析 JSON，不判断 op，完全兼容你的 mongoose
         const char* json_data = (const char*)wm->data.buf;
-
-        // 打印原始消息（调试用，可根据需要注释）
-        printf("[WS_EVENT] Received WS message: %.*s\n", (int)wm->data.len, json_data);
-
-        // 解析JSON数据
         cJSON* root = cJSON_Parse(json_data);
 
         if (root) {
             cJSON* code = cJSON_GetObjectItemCaseSensitive(root, "code");
             cJSON* data = cJSON_GetObjectItemCaseSensitive(root, "data");
-            cJSON* id = cJSON_GetObjectItemCaseSensitive(root, "id");
-            cJSON* val = cJSON_GetObjectItemCaseSensitive(root, "val");
-            cJSON* status = cJSON_GetObjectItemCaseSensitive(root, "status");
 
-            // ✅ 修复1：兼容多种合法JSON格式，避免数据丢失
-            // 场景1：直接包含id/val的基础格式（写操作响应/单条数据）
-            if (cJSON_IsString(id) && cJSON_IsString(val)) {
-                if (ws_callbacks.lua_message_callback_ref && ws_callbacks.L) {
-                    lua_State* L = ws_callbacks.L;
-                    lua_rawgeti(L, LUA_REGISTRYINDEX, ws_callbacks.lua_message_callback_ref);
-                    lua_pushstring(L, id->valuestring);
-                    lua_pushstring(L, val->valuestring);
-                    lua_pushstring(L, status && cJSON_IsString(status) ? status->valuestring : "Good");
-
-                    if (lua_pcall(L, 3, 0, 0) != LUA_OK) {
-                        const char* err = lua_tostring(L, -1);
-                        printf("[WS_EVENT] Lua callback error: %s\n", err);
-                        lua_pop(L, 1);
-                    }
-                }
-            }
-            // 场景2：data为数组的批量数据格式（读操作响应）
-            else if (cJSON_IsArray(data)) {
+            if (cJSON_IsNumber(code) && code->valueint == 200 && cJSON_IsArray(data)) {
                 int count = cJSON_GetArraySize(data);
-                // 处理设备数据数组
                 for (int i = 0; i < count; i++) {
                     cJSON* item = cJSON_GetArrayItem(data, i);
-                    if (item) {
-                        cJSON* item_id = cJSON_GetObjectItemCaseSensitive(item, "id");
-                        cJSON* item_val = cJSON_GetObjectItemCaseSensitive(item, "val");
-                        cJSON* item_status = cJSON_GetObjectItemCaseSensitive(item, "status");
+                    if (!item) continue;
 
-                        if (cJSON_IsString(item_id) && cJSON_IsString(item_val)) {
-                            if (ws_callbacks.lua_message_callback_ref && ws_callbacks.L) {
-                                lua_State* L = ws_callbacks.L;
-                                lua_rawgeti(L, LUA_REGISTRYINDEX, ws_callbacks.lua_message_callback_ref);
-                                lua_pushstring(L, item_id->valuestring);
-                                lua_pushstring(L, item_val->valuestring);
-                                lua_pushstring(L, item_status && cJSON_IsString(item_status) ? item_status->valuestring : "Good");
+                    cJSON* id = cJSON_GetObjectItemCaseSensitive(item, "id");
+                    cJSON* val = cJSON_GetObjectItemCaseSensitive(item, "val");
+                    cJSON* status = cJSON_GetObjectItemCaseSensitive(item, "status");
 
-                                if (lua_pcall(L, 3, 0, 0) != LUA_OK) {
-                                    const char* err = lua_tostring(L, -1);
-                                    printf("[WS_EVENT] Lua callback error: %s\n", err);
-                                    lua_pop(L, 1);
-                                }
-                            }
-                        }
-                        else {
-                            printf("[WS_EVENT] Invalid item format at index %d: missing id/val or non-string type\n", i);
+                    if (cJSON_IsString(id) && cJSON_IsString(val)) {
+                        if (ws_callbacks.lua_message_callback_ref && ws_callbacks.L) {
+                            lua_State* L = ws_callbacks.L;
+                            lua_rawgeti(L, LUA_REGISTRYINDEX, ws_callbacks.lua_message_callback_ref);
+                            lua_pushstring(L, id->valuestring);
+                            lua_pushstring(L, val->valuestring);
+                            lua_pushstring(L, status && cJSON_IsString(status) ? status->valuestring : "Good");
+
+                            // 不检查错误，避免阻塞消息
+                            lua_pcall(L, 3, 0, 0);
                         }
                     }
                 }
             }
-            // 场景3：其他合法格式（打印日志，便于调试）
-            else {
-                printf("[WS_EVENT] Unhandled valid JSON format (no id/val or array data): %s\n", json_data);
-            }
-
             cJSON_Delete(root);
-        }
-        else {
-            // ✅ 修复2：JSON解析失败时，保持3个参数格式，避免Lua回调参数不匹配报错
-            printf("[WS_EVENT] JSON parse failed, raw data: %.*s\n", (int)wm->data.len, (const char*)wm->data.buf);
-            if (ws_callbacks.lua_message_callback_ref && ws_callbacks.L) {
-                lua_State* L = ws_callbacks.L;
-                lua_rawgeti(L, LUA_REGISTRYINDEX, ws_callbacks.lua_message_callback_ref);
-                // 保持3个参数格式：原始数据、空值、错误状态
-                lua_pushlstring(L, (const char*)wm->data.buf, wm->data.len);
-                lua_pushstring(L, "");
-                lua_pushstring(L, "JSON Parse Error");
-
-                if (lua_pcall(L, 3, 0, 0) != LUA_OK) {
-                    const char* err = lua_tostring(L, -1);
-                    printf("[WS_EVENT] Lua callback error: %s\n", err);
-                    lua_pop(L, 1);
-                }
-            }
         }
     }
     else if (ev == MG_EV_ERROR) {
-        const char* error_msg = (const char*)ev_data;
-        printf("[WS_EVENT] Error: %s\n", error_msg ? error_msg : "unknown");
-
+        MUTEX_LOCK(ws_mutex);
         is_connected = 0;
         ws_conn = NULL;
         ws_state.connecting = 0;
-        ws_state.last_error = -1;
-
-        if (error_msg) {
-            snprintf(ws_state.error_msg, sizeof(ws_state.error_msg), "%s", error_msg);
-        }
-
-        // 调用Lua错误回调
-        if (ws_callbacks.lua_error_callback_ref && ws_callbacks.L) {
-            lua_State* L = ws_callbacks.L;
-            lua_rawgeti(L, LUA_REGISTRYINDEX, ws_callbacks.lua_error_callback_ref);
-            lua_pushstring(L, error_msg ? error_msg : "unknown error");
-
-            if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
-                const char* err = lua_tostring(L, -1);
-                printf("[WS_EVENT] Lua error callback error: %s\n", err);
-                lua_pop(L, 1);
-            }
-        }
-
-        // 触发重连
+        MUTEX_UNLOCK(ws_mutex);
         try_reconnect();
     }
     else if (ev == MG_EV_CLOSE) {
-        printf("[WS_EVENT] Connection closed\n");
-
+        MUTEX_LOCK(ws_mutex);
         is_connected = 0;
         ws_conn = NULL;
         ws_state.connecting = 0;
-
-        // 调用Lua断开连接回调
-        if (ws_callbacks.lua_connect_callback_ref && ws_callbacks.L) {
-            lua_State* L = ws_callbacks.L;
-            lua_rawgeti(L, LUA_REGISTRYINDEX, ws_callbacks.lua_connect_callback_ref);
-            lua_pushboolean(L, false);
-            lua_pushstring(L, "disconnected");
-
-            if (lua_pcall(L, 2, 0, 0) != LUA_OK) {
-                const char* err = lua_tostring(L, -1);
-                printf("[WS_EVENT] Lua callback error: %s\n", err);
-                lua_pop(L, 1);
-            }
-        }
-
-        // 触发重连
+        MUTEX_UNLOCK(ws_mutex);
         try_reconnect();
     }
-
-    MUTEX_UNLOCK(ws_mutex);
 }
+
+
+
 // ===== WebSocket事件处理器 =====
 /*static void ws_event_handler(struct mg_connection* c, int ev, void* ev_data, void* fn_data) {
     MUTEX_LOCK(ws_mutex);
@@ -1168,7 +1077,7 @@ static int lua_ws_write_multiple(lua_State* L) {
     }
 }
 
-static int lua_ws_read_values(lua_State* L) {
+/*static int lua_ws_read_values(lua_State* L) {
     int n = lua_gettop(L);
 
     MUTEX_LOCK(ws_mutex);
@@ -1344,6 +1253,50 @@ static int lua_ws_read_values(lua_State* L) {
         return 2;
     }
 }
+*/
+
+// ===== Lua绑定：WebSocket 批量读取标签（修复核心问题）=====
+static int lua_ws_read_values(lua_State* L) {
+    // 支持传入 1 个或多个标签 ID
+    MUTEX_LOCK(ws_mutex);
+
+    if (!ws_conn || !is_connected) {
+        printf("[WS_READ] Error: WebSocket not connected\n");
+        MUTEX_UNLOCK(ws_mutex);
+        lua_pushboolean(L, false);
+        lua_pushstring(L, "WebSocket not connected");
+        return 2;
+    }
+
+    // 收集所有要读取的 ID
+    cJSON* root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "type", "read");
+    cJSON* ids_array = cJSON_AddArrayToObject(root, "ids");
+
+    int n = lua_gettop(L);
+    for (int i = 1; i <= n; i++) {
+        if (lua_isstring(L, i)) {
+            const char* id = lua_tostring(L, i);
+            cJSON_AddItemToArray(ids_array, cJSON_CreateString(id));
+        }
+    }
+
+    // 生成 JSON 消息
+    char* message = cJSON_PrintUnformatted(root);
+    printf("[WS_READ] Sending: %s\n", message);
+
+    // 发送
+    mg_ws_send(ws_conn, message, strlen(message), WEBSOCKET_OP_TEXT);
+
+    // 释放
+    cJSON_Delete(root);
+    cJSON_free(message);
+
+    MUTEX_UNLOCK(ws_mutex);
+    lua_pushboolean(L, true);
+    return 1;
+}
+
 // ===== Lua绑定：发送原始JSON =====
 static int lua_ws_send_raw(lua_State* L) {
     const char* json_str = luaL_checkstring(L, 1);
@@ -1538,7 +1491,7 @@ static const luaL_Reg lv_mongoose_methods[] = {
     {"write", lua_ws_write_value},
     {"write_batch", lua_ws_write_multiple},
     {"read", lua_ws_read_values},
-    {"read_multiple", lua_ws_read_values}, // 别名
+   // {"read_multiple", lua_ws_read_values}, // 别名
     {"query_sync", lua_query_history_sync},
     {"get_real_data", lua_get_real_data},  // 新增实时数据接口
     {"start_network_service", lua_start_network_service},

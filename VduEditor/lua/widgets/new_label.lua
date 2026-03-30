@@ -255,24 +255,8 @@ function Label:_bind_event()
       label = self  -- 将标签自身作为目标控件
     })
     
-        if callback then
-        print("[label] 设置自动读取: " .. bind_point)
-        
-        -- 添加执行标志
-        local executed = false
-        
-        lvgl.timer_create(function()
-            -- 如果已经执行过，直接返回
-            if executed then
-              --  print("[定时器] 已经执行过，忽略")
-                return
-            end
-            
-            executed = true
-            print("[定时器] 第1次执行")
-            callback()
-        end, 500, nil)
-    end
+      print("[立即执行] 读取绑定数据点: " .. bind_point)
+callback()
     
   elseif event_action == "写入绑定数据点" and bind_point and bind_point ~= "" then
     -- 创建写入回调，绑定到点击事件

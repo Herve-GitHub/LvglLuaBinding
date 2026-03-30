@@ -28,7 +28,7 @@ function PropertyWidgetEditor.create_metadata_table(ctx, meta)
         label:set_text(field.label .. tostring(value))
         label:set_style_text_color(0xCCCCCC, 0)
         label:set_pos(10, y_pos)
-        y_pos = y_pos + 18
+        y_pos = y_pos + 18 --18
     end
     
     y_pos = y_pos + 10
@@ -92,7 +92,7 @@ function PropertyWidgetEditor.create_properties_table(ctx, y_pos, widget_entry, 
     title:set_text("属性编辑")
     title:set_style_text_color(0x00CC00, 0)
     title:set_pos(0, y_pos)
-    y_pos = y_pos + table_title_height + 5
+    y_pos = y_pos + table_title_height --5
     
     for _, prop_def in ipairs(meta.properties) do
         local prop_name = prop_def.name

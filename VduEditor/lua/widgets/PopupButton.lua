@@ -124,8 +124,14 @@ end, 0)
 
 -- 4. 键盘取消按钮事件
 keyboard:add_event_cb(function(code)
+    -- 取消按钮
     if code == lvgl.EVENT_CANCEL then
         keyboard:add_flag(lvgl.OBJ_FLAG_HIDDEN)
+    end
+    -- 确认按钮（回车/OK）
+    if code == lvgl.EVENT_READY then
+        keyboard:add_flag(lvgl.OBJ_FLAG_HIDDEN)
+        -- 这里可以加你确认后要执行的逻辑
     end
 end, 0)
 

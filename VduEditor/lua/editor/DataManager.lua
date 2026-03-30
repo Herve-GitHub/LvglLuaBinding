@@ -68,13 +68,24 @@ function DataManager.init()
     -- DataManager.lua 中修改中央回调部分
 lvgl.set_callbacks(
     function(connected)
-        print("[WebSocket] 连接状态: " .. tostring(connected))
+    print("[WebSocket] 连接状态: " .. tostring(connected))
+    if connected then
+        -- 🔥 修复：连接成功 → 自动订阅所有已注册点
+        local all_points = {}
+        for p, _ in pairs(DataManager.button_callbacks) do table.insert(all_points, p) end
+        for p, _ in pairs(DataManager.label_callbacks) do table.insert(all_points, p) end
+        for p, _ in pairs(DataManager.switch_callbacks) do table.insert(all_points, p) end
         
-        -- 通知所有模块连接状态变化
-        if _G.on_ws_connection_changed then
-            pcall(_G.on_ws_connection_changed, connected)
+        if #all_points > 0 then
+            lvgl.read(table.unpack(all_points))
+            print("[已订阅] 点数:", #all_points)
         end
-    end,
+    end
+
+    if _G.on_ws_connection_changed then
+        pcall(_G.on_ws_connection_changed, connected)
+    end
+end,
     function(device_id, value, status)
         -- 核心过滤：忽略空数据、PONG帧、控制帧
         if not device_id or device_id == "" or value == nil or value == "" then

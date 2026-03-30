@@ -4,6 +4,16 @@ local lv = require("lvgl")
 local gen = require("general")
 local DataAction = require("editor.DataAction")
 
+-- 引用页面导航模块（如果存在）
+local PageNavigation = nil
+local has_page_navigation = pcall(function()
+    PageNavigation = require("actions.page_navigation")
+end)
+
+if not has_page_navigation then
+    print("[Button] 警告: 未找到 actions.page_navigation 模块，页面跳转功能将不可用")
+end
+
 local Button = {}
 
 Button.__widget_meta = {
@@ -28,7 +38,18 @@ Button.__widget_meta = {
     { name = "enabled", type = "boolean", default = true, label = "启用" },
     { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
     
-   -- 数据配置 - 这些属性会被数据编辑器修改
+    -- 页面跳转配置
+    { name = "enable_page_navigation", type = "boolean", default = false, label = "启用页面跳转",
+      description = "启用后点击按钮将跳转到指定页面" },
+    { name = "navigation_action", type = "enum", default = "goto_page", 
+      options = {"goto_page", "goto_next_page", "goto_prev_page", "goto_first_page", "goto_last_page", "goto_page_by_name"},
+      label = "跳转动作", description = "选择页面跳转的方式" },
+    { name = "target_page_index", type = "number", default = 1, label = "目标页面索引",
+      description = "跳转到指定页面时使用（从1开始）" },
+    { name = "target_page_name", type = "string", default = "", label = "目标页面名称",
+      description = "按名称跳转时使用" },
+    
+    -- 数据配置 - 这些属性会被数据编辑器修改
     { name = "bind_point", type = "string", default = "", label = "绑定数据点",
       description = "例如: Device1.E, PLC1.D100" },
     { name = "websocket_url", type = "string", default = "", label = "WebSocket",
@@ -40,18 +61,18 @@ Button.__widget_meta = {
       description = "例如: http://192.168.1.100/api/data" },
     { name = "http_token", type = "string", default = "", label = "HTTP Token",
       description = "认证令牌" },
-      -- 在控件的 __widget_meta.properties 中添加
-{ name = "compare_operator", type = "string", default = "大于", label = "比较运算符" },
-{ name = "compare_value", type = "string", default = "0", label = "比较值" },
-{ name = "true_color", type = "color", default = "#ffffff", label = "条件满足时文本颜色" },
-{ name = "false_color", type = "color", default = "#ffffff", label = "条件不满足时文本颜色" },
-{ name = "true_bg_color", type = "color", default = "#ffffff", label = "条件满足时背景颜色" },
-{ name = "false_bg_color", type = "color", default = "#ffffff", label = "条件不满足时背景颜色" },
+    
+    -- 条件样式配置
+    { name = "compare_operator", type = "string", default = "大于", label = "比较运算符" },
+    { name = "compare_value", type = "string", default = "0", label = "比较值" },
+    { name = "true_color", type = "color", default = "#ffffff", label = "条件满足时文本颜色" },
+    { name = "false_color", type = "color", default = "#ffffff", label = "条件不满足时文本颜色" },
+    { name = "true_bg_color", type = "color", default = "#ffffff", label = "条件满足时背景颜色" },
+    { name = "false_bg_color", type = "color", default = "#ffffff", label = "条件不满足时背景颜色" },
     
     -- 事件配置 - 这些属性会被事件编辑器修改
     { name = "event_action", type = "enum", default = "写入绑定数据点",
-      options = {"写入绑定数据点", "读取绑定数据点", "读写数据点",  -- 将"连接WebSocket"改为"读写数据点"
-                 "写入自定义地址", "读取自定义地址", "发送HTTP请求"},
+      options = {"写入绑定数据点", "读取绑定数据点", "读写数据点", "写入自定义地址", "读取自定义地址", "发送HTTP请求"},
       label = "事件动作", description = "点击时执行的动作" },
     { name = "custom_address", type = "string", default = "", label = "自定义地址",
       description = "写入/读取自定义地址时使用" },
@@ -85,9 +106,9 @@ local function apply_styles(self)
     local bg_color = parse_color(self.props.bg_color or "#007acc")
     if self.btn and self.btn.set_style_bg_color then
         if self.props.enabled then
-            self.btn:set_style_bg_color(bg_color, 0)
+            self.btn:set_style_bg_color(bg_color, 0)--bg_color
         else
-            self.btn:set_style_bg_color(0x888888, 0)
+            self.btn:set_style_bg_color(0x888888, 0)--
         end
     end
     
@@ -96,6 +117,50 @@ local function apply_styles(self)
     if self.label and self.label.set_style_text_color then
         self.label:set_style_text_color(text_color, 0)
     end
+end
+
+-- 执行页面跳转
+local function execute_page_navigation(self)
+    if not PageNavigation then
+        print("[Button] 错误: 页面导航模块不可用")
+        return false
+    end
+    
+    local action = self.props.navigation_action or "goto_page"
+    
+    if action == "goto_page" then
+        local page_index = self.props.target_page_index or 1
+        print("[Button] 跳转到页面索引: " .. page_index)
+        return PageNavigation.goto_page(page_index)
+        
+    elseif action == "goto_next_page" then
+        print("[Button] 跳转到下一页")
+        return PageNavigation.goto_next_page()
+        
+    elseif action == "goto_prev_page" then
+        print("[Button] 跳转到上一页")
+        return PageNavigation.goto_prev_page()
+        
+    elseif action == "goto_first_page" then
+        print("[Button] 跳转到第一页")
+        return PageNavigation.goto_first_page()
+        
+    elseif action == "goto_last_page" then
+        print("[Button] 跳转到最后一页")
+        return PageNavigation.goto_last_page()
+        
+    elseif action == "goto_page_by_name" then
+        local page_name = self.props.target_page_name or ""
+        if page_name == "" then
+            print("[Button] 错误: 目标页面名称为空")
+            return false
+        end
+        print("[Button] 跳转到页面: " .. page_name)
+        return PageNavigation.goto_page_by_name(page_name)
+    end
+    
+    print("[Button] 错误: 未知的跳转动作: " .. tostring(action))
+    return false
 end
 
 -- new(parent, state)
@@ -112,6 +177,8 @@ function Button.new(parent, state)
             self.props[p.name] = p.default
         end
     end
+
+
     
     -- 创建 lv 按钮与标签
     self.btn = lv.button_create(parent)
@@ -200,6 +267,13 @@ function Button.new(parent, state)
             if not self.props.design_mode then
                 self:_bind_event()
             end
+        elseif name == "enable_page_navigation" or name == "navigation_action" or 
+               name == "target_page_index" or name == "target_page_name" then
+            -- 页面跳转相关属性变化时，重新绑定事件
+            print("[Button] 页面跳转配置更新: " .. name .. " = " .. tostring(value))
+            if not self.props.design_mode then
+                self:_bind_event()
+            end
         end
         
         return true
@@ -243,101 +317,85 @@ function Button.new(parent, state)
     end
     
     -- 绑定事件（内部使用）
-  -- 绑定事件（内部使用）
-function self._bind_event(self)
-    local event_action = self.props.event_action
-    local bind_point = self.props.bind_point
-    local value = self.props.custom_value or "1"
-    local url = self.props.websocket_url
-    
-    -- 先清除旧的回调
-    if self._callbacks.clicked then
-        -- 注意：这里无法直接移除事件回调，需要更复杂的处理
-        -- 简单起见，我们假设每次绑定前都是干净的
-    end
-    
-    if event_action == "写入绑定数据点" and bind_point and bind_point ~= "" then
-        local callback = DataAction.create_callback(event_action, {
-            bind_point = bind_point,
-            value = value,
-            websocket_url = url,
-            button = self
-        })
-        if callback then
-            self:on("clicked", callback)
-            print("[Button] 已绑定写入事件: " .. bind_point .. " = " .. value)
+    function self._bind_event(self)
+       
+        -- 优先处理页面跳转
+        if self.props.enable_page_navigation then
+            print("[Button] 启用页面跳转模式")
+            self:on("clicked", function()
+                execute_page_navigation(self)
+            end)
+            return
         end
         
-    elseif event_action == "读取绑定数据点" and bind_point and bind_point ~= "" then
-    
-    local callback = DataAction.create_callback(event_action, {
-        bind_point = bind_point,
-        websocket_url = url,
-        button = self
-    })
-    
-    if callback then
-        print("[Button] 设置自动读取: " .. bind_point)
+        -- 原有的数据点操作逻辑
+        local event_action = self.props.event_action
+        local bind_point = self.props.bind_point
+        local value = self.props.custom_value or "1"
+        local url = self.props.websocket_url
         
-        -- 添加执行标志
-        local executed = false
-        
-        lvgl.timer_create(function()
-            -- 如果已经执行过，直接返回
-            if executed then
-              --  print("[定时器] 已经执行过，忽略")
-                return
+        if event_action == "写入绑定数据点" and bind_point and bind_point ~= "" then
+            local callback = DataAction.create_callback(event_action, {
+                bind_point = bind_point,
+                value = value,
+                websocket_url = url,
+                button = self
+            })
+            if callback then
+                self:on("clicked", callback)
+                print("[Button] 已绑定写入事件: " .. bind_point .. " = " .. value)
             end
             
-            executed = true
-            print("[定时器] 第1次执行")
-            callback()
-        end, 500, nil)
-    end
+        elseif event_action == "读取绑定数据点" and bind_point and bind_point ~= "" then
         
-    elseif event_action == "读写数据点" and bind_point and bind_point ~= "" then
-        -- 先初始化读写模式（注册按钮，开始接收数据）
-         local init_callback = DataAction.create_callback(event_action, {
-            bind_point = bind_point,
-            write_value = value,
-            websocket_url = url,
-            button = self
-        })
-        
-        if init_callback then
-            -- 执行初始化
-            init_callback()
-            print("[Button] 读写模式已初始化: " .. bind_point .. "，写入值: " .. value)
-        end 
-        
-        -- 绑定点击事件 - 直接执行写入操作
-        self:on("clicked", function()
-            print("[Button] 读写模式按钮点击，执行写入: " .. bind_point .. " = " .. value)
+            local callback = DataAction.create_callback(event_action, {
+                bind_point = bind_point,
+                websocket_url = url,
+                button = self
+            })
             
-            -- 直接调用写入函数
-            if lvgl then
-                lvgl.write(bind_point, value)
-                lvgl.read(bind_point)
-            else
-                print("[Button] 错误: lvgl 不存在")
+           
+                
+                print("[立即执行] 读取绑定数据点: " .. bind_point)
+callback()
+            
+        elseif event_action == "读写数据点" and bind_point and bind_point ~= "" then
+            -- 先初始化读写模式（注册按钮，开始接收数据）
+             local init_callback = DataAction.create_callback(event_action, {
+                bind_point = bind_point,
+                write_value = value,
+                websocket_url = url,
+                button = self
+            })
+            
+            if init_callback then
+                -- 执行初始化
+                init_callback()
+                print("[Button] 读写模式已初始化: " .. bind_point .. "，写入值: " .. value)
+            end 
+            
+            -- 绑定点击事件 - 直接执行写入操作
+            self:on("clicked", function()
+                print("[Button] 读写模式按钮点击，执行写入: " .. bind_point .. " = " .. value)
+                
+                -- 直接调用写入函数
+                if lvgl then
+                    lvgl.write(bind_point, value)
+                    lvgl.read(bind_point)
+                else
+                    print("[Button] 错误: lvgl 不存在")
+                end
+            end)
+            
+        else
+            if event_action ~= "写入绑定数据点" and event_action ~= "读取绑定数据点" and 
+               event_action ~= "读写数据点" then
+                print("[Button] 未绑定事件: " .. tostring(event_action))
+            elseif not bind_point or bind_point == "" then
+                print("[Button] 未绑定事件: 数据点为空")
             end
-        end)
-        
-        -- 立即执行一次读取，获取当前值
-       -- if lvgl then
-         --   print("[Button] 首次读取数据点: " .. bind_point)
-         --   lvgl.read(bind_point)
-      --  end
-        
-    else
-        if event_action ~= "写入绑定数据点" and event_action ~= "读取绑定数据点" and 
-           event_action ~= "读写数据点" then
-            print("[Button] 未绑定事件: " .. tostring(event_action))
-        elseif not bind_point or bind_point == "" then
-            print("[Button] 未绑定事件: 数据点为空")
         end
     end
-end
 
     -- 自动绑定事件（如果不是设计模式）
     if not self.props.design_mode then

@@ -1,22 +1,19 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-03-26 11:11:35
+-- 生成时间: 2026-03-30 10:24:37
 -- 工程版本: 1.0
 -- ==============================================
 
 -- 启动网络服务
 lvgl.start_network_service(3000)
-lvgl.connect("", 3000)
+lvgl.connect("ws://192.168.0.60:8085/ws/", 3000)
 
 -- 引用 LVGL
 local lv = require("lvgl")
 
 -- 引用控件模块
-local widgets_new_button = require("widgets.new_button")
-local widgets_new_label = require("widgets.new_label")
-local widgets_checkbox = require("widgets.checkbox")
-local widgets_dropdown = require("widgets.dropdown")
+local widgets_image = require("widgets.image")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -48,189 +45,22 @@ local function create_page_1(parent)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
 
-    -- 控件 1: custom_button
-    local widget_1 = widgets_new_button.new(container, {
+    -- 控件 1: custom_image
+    local widget_1 = widgets_image.new(container, {
+        scale = 256,
+        opa = 255,
+        design_mode = false,
+        src = "ahu3.png",
+        height = 100,
+        x = 537,
+        scale_y = 256,
+        rotation = 0,
         instance_name = "",
-        alignment = "center",
-        true_bg_color = "#ffffff",
-        http_token = "",
-        color = "#ffffff",
-        http_url = "",
-        compare_operator = "大于",
-        enabled = true,
-        label = "OK",
-        x = 358,
-        y = 103,
-        compare_value = "0",
-        font_size = 16,
-        custom_address = "",
-        event_action = "写入绑定数据点",
-        false_color = "#ffffff",
-        websocket_url = "",
-        false_bg_color = "#ffffff",
-        on_clicked_handler = "",
+        on_loaded_handler = "",
+        scale_x = 256,
         width = 100,
-        on_single_clicked_handler = "",
-        height = 40,
-        http_data_type = "实时数据",
-        design_mode = false,
-        true_color = "#ffffff",
-        bind_point = "",
-        custom_value = "",
-        bg_color = "#007acc",
-        on_double_clicked_handler = ""
-    })
-
-    -- 控件 2: label
-    local widget_2 = widgets_new_label.new(container, {
-        text_color = "#FFFFFF",
-        alignment = "left",
-        true_bg_color = "#ffffff",
-        http_token = "",
-        design_mode = false,
-        http_url = "",
-        text = "Label",
-        width = 100,
-        true_color = "#ffffff",
-        x = 598,
-        y = 164,
-        compare_value = "0",
-        font_size = 16,
-        custom_address = "",
-        event_action = "写入绑定数据点",
-        false_color = "#ffffff",
-        long_mode = "wrap",
-        false_bg_color = "#ffffff",
-        on_clicked_handler = "",
-        height = 30,
-        instance_name = "",
-        visible = true,
-        http_data_type = "实时数据",
-        websocket_url = "",
-        compare_operator = "大于",
-        bind_point = "",
-        custom_value = "",
-        bg_color = "#00000000",
-        bg_opa = 0
-    })
-
-    -- 控件 3: checkbox
-    local widget_3 = widgets_checkbox.new(container, {
-        text_color = "#FFFFFF",
-        checked = false,
-        instance_name = "",
-        design_mode = false,
-        x = 440,
-        width = 120,
-        box_size = 20,
-        y = 237,
-        enabled = true,
-        check_color = "#007ACC",
-        height = 30,
-        on_changed_handler = "",
-        text = "选项",
-        box_color = "#3C3C3C"
-    })
-
-    return container
-end
-
--- ========== 图页 2: 图页 2 ==========
--- 图页尺寸: 1024x600
--- 背景颜色: 0x1E1E1E
-local function create_page_2(parent)
-    -- 创建图页容器
-    local container = lv.obj_create(parent)
-    container:set_pos(0, 0)
-    container:set_size(1024, 600)
-    container:set_style_bg_color(0x1E1E1E, 0)
-    container:set_style_border_width(0, 0)
-    container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
-    container:clear_layout()
-
-    -- 控件 1: custom_button
-    local widget_1 = widgets_new_button.new(container, {
-        instance_name = "",
-        alignment = "center",
-        true_bg_color = "#ffffff",
-        http_token = "",
-        color = "#ffffff",
-        http_url = "",
-        compare_operator = "大于",
-        enabled = true,
-        label = "OK",
-        x = 432,
-        y = 116,
-        compare_value = "0",
-        font_size = 16,
-        custom_address = "",
-        event_action = "写入绑定数据点",
-        false_color = "#ffffff",
-        websocket_url = "",
-        false_bg_color = "#ffffff",
-        on_clicked_handler = "",
-        width = 100,
-        on_single_clicked_handler = "",
-        height = 40,
-        http_data_type = "实时数据",
-        design_mode = false,
-        true_color = "#ffffff",
-        bind_point = "",
-        custom_value = "",
-        bg_color = "#007acc",
-        on_double_clicked_handler = ""
-    })
-
-    -- 控件 2: label
-    local widget_2 = widgets_new_label.new(container, {
-        text_color = "#FFFFFF",
-        alignment = "left",
-        true_bg_color = "#ffffff",
-        http_token = "",
-        design_mode = false,
-        http_url = "",
-        text = "Label",
-        width = 100,
-        true_color = "#ffffff",
-        x = 443,
-        y = 210,
-        compare_value = "0",
-        font_size = 16,
-        custom_address = "",
-        event_action = "写入绑定数据点",
-        false_color = "#ffffff",
-        long_mode = "wrap",
-        false_bg_color = "#ffffff",
-        on_clicked_handler = "",
-        height = 30,
-        instance_name = "",
-        visible = true,
-        http_data_type = "实时数据",
-        websocket_url = "",
-        compare_operator = "大于",
-        bind_point = "",
-        custom_value = "",
-        bg_color = "#00000000",
-        bg_opa = 0
-    })
-
-    -- 控件 3: dropdown
-    local widget_3 = widgets_dropdown.new(container, {
-        text_color = "#FFFFFF",
-        options = "选项1\n选项2\n选项3",
-        instance_name = "",
-        border_color = "#555555",
-        design_mode = false,
-        list_bg_color = "#2D2D2D",
-        width = 150,
-        y = 271,
-        height = 32,
-        enabled = true,
-        selected_color = "#007ACC",
-        x = 427,
-        on_changed_handler = "",
-        bg_color = "#3C3C3C",
-        selected_index = 0
+        y = 157,
+        mode = "normal"
     })
 
     return container
@@ -244,7 +74,6 @@ PageManager.current_index = 0
 
 -- 注册图页创建函数
 PageManager.pages[1] = { name = "图页 1", create = create_page_1 }
-PageManager.pages[2] = { name = "图页 2", create = create_page_2 }
 
 -- 预创建所有图页（启动时调用）
 function PageManager.init()
