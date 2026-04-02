@@ -80,7 +80,12 @@ function TrendChart.new(parent, props)
     self.chart:set_point_count(self.props.point_count)
     self.chart:set_update_mode(lv.CHART_UPDATE_MODE_SHIFT)
     self.chart:set_div_line_count(3, 3)
-    self.series = self.chart:add_series(0x2196F3, lv.CHART_AXIS_PRIMARY_Y)
+
+    self.chart:set_style_bg_color(0x000000, 0)    -- 白色背景（跟仿真一样！）
+self.chart:set_style_bg_opa(lv.OPA_COVER, 0)   -- 完全不透明
+self.chart:set_style_border_width(1, 0)       -- 加边框
+
+    self.series = self.chart:add_series(0xFF0000, lv.CHART_AXIS_PRIMARY_Y)
     self.chart:set_range(lv.CHART_AXIS_PRIMARY_Y, self.props.range_min, self.props.range_max)
 
     -- ========== 触发事件函数 ==========

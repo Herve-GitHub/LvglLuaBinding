@@ -41,6 +41,7 @@ LeftPanel.DEFAULT_TOOLS = {
    { id = "switch", name = "开关", icon = "SWT", module_path = "widgets.switch" },
     { id = "image", name = "图像", icon = "IMG", module_path = "widgets.image" },
     { id = "tangchuang", name = "弹窗", icon = "TCZ", module_path = "widgets.PopupButton"},
+     { id = "tangchuang", name = "表盘", icon = "PAN", module_path = "widgets.ArcGauge"},
 }
 
 -- 尝试获取中文字体

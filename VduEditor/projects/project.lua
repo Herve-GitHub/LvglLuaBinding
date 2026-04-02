@@ -1,19 +1,19 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-03-30 10:24:37
+-- 生成时间: 2026-04-02 08:31:22
 -- 工程版本: 1.0
 -- ==============================================
 
 -- 启动网络服务
 lvgl.start_network_service(3000)
-lvgl.connect("ws://192.168.0.60:8085/ws/", 3000)
+lvgl.connect("nil", 3000)
 
 -- 引用 LVGL
 local lv = require("lvgl")
 
 -- 引用控件模块
-local widgets_image = require("widgets.image")
+local widgets_ArcGauge = require("widgets.ArcGauge")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -45,22 +45,21 @@ local function create_page_1(parent)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
 
-    -- 控件 1: custom_image
-    local widget_1 = widgets_image.new(container, {
-        scale = 256,
-        opa = 255,
+    -- 控件 1: custom_arc_gauge
+    local widget_1 = widgets_ArcGauge.new(container, {
+        y = 282,
+        on_value_changed_handler = "",
+        value = 0,
+        arc_width = 6,
+        gauge_title = "仪表盘",
+        arc_color = 16766720,
         design_mode = false,
-        src = "ahu3.png",
-        height = 100,
-        x = 537,
-        scale_y = 256,
-        rotation = 0,
+        x = 408,
+        unit = "%",
+        width = 300,
         instance_name = "",
-        on_loaded_handler = "",
-        scale_x = 256,
-        width = 100,
-        y = 157,
-        mode = "normal"
+        height = 300,
+        arc_size = 260
     })
 
     return container

@@ -285,6 +285,12 @@ static int l_lv_scale_create(lua_State* L) {
     return 1;
 }
 
+
+static int l_lv_line_create(lua_State* L) {
+    push_lv_obj(L, lv_line_create(check_lv_obj(L, 1)));
+    return 1;
+}
+
 // lv.checkbox_create(parent)
 static int l_lv_checkbox_create(lua_State* L) {
     push_lv_obj(L, lv_checkbox_create(check_lv_obj(L, 1)));
@@ -435,6 +441,7 @@ static const luaL_Reg lvgl_funcs[] = {
     {"textarea_get_text", l_lv_textarea_get_text},
     {"keyboard_create", l_lv_keyboard_create},
     {"scale_create", l_lv_scale_create},
+    {"line_create", l_lv_line_create},
     {"checkbox_create", l_lv_checkbox_create},
     {"dropdown_create", l_lv_dropdown_create},
     {"slider_create", l_lv_slider_create},
@@ -493,7 +500,8 @@ static int luaopen_lvgl(lua_State* L) {
     // Add slider methods
     merge_methods_to_table(L, lvgl_get_slider_methods());
     
-   
+    // Add scale methods
+    merge_methods_to_table(L, lvgl_get_meter_methods());
     
     lua_setfield(L, -2, "__index");
     lua_pop(L, 1);
@@ -679,3 +687,4 @@ void lvgl_lua_register(lua_State* L) {
     luaopen_lvgl(L);
     lua_setglobal(L, "lvgl");
 }
+

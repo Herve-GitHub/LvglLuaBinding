@@ -16,6 +16,7 @@ local WIDGET_TYPE_TO_MODULE = {
     ["status_bar"] = "widgets.status_bar",
     ["switch"] = "widgets.switch",
     ["image"] = "widgets.image" ,
+    ["ArcGauge"] = "widgets.ArcGauge" ,
     ["PopupButton"] = "widgets.PopupButton" 
 }
 
@@ -101,8 +102,8 @@ local function find_websocket_url(project_data)
     end
     
     -- 没有找到，使用默认值
-    websocket_url = "ws://192.168.0.60:8085/ws/"
-    print("[Compiler] 使用默认WebSocket地址: " .. websocket_url)
+ --   websocket_url = "ws://192.168.0.60:8085/ws/"
+  --  print("[Compiler] 使用默认WebSocket地址: " .. websocket_url)
     return websocket_url, websocket_timeout
 end
 

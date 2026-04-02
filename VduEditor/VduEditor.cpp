@@ -1,7 +1,4 @@
-﻿// VduEditor.cpp : VDU组态编辑器主程序
-//
-
-#include <Windows.h>
+﻿#include <Windows.h>
 #include <iostream>
 #include <string>
 
@@ -14,7 +11,7 @@ static const int WINDOW_WIDTH = 1124;
 static const int WINDOW_HEIGHT = 600;//960
 
 // 默认脚本路径（相对于可执行文件目录）
-//static const char* DEFAULT_SCRIPT_PATH = "websocket\\test.lua";  // 修改为 websocket 测试脚本
+//static const char* DEFAULT_SCRIPT_PATH = "websocket\\biao.lua";  // 修改为 websocket 测试脚本
 static const char* DEFAULT_SCRIPT_PATH = "lua\\editor\\main_editor.lua";  // 修改为 websocket 测试脚本
 // static const char* DEFAULT_SCRIPT_PATH = "projects\\project.lua";  // 修改为 websocket 测试脚本
 // 默认 Lua 搜索路径（相对于可执行文件目录）
@@ -375,7 +372,7 @@ int main(int argc, char* argv[])
     // 运行几个定时器周期，让 LVGL 完全初始化显示
     for (int i = 0; i < 10; i++) {
         lv_timer_handler();
-        
+
     }
 
     std::cout << "LVGL display initialized successfully" << std::endl;

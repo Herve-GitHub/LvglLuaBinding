@@ -3626,6 +3626,10 @@
     <ClCompile Include="lvgl_picture_lua_bingdings.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="lvgl_scale_lua_bindings.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+	  
   </ItemGroup>
   <ItemGroup>
     <None Include="LvglLuaBinding.def">

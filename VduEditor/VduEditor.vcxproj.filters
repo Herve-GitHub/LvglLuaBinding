@@ -123,6 +123,8 @@
     <None Include="data_editor_config.json" />
     <None Include="lua\widgets\config.lua" />
     <None Include="lua\editor\install_config.lua" />
+    <None Include="websocket\biao.lua" />
+    <None Include="lua\widgets\ArcGauge.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

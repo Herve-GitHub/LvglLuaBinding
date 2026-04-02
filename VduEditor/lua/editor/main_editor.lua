@@ -219,7 +219,7 @@ local property_area = PropertyArea.new(scr, {
 -- ========== 窗口大小变化监听 ==========
 
 local function update_layout()
-    local new_width, new_height = get_window_size()
+    --[[local new_width, new_height = get_window_size()
     
     if new_width ~= WINDOW_WIDTH or new_height ~= WINDOW_HEIGHT then
         WINDOW_WIDTH = new_width
@@ -254,13 +254,13 @@ local function update_layout()
         menu_bar:set_width(new_width)     
 
         print("[编辑器] 窗口大小更新: " .. new_width .. "x" .. new_height)
-    end
+    end]]--
 end
 
 -- 创建布局更新定时器
-local layout_timer = lv.timer_create(function(timer)
+--[[local layout_timer = lv.timer_create(function(timer)
     update_layout()
-end, 200)
+end, 200)]]--
 
 -- ========== 状态栏管理 ==========
 

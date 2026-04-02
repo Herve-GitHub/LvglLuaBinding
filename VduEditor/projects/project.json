@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-03-30 10:24:36",
+  "created_at": "2026-04-02 08:31:22",
   "current_page_index": 1,
-  "modified_at": "2026-03-30 10:24:36",
+  "modified_at": "2026-04-02 08:31:22",
   "pages": [
     {
       "bg_color": "#1E1E1E",
@@ -10,23 +10,22 @@
       "name": "图页 1",
       "widgets": [
         {
-          "module_path": "widgets.image",
+          "module_path": "widgets.ArcGauge",
           "props": {
-            "height": 100,
+            "arc_color": 16766720,
+            "arc_size": 260,
+            "arc_width": 6,
+            "gauge_title": "仪表盘",
+            "height": 300,
             "instance_name": "",
-            "mode": "normal",
-            "on_loaded_handler": "",
-            "opa": 255,
-            "rotation": 0,
-            "scale": 256,
-            "scale_x": 256,
-            "scale_y": 256,
-            "src": "ahu3.png",
-            "width": 100,
-            "x": 537,
-            "y": 157
+            "on_value_changed_handler": "",
+            "unit": "%",
+            "value": 0,
+            "width": 300,
+            "x": 408,
+            "y": 282
           },
-          "type": "custom_image"
+          "type": "custom_arc_gauge"
         }
       ],
       "width": 1024
