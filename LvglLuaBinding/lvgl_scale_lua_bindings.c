@@ -282,7 +282,7 @@ static int l_arc_set_style_bg_arc_color(lua_State* L) {
 }
 
 // ===================== 方法表：scale + arc 全部注册 =====================
-static const luaL_Reg lv_scale_methods[] = {
+static const luaL_Reg lv_meter_methods[] = {
     // scale
    // {"scale_create", l_scale_create},
     {"scale_set_range", l_scale_set_range},
@@ -310,6 +310,8 @@ static const luaL_Reg lv_scale_methods[] = {
     {"scale_set_post_draw", l_scale_set_post_draw},
     {"scale_set_draw_ticks_on_top", l_scale_set_draw_ticks_on_top},
     {"scale_set_style_bg", l_scale_set_style_bg},
+  
+
 
     // arc ✅ 已完整加入
     //{"arc_create", l_arc_create},
@@ -325,5 +327,5 @@ static const luaL_Reg lv_scale_methods[] = {
 };
 
 const luaL_Reg* lvgl_get_meter_methods(void) {
-    return lv_scale_methods;
+    return lv_meter_methods;
 }

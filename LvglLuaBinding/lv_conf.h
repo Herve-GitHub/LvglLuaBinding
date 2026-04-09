@@ -41,7 +41,7 @@
 #define LV_STDARG_INCLUDE       <stdarg.h>
 
 #if LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN
-    #define LV_MEM_SIZE (256 * 1024U)
+    #define LV_MEM_SIZE (16 * 1024U * 1024U)  // 16MB 内存
     #define LV_MEM_POOL_EXPAND_SIZE 0
     #define LV_MEM_ADR 0
     #if LV_MEM_ADR == 0
@@ -84,10 +84,12 @@
 #define LV_USE_DRAW_SW 1
 #if LV_USE_DRAW_SW == 1
     #define LV_DRAW_SW_SUPPORT_RGB565       1
+    #define LV_DRAW_SW_SUPPORT_RGB565_SWAPPED       1 //add
     #define LV_DRAW_SW_SUPPORT_RGB565A8     1
     #define LV_DRAW_SW_SUPPORT_RGB888       1
     #define LV_DRAW_SW_SUPPORT_XRGB8888     1
     #define LV_DRAW_SW_SUPPORT_ARGB8888     1
+    #define LV_DRAW_SW_SUPPORT_ARGB8888_PREMULTIPLIED 1
     #define LV_DRAW_SW_SUPPORT_L8           1
     #define LV_DRAW_SW_SUPPORT_AL88         1
     #define LV_DRAW_SW_SUPPORT_A8           1
@@ -98,8 +100,8 @@
     #define LV_USE_NATIVE_HELIUM_ASM    0
     #define LV_DRAW_SW_COMPLEX          1
     #if LV_DRAW_SW_COMPLEX == 1
-        #define LV_DRAW_SW_SHADOW_CACHE_SIZE 0
-        #define LV_DRAW_SW_CIRCLE_CACHE_SIZE 4
+        #define LV_DRAW_SW_SHADOW_CACHE_SIZE 32
+        #define LV_DRAW_SW_CIRCLE_CACHE_SIZE 8
     #endif
     #define  LV_USE_DRAW_SW_ASM     LV_DRAW_SW_ASM_NONE
     #if LV_USE_DRAW_SW_ASM == LV_DRAW_SW_ASM_CUSTOM

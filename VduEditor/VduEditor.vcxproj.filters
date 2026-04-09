@@ -125,6 +125,17 @@
     <None Include="lua\editor\install_config.lua" />
     <None Include="websocket\biao.lua" />
     <None Include="lua\widgets\ArcGauge.lua" />
+    <None Include="lua\widgets\new_chart.lua" />
+    <None Include="lua\actions\ChartAction.lua" />
+    <None Include="websocket\chart.lua" />
+    <None Include="websocket\table.lua" />
+    <None Include="websocket\httphistory.lua" />
+    <None Include="websocket\OldCanvasArea.lua" />
+    <None Include="lua\widgets\new_table.lua" />
+    <None Include="websocket\weuduji.lua" />
+    <None Include="lua\widgets\temperature.lua" />
+    <None Include="lua\widgets\new_time.lua" />
+    <None Include="lua\editor\ImageDialog.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

@@ -60,13 +60,16 @@ void lvgl_register_mongoose_methods(lua_State* L, luaL_Reg* methods, int* count)
 
 void lvgl_register_meter_methods(lua_State* L, luaL_Reg* methods, int* count);
 
+void lvgl_register_table_methods(lua_State* L, luaL_Reg* methods, int* count);
+
+
 // Get methods tables
 const luaL_Reg* lvgl_get_obj_methods(void);
 const luaL_Reg* lvgl_get_textarea_methods(void);
 const luaL_Reg* lvgl_get_chart_methods(void);
 const luaL_Reg* lvgl_get_slider_methods(void);
 
-
+const luaL_Reg* lvgl_get_table_methods(void);
 const luaL_Reg* lvgl_get_meter_methods(void);
 
 // Get clipboard functions

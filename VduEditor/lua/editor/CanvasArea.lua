@@ -1,5 +1,5 @@
 ﻿-- CanvasArea.lua
--- 画布区域：组态软件的设计画布，支持拖拽移动控件、框选多选
+-- 画布区域：组态软件的设计画布，支持拖拽移动控件、框选多选、剪切复制粘贴撤销重做
 local lv = require("lvgl")
 
 local CanvasArea = {}
@@ -22,18 +22,17 @@ function CanvasArea.new(parent, props)
     self.props = {
         x = props.x or 0,
         y = props.y or 40,
-        width = props.width or 1024,--800
-        height = props.height or 600,--600
+        width = props.width or 1024,
+        height = props.height or 600,
         bg_color = props.bg_color or 0x1E1E1E,
         grid_color = props.grid_color or 0x2A2A2A,
         grid_size = props.grid_size or 20,
         show_grid = props.show_grid ~= false,
         snap_to_grid = props.snap_to_grid ~= false,
-        -- 图页边界属性
         page_width = props.page_width or 1024,
         page_height = props.page_height or 600,
-        show_page_border = props.show_page_border ~= false,  -- 默认显示边界线
-        page_border_color = props.page_border_color or 0xFF6600,  -- 橙色边界线
+        show_page_border = props.show_page_border ~= false,
+        page_border_color = props.page_border_color or 0xFF6600,
         page_border_width = props.page_border_width or 2,
     }
     
@@ -43,8 +42,6 @@ function CanvasArea.new(parent, props)
     -- 选中的控件（支持多选）
     self._selected_widgets = {}
     self._selection_boxes = {}
-    
-    -- 选择框ID映射（使用独立的表来存储映射关系）
     self._box_widget_map = {}
     
     -- 单个控件拖拽状态
@@ -70,13 +67,21 @@ function CanvasArea.new(parent, props)
     -- 框选状态
     self._marquee_state = {
         is_selecting = false,
-        was_selecting = false,  -- 新增：记录是否刚刚完成框选
+        was_selecting = false,
         start_x = 0,
         start_y = 0,
         current_x = 0,
         current_y = 0,
         marquee_box = nil,
     }
+    
+    -- 剪贴板
+    self._clipboard = nil
+
+    -- 撤销/重做栈
+    self._undo_stack = {}
+    self._redo_stack = {}
+    self._is_in_undo_redo = false
     
     -- 图页边界线对象
     self._page_border = nil
@@ -110,29 +115,23 @@ function CanvasArea.new(parent, props)
     -- 画布事件
     local this = self
     
-    -- 按下事件 - 开始框选
     self.container:add_event_cb(function(e)
         this:_on_canvas_pressed()
     end, lv.EVENT_PRESSED, nil)
     
-    -- 拖动事件 - 更新框选区域
     self.container:add_event_cb(function(e)
         this:_on_canvas_pressing()
     end, lv.EVENT_PRESSING, nil)
     
-    -- 释放事件 - 完成框选
     self.container:add_event_cb(function(e)
         this:_on_canvas_released()
     end, lv.EVENT_RELEASED, nil)
     
-    -- 点击事件 - 取消选中（非框选时）
     self.container:add_event_cb(function(e)
-        -- 如果刚刚完成框选，不要取消选中
         if this._marquee_state.was_selecting then
             this._marquee_state.was_selecting = false
             return
         end
-        -- 只有当不是拖拽操作时才取消选中
         if not this._drag_state.is_dragging then
             this:deselect_all()
         end
@@ -162,8 +161,146 @@ function CanvasArea:_emit(event_name, ...)
     end
 end
 
--- ========== 画布框选事件 ==========
+-- 保存快照（用于撤销）
+function CanvasArea:_save_state()
+    if self._is_in_undo_redo then return end
+    local snapshot = self:export_state()
+    table.insert(self._undo_stack, snapshot)
+    self._redo_stack = {}
+end
 
+-- 撤销
+function CanvasArea:undo()
+    if #self._undo_stack == 0 then return end
+    local current = self:export_state()
+    table.insert(self._redo_stack, current)
+    
+    self._is_in_undo_redo = true
+    local prev = table.remove(self._undo_stack)
+    self:import_state(prev)
+    self._is_in_undo_redo = false
+    print("[画布] 撤销")
+end
+
+-- 重做
+function CanvasArea:redo()
+    if #self._redo_stack == 0 then return end
+    local current = self:export_state()
+    table.insert(self._undo_stack, current)
+    
+    self._is_in_undo_redo = true
+    local next_state = table.remove(self._redo_stack)
+    self:import_state(next_state)
+    self._is_in_undo_redo = false
+    print("[画布] 重做")
+end
+
+-- 复制
+function CanvasArea:copy_selected()
+    local selected = self:get_selected_widgets()
+    if #selected == 0 then return end
+    
+    local data = {}
+    for _, w in ipairs(selected) do
+        table.insert(data, {
+            module = w.module,
+            module_path = w.module_path,
+            props = w.instance:to_state()
+        })
+    end
+    self._clipboard = data
+    print("[画布] 复制 " .. #data .. " 个控件")
+end
+
+-- 剪切
+function CanvasArea:cut_selected()
+    local selected = self:get_selected_widgets()
+    if #selected == 0 then return end
+
+    self:_save_state()
+    self:copy_selected()
+    self:delete_selected()
+    print("[画布] 剪切")
+end
+
+-- 粘贴
+function CanvasArea:paste()
+    if not self._clipboard or #self._clipboard == 0 then return end
+
+    self:_save_state()
+    local offset = 20
+    local new_widgets = {}
+
+    for _, item in ipairs(self._clipboard) do
+        local mod = item.module
+        local path = item.module_path
+        local props = item.props
+
+        if not mod then goto continue end
+
+        local p = {}
+        for k, v in pairs(props) do
+            p[k] = v
+        end
+
+        p.x = (p.x or 100) + offset
+        p.y = (p.y or 100) + offset
+        p.x = math.max(0, math.min(p.x, self.props.width - 50))
+        p.y = math.max(0, math.min(p.y, self.props.height - 50))
+
+        local entry = self:add_widget(mod, p)
+        if entry then
+            entry.module_path = path
+            table.insert(new_widgets, entry)
+        end
+
+        ::continue::
+    end
+
+    self:deselect_all()
+    for _, w in ipairs(new_widgets) do
+        table.insert(self._selected_widgets, w)
+        self:_create_selection_box(w)
+    end
+
+    if #new_widgets == 1 then
+        self:_emit("widget_selected", new_widgets[1])
+    else
+        self:_emit("widgets_selected", new_widgets)
+    end
+
+    print("[画布] 粘贴 " .. #new_widgets .. " 个控件")
+end
+
+-- 导入状态（撤销/重做用）
+function CanvasArea:import_state(state)
+    if not state or not state.widgets then return end
+    self:clear()
+
+    for _, wdata in ipairs(state.widgets) do
+        local mod = nil
+        local path = nil
+
+        for _, v in pairs(package.loaded) do
+            if type(v) == "table" and v.__widget_meta and v.__widget_meta.id == wdata.type then
+                mod = v
+                break
+            end
+        end
+
+        if not mod then goto continue end
+
+        local entry = self:add_widget(mod, wdata.props)
+        if entry then
+            entry.module_path = path
+            entry.id = wdata.id
+        end
+
+        ::continue::
+    end
+end
+
+-- ========== 画布框选事件 ==========
 function CanvasArea:_on_canvas_pressed()
     local mouse_x = lv.get_mouse_x()
     local mouse_y = lv.get_mouse_y()
@@ -203,19 +340,13 @@ end
 
 function CanvasArea:_on_canvas_released()
     if self._marquee_state.is_selecting then
-        -- 标记刚刚完成框选
         self._marquee_state.was_selecting = true
         
-        -- 获取框选区域
         local x1 = math.min(self._marquee_state.start_x, self._marquee_state.current_x)
         local y1 = math.min(self._marquee_state.start_y, self._marquee_state.current_y)
         local x2 = math.max(self._marquee_state.start_x, self._marquee_state.current_x)
         local y2 = math.max(self._marquee_state.start_y, self._marquee_state.current_y)
         
-        print("[画布] 框选区域: (" .. x1 .. "," .. y1 .. ") - (" .. x2 .. "," .. y2 .. ")")
-        print("[画布] 控件数量: " .. #self._widgets)
-        
-        -- 查找框选区域内的控件
         local selected = {}
         for _, widget_entry in ipairs(self._widgets) do
             local instance = widget_entry.instance
@@ -226,23 +357,15 @@ function CanvasArea:_on_canvas_released()
                 local ww = main_obj:get_width()
                 local wh = main_obj:get_height()
                 
-                print("[画布] 检查控件: " .. widget_entry.id .. " 位置: (" .. wx .. "," .. wy .. ") 尺寸: (" .. ww .. "x" .. wh .. ")")
-                
-                -- 检查是否相交
                 if wx < x2 and wx + ww > x1 and wy < y2 and wy + wh > y1 then
-                    print("[画布] 控件在框选区域内: " .. widget_entry.id)
                     table.insert(selected, widget_entry)
                 end
             end
         end
         
-        -- 删除框选矩形
         self:_delete_marquee_box()
         
-        -- 选中找到的控件
         if #selected > 0 then
-            print("[画布] 框选完成，选中 " .. #selected .. " 个控件")
-            -- 清除旧的选择状态
             self._selected_widgets = {}
             for i = #self._selection_boxes, 1, -1 do
                 local box = self._selection_boxes[i]
@@ -253,7 +376,6 @@ function CanvasArea:_on_canvas_released()
             self._selection_boxes = {}
             self._box_widget_map = {}
             
-            -- 设置新的选中状态
             self._selected_widgets = selected
             
             for _, w in ipairs(selected) do
@@ -265,11 +387,8 @@ function CanvasArea:_on_canvas_released()
             else
                 self:_emit("widgets_selected", selected)
             end
-        else
-            print("[画布] 框选完成，未选中任何控件")
         end
     else
-        -- 不是框选，清除标志
         self._marquee_state.was_selecting = false
     end
     self._marquee_state.is_selecting = false
@@ -317,7 +436,6 @@ function CanvasArea:_delete_marquee_box()
 end
 
 -- ========== 网格绘制 ==========
-
 function CanvasArea:_draw_grid()
     local grid_size = self.props.grid_size
     local width = self.props.width
@@ -376,7 +494,6 @@ function CanvasArea:_disable_widget_events(obj)
 end
 
 -- ========== 控件管理 ==========
-
 function CanvasArea:add_widget(widget_module, props)
     props = props or {}
     
@@ -384,11 +501,7 @@ function CanvasArea:add_widget(widget_module, props)
     props.x = x
     props.y = y
     props.design_mode = true
-    -- 不再强制设置 auto_update 为 false，保留用户配置的值或使用默认值
-    -- 设计模式下 trend_chart 和其他控件的 start() 函数会自行检查 design_mode
     if props.auto_update == nil then
-        -- 如果没有明确指定，使用控件的默认值（大多数控件默认为 true）
-        -- 获取默认值
         if widget_module.__widget_meta and widget_module.__widget_meta.properties then
             for _, p in ipairs(widget_module.__widget_meta.properties) do
                 if p.name == "auto_update" then
@@ -397,7 +510,6 @@ function CanvasArea:add_widget(widget_module, props)
                 end
             end
         end
-        -- 如果仍然没有，默认为 true
         if props.auto_update == nil then
             props.auto_update = true
         end
@@ -423,6 +535,7 @@ function CanvasArea:add_widget(widget_module, props)
     
     table.insert(self._widgets, widget_entry)
     self:_setup_widget_drag_events(widget_entry)
+    self:_save_state()
     self:_emit("widget_added", widget_entry)
     
     return widget_entry
@@ -504,7 +617,6 @@ function CanvasArea:_on_widget_pressing(widget_entry)
     local mouse_x = lv.get_mouse_x()
     local mouse_y = lv.get_mouse_y()
     
-    -- 多选拖拽
     if self:_is_widget_selected(widget_entry) and #self._selected_widgets > 1 then
         local delta_x = mouse_x - self._multi_drag_state.start_mouse_x
         local delta_y = mouse_y - self._multi_drag_state.start_mouse_y
@@ -536,7 +648,6 @@ function CanvasArea:_on_widget_pressing(widget_entry)
         return
     end
     
-    -- 单个拖拽
     if self._drag_state.widget_entry ~= widget_entry then return end
     
     local instance = widget_entry.instance
@@ -571,7 +682,6 @@ function CanvasArea:_on_widget_pressing(widget_entry)
 end
 
 function CanvasArea:_on_widget_released(widget_entry)
-    -- 多选拖拽结束
     if self._multi_drag_state.is_dragging then
         for _, w in ipairs(self._selected_widgets) do
             local inst = w.instance
@@ -593,13 +703,13 @@ function CanvasArea:_on_widget_released(widget_entry)
         end
         
         self:_update_all_selection_boxes()
+        self:_save_state()
         self:_emit("widgets_moved", self._selected_widgets)
         self._multi_drag_state.is_dragging = false
         self._multi_drag_state.start_positions = {}
         return
     end
     
-    -- 单个拖拽结束
     if self._drag_state.widget_entry ~= widget_entry then return end
     
     local was_dragging = self._drag_state.is_dragging
@@ -622,6 +732,7 @@ function CanvasArea:_on_widget_released(widget_entry)
         widget_entry.props.y = snapped_y
         
         self:_update_all_selection_boxes()
+        self:_save_state()
         self:_emit("widget_moved", widget_entry)
     end
     
@@ -630,8 +741,6 @@ function CanvasArea:_on_widget_released(widget_entry)
 end
 
 -- ========== 图页边界线管理 ==========
-
--- 创建图页边界线
 function CanvasArea:_create_page_border()
     if self._page_border then
         self:_delete_page_border()
@@ -641,12 +750,8 @@ function CanvasArea:_create_page_border()
     local page_w = self.props.page_width
     local page_h = self.props.page_height
     
-    -- 创建边界容器
-    self._page_border = {
-        lines = {}
-    }
+    self._page_border = { lines = {} }
     
-    -- 上边界
     local top_line = lv.obj_create(self.container)
     top_line:set_pos(0, 0)
     top_line:set_size(page_w, border_width)
@@ -658,7 +763,6 @@ function CanvasArea:_create_page_border()
     top_line:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     table.insert(self._page_border.lines, top_line)
     
-    -- 下边界
     local bottom_line = lv.obj_create(self.container)
     bottom_line:set_pos(0, page_h - border_width)
     bottom_line:set_size(page_w, border_width)
@@ -670,7 +774,6 @@ function CanvasArea:_create_page_border()
     bottom_line:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     table.insert(self._page_border.lines, bottom_line)
     
-    -- 左边界
     local left_line = lv.obj_create(self.container)
     left_line:set_pos(0, border_width)
     left_line:set_size(border_width, page_h - 2 * border_width)
@@ -682,7 +785,6 @@ function CanvasArea:_create_page_border()
     left_line:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     table.insert(self._page_border.lines, left_line)
     
-    -- 右边界
     local right_line = lv.obj_create(self.container)
     right_line:set_pos(page_w - border_width, border_width)
     right_line:set_size(border_width, page_h - 2 * border_width)
@@ -693,11 +795,8 @@ function CanvasArea:_create_page_border()
     right_line:remove_flag(lv.OBJ_FLAG_CLICKABLE)
     right_line:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     table.insert(self._page_border.lines, right_line)
-    
-    print("[画布] 图页边界线已创建: " .. page_w .. "x" .. page_h)
 end
 
--- 删除图页边界线
 function CanvasArea:_delete_page_border()
     if self._page_border and self._page_border.lines then
         for _, line in ipairs(self._page_border.lines) do
@@ -709,7 +808,6 @@ function CanvasArea:_delete_page_border()
     self._page_border = nil
 end
 
--- 更新图页边界线位置和大小
 function CanvasArea:update_page_border(page_width, page_height)
     self.props.page_width = page_width or self.props.page_width
     self.props.page_height = page_height or self.props.page_height
@@ -717,11 +815,8 @@ function CanvasArea:update_page_border(page_width, page_height)
     if self.props.show_page_border then
         self:_create_page_border()
     end
-    
-    print("[画布] 图页边界更新: " .. self.props.page_width .. "x" .. self.props.page_height)
 end
 
--- 设置是否显示图页边界线
 function CanvasArea:set_show_page_border(show)
     self.props.show_page_border = show
     if show then
@@ -731,18 +826,15 @@ function CanvasArea:set_show_page_border(show)
     end
 end
 
--- 获取是否显示图页边界线
 function CanvasArea:is_page_border_visible()
     return self.props.show_page_border
 end
 
--- 切换图页边界线显示
 function CanvasArea:toggle_page_border()
     self:set_show_page_border(not self.props.show_page_border)
     return self.props.show_page_border
 end
 
--- 设置图页边界线颜色
 function CanvasArea:set_page_border_color(color)
     self.props.page_border_color = color
     if self._page_border and self._page_border.lines then
@@ -754,18 +846,15 @@ function CanvasArea:set_page_border_color(color)
     end
 end
 
--- 获取图页尺寸
 function CanvasArea:get_page_size()
     return self.props.page_width, self.props.page_height
 end
 
--- 设置图页尺寸
 function CanvasArea:set_page_size(width, height)
     self:update_page_border(width, height)
 end
 
 -- ========== 选择管理（多选） ==========
-
 function CanvasArea:_is_widget_selected(widget_entry)
     for _, w in ipairs(self._selected_widgets) do
         if w.id == widget_entry.id then
@@ -782,8 +871,7 @@ function CanvasArea:select_widget(widget_entry)
     self:_emit("widget_selected", widget_entry)
 end
 
-function CanvasArea:select_widgets(widget_entries
-)
+function CanvasArea:select_widgets(widget_entries)
     self:deselect_all()
     self._selected_widgets = widget_entries
     
@@ -799,10 +887,8 @@ function CanvasArea:select_widgets(widget_entries
 end
 
 function CanvasArea:deselect_all()
-    -- 先清空映射表
     self._box_widget_map = {}
     
-    -- 删除所有选择框
     for i = #self._selection_boxes, 1, -1 do
         local box = self._selection_boxes[i]
         if box then
@@ -828,11 +914,8 @@ function CanvasArea:_create_selection_box(widget_entry)
     local main_obj = instance.btn or instance.container or instance.obj or instance.chart
     if not main_obj then return end
     
-    -- 始终优先使用 props 中的值（在控件创建时已正确设置）
-    -- 这样可以避免 LVGL 位置更新延迟导致获取到错误的值
     local x, y, w, h
     
-    -- 首先尝试从 widget_entry.props 获取位置
     if widget_entry.props and widget_entry.props.x ~= nil then
         x = widget_entry.props.x
     elseif instance.props and instance.props.x ~= nil then
@@ -849,7 +932,6 @@ function CanvasArea:_create_selection_box(widget_entry)
         y = main_obj:get_y()
     end
     
-    -- 获取尺寸（优先从 props，因为 main_obj 可能还未更新）
     if widget_entry.props and widget_entry.props.width ~= nil then
         w = widget_entry.props.width
     elseif instance.props and instance.props.width ~= nil then
@@ -865,8 +947,6 @@ function CanvasArea:_create_selection_box(widget_entry)
     else
         h = main_obj:get_height()
     end
-    
-    print("[选中框] 创建选中框: x=" .. tostring(x) .. ", y=" .. tostring(y) .. ", w=" .. tostring(w) .. ", h=" .. tostring(h))
     
     local box = lv.obj_create(self.container)
     box:set_pos(x - 2, y - 2)
@@ -896,7 +976,6 @@ function CanvasArea:_create_selection_box(widget_entry)
         handle:remove_flag(lv.OBJ_FLAG_CLICKABLE)
     end
     
-    -- 使用独立的映射表来存储关联关系
     local box_index = #self._selection_boxes + 1
     table.insert(self._selection_boxes, box)
     self._box_widget_map[box_index] = widget_entry.id
@@ -918,7 +997,6 @@ function CanvasArea:_update_all_selection_boxes()
             local instance = widget_entry.instance
             local main_obj = instance.btn or instance.container or instance.obj or instance.chart
             if main_obj then
-                -- 拖动时使用 main_obj 的实时位置
                 local x = main_obj:get_x()
                 local y = main_obj:get_y()
                 local w = main_obj:get_width()
@@ -952,7 +1030,6 @@ function CanvasArea:_generate_id()
 end
 
 -- ========== 删除操作 ==========
-
 function CanvasArea:delete_selected()
     if #self._selected_widgets == 0 then return end
     
@@ -983,7 +1060,6 @@ function CanvasArea:delete_selected()
 end
 
 -- ========== 获取方法 ==========
-
 function CanvasArea:get_widgets()
     return self._widgets
 end
@@ -1004,7 +1080,6 @@ function CanvasArea:get_container()
 end
 
 -- ========== 导出/清空 ==========
-
 function CanvasArea:export_state()
     local state = { widgets = {} }
     for _, w in ipairs(self._widgets) do
@@ -1030,7 +1105,6 @@ function CanvasArea:clear()
 end
 
 -- ========== 网格控制 ==========
-
 function CanvasArea:toggle_grid()
     self.props.show_grid = not self.props.show_grid
     self:_refresh_grid()
@@ -1086,7 +1160,6 @@ function CanvasArea:_refresh_grid()
 end
 
 -- ========== 工具箱放置 ==========
-
 function CanvasArea:handle_drop(widget_module, drop_x, drop_y)
     local canvas_x = math.max(0, math.min(drop_x, self.props.width - 50))
     local canvas_y = math.max(0, math.min(drop_y, self.props.height - 50))
@@ -1094,8 +1167,6 @@ function CanvasArea:handle_drop(widget_module, drop_x, drop_y)
 end
 
 -- ========== 对齐操作 ==========
-
--- 获取选中控件组的边界框
 function CanvasArea:_get_selection_bounds()
     if #self._selected_widgets == 0 then
         return nil
@@ -1133,7 +1204,6 @@ end
 function CanvasArea:align_selected(align_type)
     if #self._selected_widgets == 0 then return end
     
-    -- 单个控件时，对齐到画布边界
     if #self._selected_widgets == 1 then
         local widget_entry = self._selected_widgets[1]
         local instance = widget_entry.instance
@@ -1168,7 +1238,6 @@ function CanvasArea:align_selected(align_type)
             widget_entry.props.y = new_y
         end
     else
-        -- 多个控件时，对齐到选中控件组的边界
         local bounds = self:_get_selection_bounds()
         if not bounds then return end
         
@@ -1183,28 +1252,21 @@ function CanvasArea:align_selected(align_type)
                 local new_x, new_y = cur_x, cur_y
                 
                 if align_type == "center_h" then
-                    -- 水平居中：相对于选中组的中心
                     local group_center_x = bounds.x + bounds.width / 2
                     new_x = math.floor(group_center_x - w / 2)
                 elseif align_type == "center_v" then
-                    -- 垂直居中：相对于选中组的中心
                     local group_center_y = bounds.y + bounds.height / 2
                     new_y = math.floor(group_center_y - h / 2)
                 elseif align_type == "left" then
-                    -- 左对齐：对齐到选中组的左边界
                     new_x = bounds.x
                 elseif align_type == "right" then
-                    -- 右对齐：对齐到选中组的右边界
                     new_x = bounds.right - w
                 elseif align_type == "top" then
-                    -- 顶对齐：对齐到选中组的上边界
                     new_y = bounds.y
                 elseif align_type == "bottom" then
-                    -- 底对齐：对齐到选中组的下边界
                     new_y = bounds.bottom - h
                 end
                 
-                -- 确保不超出画布边界
                 new_x = math.max(0, math.min(new_x, self.props.width - w))
                 new_y = math.max(0, math.min(new_y, self.props.height - h))
                 

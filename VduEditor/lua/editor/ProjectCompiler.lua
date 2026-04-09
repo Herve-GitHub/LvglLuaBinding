@@ -12,11 +12,12 @@ local WIDGET_TYPE_TO_MODULE = {
     ["label"] = "weidgets.label",
     ["button"] = "widgets.new_button",
     ["valve"] = "widgets.valve",
-    ["trend_chart"] = "widgets.trend_chart",
+    ["trend_chart"] = "widgets.new_chart",
     ["status_bar"] = "widgets.status_bar",
     ["switch"] = "widgets.switch",
     ["image"] = "widgets.image" ,
-    ["ArcGauge"] = "widgets.ArcGauge" ,
+    ["table"] = "widgets.new_table" ,
+    ["timer"] = "widgets.new_time" ,
     ["PopupButton"] = "widgets.PopupButton" 
 }
 

@@ -1,13 +1,14 @@
 ﻿local lv = require("lvgl")
 local DataAction = require("editor.DataAction")
 local config = require("widgets.config")
+local ImageDialog = require("ImageDialog")
 
 local Image = {}
 
 Image.__widget_meta = {
   id = "custom_image",
   name = "Custom Image",
-  description = "图像控件，支持编辑器拖拽调整",
+  description = "图像控件拖拽调整",
   schema_version = "1.0",
   version = "1.0",
   properties = {
@@ -16,36 +17,36 @@ Image.__widget_meta = {
     { name = "y", type = "number", default = 0, label = "Y" },
     { name = "width", type = "number", default = 100, label = "宽度" },
     { name = "height", type = "number", default = 100, label = "高度" },
-    { name = "src", type = "string", default = "", label = "图像名称" },
-    { name = "mode", type = "enum", default = "normal", options = {"normal", "cover", "contain", "stretch"}, label = "显示模式" },
+    { name = "src", type = "boolean", default = false, label = "选择图片" },
+    { name = "mode", type = "enum", default = "normal", options = {"normal","cover","contain","stretch"}, label = "显示模式" },
     { name = "rotation", type = "number", default = 0, label = "旋转角度" },
     { name = "scale", type = "number", default = 256, label = "缩放" },
     { name = "scale_x", type = "number", default = 256, label = "水平缩放" },
     { name = "scale_y", type = "number", default = 256, label = "垂直缩放" },
-    { name = "opa", type = "number", default = 255, label = "透明度", min = 0, max = 255 },
-    { name = "on_loaded_handler", type = "code", default = "", label = "加载完成处理", event = "loaded" },
+    { name = "opa", type = "number", default = 255, label = "透明度", min=0,max=255 },
   },
 }
 
--- ==========================================
--- 自动识别系统：Windows / Linux
--- ==========================================
-local function is_linux_platform()
-    -- Linux设备上会识别为Linux环境
-    return package.config:sub(1,1) == '/'
+-- 判断是否为 Windows 绝对路径 C:\ D:\
+local function is_windows_absolute(path)
+    return type(path) == "string" and path:match("^%a:\\")
 end
 
 local function get_image_real_path(filename)
-    if not filename or filename == "" then return "" end
-    
-    if is_linux_platform() then
-        local path = config.linux_path .. filename
-        print("[Image] 🐧 Linux 环境，使用路径: " .. path)
-        return path
+    if not filename or filename == "" then
+        return ""
+    end
+
+    -- 绝对路径 → 直接返回
+    if is_windows_absolute(filename) then
+        return filename
+    end
+
+    -- 相对路径 → 拼接目录
+    if package.config:sub(1,1) == "/" then
+        return config.linux_path .. filename
     else
-        local path = config.image_path .. filename
-        print("[Image] 🪟 Windows 环境，使用路径: " .. path)
-        return path
+        return config.image_path .. filename
     end
 end
 
@@ -60,21 +61,25 @@ function Image.new(parent, state)
     local self = {}
 
     self.props = {}
+    self.image_path = ""
+
     for _, p in ipairs(Image.__widget_meta.properties) do
         self.props[p.name] = state[p.name] ~= nil and state[p.name] or p.default
     end
 
     self.image = lv.image_create(parent)
-    if not self.image then return nil end
     self.obj = self.image
 
     self.image:set_size(self.props.width, self.props.height)
     self.image:set_pos(self.props.x, self.props.y)
 
-    if self.props.src and self.props.src ~= "" then
-        load_image(self.image, self.props.src)
+    -- 初始化加载
+    if state.src and type(state.src) == "string" then
+        self.image_path = state.src
+        load_image(self.image, self.image_path)
     end
 
+    -- 属性应用
     if self.image.set_rotation then self.image:set_rotation(self.props.rotation) end
     if self.image.set_scale then self.image:set_scale(self.props.scale) end
     if self.image.set_scale_x then self.image:set_scale_x(self.props.scale_x) end
@@ -82,22 +87,27 @@ function Image.new(parent, state)
     if self.image.set_opa then self.image:set_opa(self.props.opa) end
 
     self._callbacks = {}
-    local function on_loaded(e)
-        if self._callbacks.loaded then pcall(self._callbacks.loaded, self, {}) end
-    end
-    if self.image.add_event_cb then
-        self.image:add_event_cb(on_loaded, lv.EVENT_READY, nil)
-    end
 
-    function self.on(self, event_name, callback)
-        if event_name == "loaded" then self._callbacks.loaded = callback
-        elseif event_name == "property_changed" then self._callbacks.property_changed = callback end
+    function self:on(event_name, callback)
+        if event_name == "loaded" then
+            self._callbacks.loaded = callback
+        elseif event_name == "property_changed" then
+            self._callbacks.property_changed = callback
+        end
     end
 
-    function self.get_container(self) return self.image end
-    function self.get_property(self, name) return self.props[name] end
+    function self:get_container()
+        return self.image
+    end
 
-    function self.set_property(self, name, value)
+    function self:get_property(name)
+        if name == "src" then
+            return self.image_path
+        end
+        return self.props[name]
+    end
+
+    function self:set_property(name, value)
         self.props[name] = value
         if not self.image then return true end
 
@@ -106,33 +116,62 @@ function Image.new(parent, state)
         elseif name == "width" or name == "height" then
             self.image:set_size(self.props.width, self.props.height)
         elseif name == "src" then
-            if value and value ~= "" then load_image(self.image, value) end
-        elseif name == "rotation" then self.image:set_rotation(value or 0)
-        elseif name == "scale" then self.image:set_scale(value or 256)
-        elseif name == "scale_x" then self.image:set_scale_x(value or 256)
-        elseif name == "scale_y" then self.image:set_scale_y(value or 256)
-        elseif name == "opa" then self.image:set_opa(value or 255) end
+            -- 打开系统选择框
+            ImageDialog.new(nil, {
+                initial_dir = config.image_path,
+                callback = function(full_path)
+                    if full_path then
+                        self.image_path = full_path
+                        load_image(self.image, full_path)
+                    end
+                end
+            })
+        elseif name == "rotation" then
+            self.image:set_rotation(value or 0)
+        elseif name == "scale" then
+            self.image:set_scale(value or 255)
+        elseif name == "scale_x" then
+            self.image:set_scale_x(value or 255)
+        elseif name == "scale_y" then
+            self.image:set_scale_y(value or 255)
+        elseif name == "opa" then
+            self.image:set_opa(value or 255)
+        end
 
-        if self.image.invalidate then self.image:invalidate() end
+        if self.image.invalidate then
+            self.image:invalidate()
+        end
+
         if self._callbacks.property_changed then
             self._callbacks.property_changed(name, value)
+        end
+
+        return true
+    end
+
+    function self:get_properties()
+        local out = {}
+        for k, v in pairs(self.props) do
+            out[k] = v
+        end
+        out.src = self.image_path
+        return out
+    end
+
+    function self:apply_properties(props_table)
+        for k, v in pairs(props_table) do
+            self:set_property(k, v)
         end
         return true
     end
 
-    function self.get_properties(self)
-        local out = {}
-        for k, v in pairs(self.props) do out[k] = v end
-        return out
+    function self:to_state()
+        return self:get_properties()
     end
 
-    function self.apply_properties(self, props_table)
-        for k, v in pairs(props_table) do self:set_property(k, v) end
-        return true
+    function self:get_id()
+        return self.props.instance_name or tostring(self)
     end
-
-    function self.to_state(self) return self:get_properties() end
-    function self.get_id(self) return self.props.instance_name or tostring(self) end
 
     return self
 end

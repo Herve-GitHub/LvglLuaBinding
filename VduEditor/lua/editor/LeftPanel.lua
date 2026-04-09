@@ -36,12 +36,13 @@ LeftPanel.DEFAULT_TOOLS = {
     { id = "dropdown", name = "下拉框", icon = "DDL", module_path = "widgets.dropdown" },
     { id = "slider", name = "滑块", icon = "SLD", module_path = "widgets.slider" },
     { id = "valve", name = "阀门", icon = "VLV", module_path = "widgets.valve" },
-    { id = "trend_chart", name = "趋势图", icon = "CHT", module_path = "widgets.trend_chart" },
+    { id = "trend_chart", name = "趋势图", icon = "CHT", module_path = "widgets.new_chart" },
     { id = "status_bar", name = "状态栏", icon = "STA", module_path = "widgets.status_bar" },
    { id = "switch", name = "开关", icon = "SWT", module_path = "widgets.switch" },
     { id = "image", name = "图像", icon = "IMG", module_path = "widgets.image" },
     { id = "tangchuang", name = "弹窗", icon = "TCZ", module_path = "widgets.PopupButton"},
-     { id = "tangchuang", name = "表盘", icon = "PAN", module_path = "widgets.ArcGauge"},
+     { id = "table", name = "图表", icon = "TAB", module_path = "widgets.new_table"},
+     { id = "timer", name = "时间组件", icon = "TIM", module_path = "widgets.new_time"},
 }
 
 -- 尝试获取中文字体

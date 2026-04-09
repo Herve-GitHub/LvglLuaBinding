@@ -11,7 +11,7 @@ static const int WINDOW_WIDTH = 1124;
 static const int WINDOW_HEIGHT = 600;//960
 
 // 默认脚本路径（相对于可执行文件目录）
-//static const char* DEFAULT_SCRIPT_PATH = "websocket\\biao.lua";  // 修改为 websocket 测试脚本
+//static const char* DEFAULT_SCRIPT_PATH = "websocket\\weuduji.lua";  // 修改为 websocket 测试脚本
 static const char* DEFAULT_SCRIPT_PATH = "lua\\editor\\main_editor.lua";  // 修改为 websocket 测试脚本
 // static const char* DEFAULT_SCRIPT_PATH = "projects\\project.lua";  // 修改为 websocket 测试脚本
 // 默认 Lua 搜索路径（相对于可执行文件目录）
@@ -301,6 +301,12 @@ static void cleanup_lua()
  */
 int main(int argc, char* argv[])
 {
+
+
+    // 隐藏控制台窗口
+//#ifdef _WIN32
+  //  FreeConsole();
+//#endif
     // 将控制台设置为 UTF-8 以支持中文输出
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);

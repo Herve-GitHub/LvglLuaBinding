@@ -1,7 +1,7 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-04-02 08:31:22
+-- 生成时间: 2026-04-09 14:00:08
 -- 工程版本: 1.0
 -- ==============================================
 
@@ -13,7 +13,7 @@ lvgl.connect("nil", 3000)
 local lv = require("lvgl")
 
 -- 引用控件模块
-local widgets_ArcGauge = require("widgets.ArcGauge")
+local widgets_new_time = require("widgets.new_time")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -45,21 +45,18 @@ local function create_page_1(parent)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
 
-    -- 控件 1: custom_arc_gauge
-    local widget_1 = widgets_ArcGauge.new(container, {
-        y = 282,
-        on_value_changed_handler = "",
-        value = 0,
-        arc_width = 6,
-        gauge_title = "仪表盘",
-        arc_color = 16766720,
-        design_mode = false,
-        x = 408,
-        unit = "%",
-        width = 300,
+    -- 控件 1: time_label
+    local widget_1 = widgets_new_time.new(container, {
+        text_color = "#FF99FF",
+        bg_color = "#915700",
+        bg_opa = 255,
         instance_name = "",
-        height = 300,
-        arc_size = 260
+        design_mode = false,
+        x = 421,
+        width = 200,
+        height = 30,
+        y = 58,
+        visible = true
     })
 
     return container

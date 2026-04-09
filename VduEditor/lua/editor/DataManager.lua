@@ -4,8 +4,60 @@ local DataManager = {
     label_callbacks = {},   -- key: bind_point, value: {labels = {}}
     switch_callbacks = {},  -- 新增：管理开关回调
     write_timer_flags = {},
+    chart_callbacks = {},   -- 👈 新增
     initialized = false
 }
+
+
+-- ##############################
+-- 👈 新增：注册图表
+-- ##############################
+function DataManager.register_chart(bind_point, chart_obj)
+    DataManager.init()
+    
+    if not bind_point or not chart_obj then return end
+    
+    if not DataManager.chart_callbacks[bind_point] then
+        DataManager.chart_callbacks[bind_point] = { charts = {} }
+    end
+    
+    local chart_list = DataManager.chart_callbacks[bind_point].charts
+    
+    for _, c in ipairs(chart_list) do
+        if c == chart_obj then
+            print("[图表已注册] " .. bind_point)
+            return
+        end
+    end
+    
+    table.insert(chart_list, chart_obj)
+    print("[注册图表] " .. bind_point .. " 数量:" .. #chart_list)
+    
+    DataManager.read(bind_point)
+end
+
+-- ##############################
+-- 👈 新增：解绑图表
+-- ##############################
+function DataManager.unregister_chart(bind_point, chart_obj)
+    if not bind_point or not chart_obj then return end
+    
+    local info = DataManager.chart_callbacks[bind_point]
+    if info and info.charts then
+        for i, c in ipairs(info.charts) do
+            if c == chart_obj then
+                table.remove(info.charts, i)
+                print("[解绑图表] " .. bind_point)
+                break
+            end
+        end
+        if #info.charts == 0 then
+            DataManager.chart_callbacks[bind_point] = nil
+        end
+    end
+end
+
+
 
 -- 新增：注册开关
 function DataManager.register_switch(bind_point, switch_obj)
@@ -75,6 +127,8 @@ lvgl.set_callbacks(
         for p, _ in pairs(DataManager.button_callbacks) do table.insert(all_points, p) end
         for p, _ in pairs(DataManager.label_callbacks) do table.insert(all_points, p) end
         for p, _ in pairs(DataManager.switch_callbacks) do table.insert(all_points, p) end
+        for p, _ in pairs(DataManager.chart_callbacks) do table.insert(all_points, p) end
+
         
         if #all_points > 0 then
             lvgl.read(table.unpack(all_points))
@@ -141,6 +195,27 @@ end,
                 end
             end
         end
+
+
+        -- 4. 👇 新增：更新图表（关键！）
+local chart_info = DataManager.chart_callbacks[device_id]
+if chart_info and chart_info.charts then
+    for i, chart in ipairs(chart_info.charts) do
+        if chart then
+            local success = pcall(function()
+                -- 趋势图只需要调用 update_value
+                chart:update_value(value)
+                print("[更新图表" .. i .. "] " .. device_id .. " = " .. value)
+            end)
+            if not success then
+                print("[移除无效图表] " .. device_id)
+                chart_info.charts[i] = nil
+            end
+        end
+    end
+end
+
+
         
         -- 3. 更新开关
         local switch_info = DataManager.switch_callbacks[device_id]
@@ -278,6 +353,7 @@ function DataManager.unregister(bind_point)
     DataManager.button_callbacks[bind_point] = nil
     DataManager.label_callbacks[bind_point] = nil
     DataManager.switch_callbacks[bind_point] = nil  -- 新增
+    DataManager.chart_callbacks[bind_point] = nil   -- 👈 新增
     print("[解绑所有] " .. bind_point)
 end
 

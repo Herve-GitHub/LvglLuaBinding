@@ -6,6 +6,18 @@
 
 #include "lvgl_lua_bindings_internal.h"
 
+#include <time.h>
+#include <stdio.h>
+static lv_obj_t* s_time_label = NULL;
+
+static bool style_inited = false;
+static lv_style_t indicator_style;
+static lv_style_t minor_ticks_style;
+static lv_style_t main_line_style;
+static lv_style_t section_label_style;
+static lv_style_t section_minor_tick_style;
+static lv_style_t section_main_line_style;
+
 static int luaopen_lvgl(lua_State* L);
 
 // Global TTF font storage (for applying to objects)
@@ -84,6 +96,141 @@ lv_timer_t* check_lv_timer(lua_State* L, int idx) {
     }
     return NULL;
 }
+
+
+
+
+// ===================== 时间标签（无定时器，纯静态，必显示） =====================
+// ===================== 时间标签（无定时器，纯静态，必显示） =====================
+// ===================== 【终极绝杀版】时间标签 —— 和温度计完全一样 =====================
+static void time_update_timer(lv_timer_t* timer)
+{
+    if (!s_time_label || !lv_obj_is_valid(s_time_label))
+        return;
+
+    time_t now = time(NULL);
+    struct tm* local_time = localtime(&now);
+
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
+        local_time->tm_year + 1900,
+        local_time->tm_mon + 1,
+        local_time->tm_mday,
+        local_time->tm_hour,
+        local_time->tm_min,
+        local_time->tm_sec);
+
+    lv_label_set_text(s_time_label, buf);
+}
+
+// ===================== 创建标签（最简，必显示） =====================
+static int l_create_time_label(lua_State* L)
+{
+    lv_obj_t* parent = check_lv_obj(L, 1);
+
+    // 1. 创建标签
+    lv_obj_t* label = lv_label_create(parent);
+    lv_label_set_text(label, "INIT...");
+    lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 10);
+
+    s_time_label = label;
+
+    // 2. 定时器只创建一次（官方稳定写法）
+    static lv_timer_t* s_timer = NULL;
+    if (s_timer == NULL) {
+        s_timer = lv_timer_create(time_update_timer, 1000, NULL);
+    }
+
+    push_lv_obj(L, label);
+    return 1;
+}
+
+// ===================== ✅ 静态圆形表盘（无动画、无线性图片、零报错）=====================
+// ===================== ✅ 完美可见圆形表盘（无动画、无图片、零报错）=====================
+
+
+
+
+// ===================== ✅ 新增：温度计样式 scale 创建（完全匹配 lv_example_scale_2）=====================
+static int l_create_wendu(lua_State* L) {
+    lv_obj_t* parent = check_lv_obj(L, 1);
+
+    lv_obj_t* scale = lv_scale_create(parent);
+    lv_obj_set_size(scale, 60, 200);//60200
+    lv_scale_set_label_show(scale, true);
+    lv_scale_set_mode(scale, LV_SCALE_MODE_VERTICAL_RIGHT);
+    lv_obj_center(scale);
+
+    lv_scale_set_total_tick_count(scale, 21);
+    lv_scale_set_major_tick_every(scale, 5);
+    lv_scale_set_range(scale, 0, 100);
+
+    lv_obj_set_style_length(scale, 10, LV_PART_INDICATOR);
+    lv_obj_set_style_length(scale, 5, LV_PART_ITEMS);
+
+    static const char* custom_labels[] = { "0℃", "25℃", "50℃", "75℃", "100℃", NULL };
+    lv_scale_set_text_src(scale, custom_labels);
+
+    if (!style_inited) {
+        style_inited = true;
+
+        lv_style_init(&indicator_style);
+        lv_style_set_text_font(&indicator_style, LV_FONT_DEFAULT);
+        lv_style_set_text_color(&indicator_style, lv_palette_darken(LV_PALETTE_BLUE, 3));
+        lv_style_set_line_color(&indicator_style, lv_palette_darken(LV_PALETTE_BLUE, 3));
+        lv_style_set_width(&indicator_style, 10U);
+        lv_style_set_line_width(&indicator_style, 2U);
+
+        lv_style_init(&minor_ticks_style);
+        lv_style_set_line_color(&minor_ticks_style, lv_palette_lighten(LV_PALETTE_BLUE, 2));
+        lv_style_set_width(&minor_ticks_style, 5U);
+        lv_style_set_line_width(&minor_ticks_style, 2U);
+
+        lv_style_init(&main_line_style);
+        lv_style_set_line_color(&main_line_style, lv_palette_darken(LV_PALETTE_BLUE, 3));
+        lv_style_set_line_width(&main_line_style, 2U);
+
+        lv_style_init(&section_label_style);
+        lv_style_init(&section_minor_tick_style);
+        lv_style_init(&section_main_line_style);
+
+        lv_style_set_text_font(&section_label_style, LV_FONT_DEFAULT);
+        lv_style_set_text_color(&section_label_style, lv_palette_darken(LV_PALETTE_RED, 3));
+        lv_style_set_line_color(&section_label_style, lv_palette_darken(LV_PALETTE_RED, 3));
+        lv_style_set_line_width(&section_label_style, 5U);
+
+        lv_style_set_line_color(&section_minor_tick_style, lv_palette_lighten(LV_PALETTE_RED, 2));
+        lv_style_set_line_width(&section_minor_tick_style, 4U);
+
+        lv_style_set_line_color(&section_main_line_style, lv_palette_darken(LV_PALETTE_RED, 3));
+        lv_style_set_line_width(&section_main_line_style, 4U);
+    }
+
+    lv_obj_add_style(scale, &indicator_style, LV_PART_INDICATOR);
+    lv_obj_add_style(scale, &minor_ticks_style, LV_PART_ITEMS);
+    lv_obj_add_style(scale, &main_line_style, LV_PART_MAIN);
+
+    // ===================== ✅ 这里修复：新版 API，无警告 =====================
+    lv_scale_section_t* section = lv_scale_add_section(scale);
+    lv_scale_section_set_range(section, 75, 100);
+
+    // 新版替代函数（废弃警告消失）
+    lv_scale_set_section_style_indicator(scale, section, &section_label_style);
+    lv_scale_set_section_style_items(scale, section, &section_minor_tick_style);
+    lv_scale_set_section_style_main(scale, section, &section_main_line_style);
+
+    lv_obj_set_style_bg_color(scale, lv_palette_main(LV_PALETTE_BLUE_GREY), 0);
+    lv_obj_set_style_bg_opa(scale, LV_OPA_50, 0);
+    lv_obj_set_style_pad_left(scale, 8, 0);
+    lv_obj_set_style_radius(scale, 8, 0);
+    lv_obj_set_style_pad_ver(scale, 20, 0);
+
+    push_lv_obj(L, scale);
+    return 1;
+}
+
+
+
 
 // ========== Timer callback and methods ==========
 
@@ -249,6 +396,13 @@ static int l_lv_list_create(lua_State* L) {
     push_lv_obj(L, lv_list_create(check_lv_obj(L, 1)));
     return 1;
 }
+
+// lv.list_create(parent)
+static int l_lv_table_create(lua_State* L) {
+    push_lv_obj(L, lv_table_create(check_lv_obj(L, 1)));
+    return 1;
+}
+
 
 // lv.win_create(parent)
 static int l_lv_win_create(lua_State* L) {
@@ -428,12 +582,16 @@ extern int l_lv_textarea_get_text(lua_State* L);
 
 // ========== Module Functions Table ==========
 static const luaL_Reg lvgl_funcs[] = {
+    {"create_time_label", l_create_time_label},
+    // ✅ 新增：温度计创建接口
+    {"create_wendu", l_create_wendu},
     {"scr_act", l_lv_scr_act},
     {"obj_create", l_lv_obj_create},
     {"label_create", l_lv_label_create},
     {"button_create", l_lv_button_create},
     {"btn_create", l_lv_button_create},
     {"list_create", l_lv_list_create},
+    {"table_create", l_lv_table_create},
     {"win_create", l_lv_win_create},
     {"menu_create", l_lv_menu_create},
     {"tabview_create", l_lv_tabview_create},
@@ -502,6 +660,7 @@ static int luaopen_lvgl(lua_State* L) {
     
     // Add scale methods
     merge_methods_to_table(L, lvgl_get_meter_methods());
+    merge_methods_to_table(L, lvgl_get_table_methods());
     
     lua_setfield(L, -2, "__index");
     lua_pop(L, 1);

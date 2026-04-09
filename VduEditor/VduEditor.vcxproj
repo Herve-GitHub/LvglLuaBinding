@@ -150,6 +150,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <None Include="data_editor_config.json" />
+    <None Include="lua\actions\ChartAction.lua" />
     <None Include="lua\actions\LabelAction.lua" />
     <None Include="lua\actions\page_navigation.lua" />
     <None Include="lua\actions\DataOperation.lua" />
@@ -167,6 +168,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\editor\DataManager.lua" />
     <None Include="lua\editor\FileDialog.lua" />
     <None Include="lua\editor\icons.lua" />
+    <None Include="lua\editor\ImageDialog.lua" />
     <None Include="lua\editor\install_config.lua" />
     <None Include="lua\editor\json.lua" />
     <None Include="lua\editor\LeftPanel.lua" />
@@ -189,6 +191,9 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\widgets\ArcGauge.lua" />
     <None Include="lua\widgets\button.lua" />
     <None Include="lua\widgets\config.lua" />
+    <None Include="lua\widgets\new_chart.lua" />
+    <None Include="lua\widgets\new_table.lua" />
+    <None Include="lua\widgets\new_time.lua" />
     <None Include="lua\widgets\PopupButton.lua" />
     <None Include="lua\widgets\checkbox.lua" />
     <None Include="lua\widgets\dropdown.lua" />
@@ -200,6 +205,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\widgets\slider.lua" />
     <None Include="lua\widgets\status_bar.lua" />
     <None Include="lua\widgets\switch.lua" />
+    <None Include="lua\widgets\temperature.lua" />
     <None Include="lua\widgets\trend_chart.lua" />
     <None Include="lua\widgets\valve.lua" />
     <None Include="projects\project.json" />
@@ -207,10 +213,15 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="projects\project20260116.json" />
     <None Include="projects\project20260116.lua" />
     <None Include="websocket\biao.lua" />
+    <None Include="websocket\chart.lua" />
     <None Include="websocket\http.lua" />
+    <None Include="websocket\httphistory.lua" />
+    <None Include="websocket\OldCanvasArea.lua" />
     <None Include="websocket\picture.lua" />
+    <None Include="websocket\table.lua" />
     <None Include="websocket\test.lua" />
     <None Include="websocket\websocket.lua" />
+    <None Include="websocket\weuduji.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\fa-regular-400.ttf" />

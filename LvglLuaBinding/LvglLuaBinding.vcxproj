@@ -1220,6 +1220,7 @@
     <ClCompile Include="lvgl_obj_lua_bindings.c" />
     <ClCompile Include="lvgl_scale_lua_bindings.c" />
     <ClCompile Include="lvgl_slider_lua_bindings.c" />
+    <ClCompile Include="lvgl_table_lua_bindings.c" />
     <ClCompile Include="lvgl_textarea_lua_bindings.c" />
     <ClCompile Include="lvgl_lua_mongoose.c" />
     <ClCompile Include="cJSON.c" />
