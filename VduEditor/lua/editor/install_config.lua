@@ -9,7 +9,7 @@ return {
     password = "LM&PASSw0rdl",
     
     -- 本地路径配置
-    local_base_dir = "C:\\Users\\86188\\Desktop\\LvgLuaBling\\git\\LvglLuaBinding\\Output\\Binaries\\Debug\\x64\\",
+    local_base_dir = "C:\\Users\\86188\\Desktop\\LvgLuaBling\\git\\LvglLuaBinding\\Output\\Binaries\\Release\\x64\\",
     sshpass_exe = "sshpass.exe",
     lua_file = "lua\\project.lua",
     

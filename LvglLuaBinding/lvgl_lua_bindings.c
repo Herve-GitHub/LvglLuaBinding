@@ -439,6 +439,12 @@ static int l_lv_scale_create(lua_State* L) {
     return 1;
 }
 
+static int l_lv_calendar_create(lua_State* L) {
+    push_lv_obj(L, lv_calendar_create(check_lv_obj(L, 1)));
+    return 1;
+}
+
+
 
 static int l_lv_line_create(lua_State* L) {
     push_lv_obj(L, lv_line_create(check_lv_obj(L, 1)));
@@ -599,6 +605,7 @@ static const luaL_Reg lvgl_funcs[] = {
     {"textarea_get_text", l_lv_textarea_get_text},
     {"keyboard_create", l_lv_keyboard_create},
     {"scale_create", l_lv_scale_create},
+    {"calendar_create", l_lv_calendar_create},
     {"line_create", l_lv_line_create},
     {"checkbox_create", l_lv_checkbox_create},
     {"dropdown_create", l_lv_dropdown_create},

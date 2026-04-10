@@ -20,7 +20,7 @@ TrendChart.__widget_meta = {
         { name = "update_interval", type = "number", default = 1000, label = "刷新间隔(ms)" },
         { name = "range_min", type = "number", default = 0, label = "最小值" },
         { name = "range_max", type = "number", default = 100, label = "最大值" },
-        { name = "auto_update", type = "boolean", default = true, label = "自动更新" },
+      --  { name = "auto_update", type = "boolean", default = true, label = "自动更新" },
         { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
 
         { name = "bind_point", type = "string", default = "", label = "绑定数据点" },
@@ -85,9 +85,9 @@ function TrendChart.new(parent, props)
     self.chart:set_update_mode(lv.CHART_UPDATE_MODE_SHIFT)
     self.chart:set_div_line_count(3, 3)
 
-    self.chart:set_style_bg_color(0x000000, 0)
-    self.chart:set_style_bg_opa(lv.OPA_COVER, 0)
-    self.chart:set_style_border_width(1, 0)
+    --self.chart:set_style_bg_color(0x000000, 0)
+    --self.chart:set_style_bg_opa(lv.OPA_COVER, 0)
+   -- self.chart:set_style_border_width(1, 0)
 
     self.series = self.chart:add_series(0xFF0000, lv.CHART_AXIS_PRIMARY_Y)
     self.chart:set_range(lv.CHART_AXIS_PRIMARY_Y, self.props.range_min, self.props.range_max)

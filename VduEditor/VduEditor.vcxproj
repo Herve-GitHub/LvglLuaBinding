@@ -220,6 +220,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="websocket\picture.lua" />
     <None Include="websocket\table.lua" />
     <None Include="websocket\test.lua" />
+    <None Include="websocket\Testtable.lua" />
     <None Include="websocket\websocket.lua" />
     <None Include="websocket\weuduji.lua" />
   </ItemGroup>

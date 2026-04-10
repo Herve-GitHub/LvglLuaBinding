@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-04-09 14:00:08",
+  "created_at": "2026-04-10 15:28:42",
   "current_page_index": 1,
-  "modified_at": "2026-04-09 14:00:08",
+  "modified_at": "2026-04-10 15:28:42",
   "pages": [
     {
       "bg_color": "#1E1E1E",
@@ -10,20 +10,30 @@
       "name": "图页 1",
       "widgets": [
         {
-          "module_path": "widgets.new_time",
+          "module_path": "widgets.new_chart",
           "props": {
-            "bg_color": "#915700",
-            "bg_opa": 255,
+            "bind_point": "THmeter.Energy",
+            "custom_value": "",
             "design_mode": true,
-            "height": 30,
+            "event_action": "读取绑定数据点",
+            "height": 120,
             "instance_name": "",
-            "text_color": "#FF99FF",
-            "visible": true,
-            "width": 200,
-            "x": 421,
-            "y": 58
+            "on_updated_handler": "",
+            "point_count": 300,
+            "range_max": 100,
+            "range_min": 0,
+            "show_x_labels": true,
+            "update_interval": 1000,
+            "websocket_url": "ws://192.168.0.80:8085/ws/",
+            "width": 300,
+            "x": 375,
+            "x_label_color": "#CCCCCC",
+            "x_label_count": 5,
+            "x_label_height": 20,
+            "x_label_texts": "0s,5s,10s",
+            "y": 124
           },
-          "type": "time_label"
+          "type": "trend_chart"
         }
       ],
       "width": 1024

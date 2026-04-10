@@ -136,6 +136,7 @@
     <None Include="lua\widgets\temperature.lua" />
     <None Include="lua\widgets\new_time.lua" />
     <None Include="lua\editor\ImageDialog.lua" />
+    <None Include="websocket\Testtable.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

@@ -29,20 +29,26 @@ LeftPanel.__page_meta = {
 }
 
 -- 默认工具列表
+-- 默认工具列表（带分组，和你原格式完全一致）
 LeftPanel.DEFAULT_TOOLS = {
+    { group = "基础控件" },
     { id = "button", name = "按钮", icon = "BTN", module_path = "widgets.new_button" },
     { id = "label", name = "标签", icon = "LBL", module_path = "widgets.new_label" },
-    { id = "checkbox", name = "复选框", icon = "CHK", module_path = "widgets.checkbox" },
-    { id = "dropdown", name = "下拉框", icon = "DDL", module_path = "widgets.dropdown" },
-    { id = "slider", name = "滑块", icon = "SLD", module_path = "widgets.slider" },
-    { id = "valve", name = "阀门", icon = "VLV", module_path = "widgets.valve" },
-    { id = "trend_chart", name = "趋势图", icon = "CHT", module_path = "widgets.new_chart" },
-    { id = "status_bar", name = "状态栏", icon = "STA", module_path = "widgets.status_bar" },
-   { id = "switch", name = "开关", icon = "SWT", module_path = "widgets.switch" },
     { id = "image", name = "图像", icon = "IMG", module_path = "widgets.image" },
-    { id = "tangchuang", name = "弹窗", icon = "TCZ", module_path = "widgets.PopupButton"},
-     { id = "table", name = "图表", icon = "TAB", module_path = "widgets.new_table"},
-     { id = "timer", name = "时间组件", icon = "TIM", module_path = "widgets.new_time"},
+    { id = "timer", name = "时间组件", icon = "TIM", module_path = "widgets.new_time" },
+    { id = "tangchuang", name = "弹窗", icon = "TCZ", module_path = "widgets.PopupButton" },
+
+    { group = "交互控件" },
+    { id = "checkbox", name = "复选框", icon = "CHK", module_path = "widgets.checkbox" },
+    { id = "switch", name = "开关", icon = "SWT", module_path = "widgets.switch" },
+    { id = "slider", name = "滑块", icon = "SLD", module_path = "widgets.slider" },
+    { id = "dropdown", name = "下拉框", icon = "DDL", module_path = "widgets.dropdown" },
+    { id = "valve", name = "阀门", icon = "VLV", module_path = "widgets.valve" },
+
+    { group = "图表控件" },
+    { id = "status_bar", name = "状态栏", icon = "STA", module_path = "widgets.status_bar" },
+    { id = "trend_chart", name = "趋势图", icon = "CHT", module_path = "widgets.new_chart" },
+    { id = "table", name = "图表", icon = "TAB", module_path = "widgets.new_table" },
 }
 
 -- 尝试获取中文字体
@@ -131,8 +137,8 @@ function LeftPanel.new(parent, props)
     self._pages_content_height = 200  -- 初始高度，后续会根据内容调整
     
     -- 计算总高度（折叠时只显示标题栏）
-    self._total_height = self.props.title_height + self._tab_height + self._toolbox_content_height + 8
-    
+    --self._total_height = self.props.title_height + self._tab_height + self._toolbox_content_height + 8
+    self._total_height = 500  
     -- 创建主容器（浮动窗口样式）
     self.container = lv.obj_create(parent)
     self.container:set_pos(self.props.x, self.props.y)
@@ -395,35 +401,69 @@ function LeftPanel:_switch_tab(tab_name)
 end
 
 -- 创建工具箱内容区域
+-- 创建工具箱内容区域（原版风格 + 一行2个 + 分组标题）
+-- 创建工具箱内容区域（最终无重叠版）
 function LeftPanel:_create_toolbox_content()
     local content_y = self._tab_height + 4
-    local content_height = self._toolbox_content_height
-    
+    local content_height = 580
+
     self.toolbox_content = lv.obj_create(self.main_content)
     self.toolbox_content:set_pos(0, content_y)
     self.toolbox_content:set_size(self.props.width, content_height)
     self.toolbox_content:set_style_bg_opa(0, 0)
     self.toolbox_content:set_style_border_width(0, 0)
-    self.toolbox_content:set_style_pad_all(5, 0)
+    self.toolbox_content:set_style_pad_all(0, 0)
     self.toolbox_content:add_flag(lv.OBJ_FLAG_SCROLLABLE)
     self.toolbox_content:clear_layout()
-    
-    -- 创建工具项
-    local y_offset = 0
+
+    local item_w = (self.props.width - 20) / 2
+    local item_h = self.props.item_height
+    local margin_x = 5
+    local current_y = 8
+    local item_in_row = 0
+
     for _, tool in ipairs(self._tools) do
-        self:_create_tool_item(tool, y_offset)
-        y_offset = y_offset + self.props.item_height + 4
+        if tool.group then
+            -- 分组标题：不加多余空行！只在换行混乱时才换行
+            if item_in_row > 0 then
+                current_y = current_y + item_h + 6
+            end
+            -- 画分组
+            local g = lv.label_create(self.toolbox_content)
+            g:set_text("● " .. tool.group)
+            g:set_style_text_color(0xcccccc, 0)
+            local f = get_cjk_font()
+            if f then g:set_style_text_font(f, 0) end
+            g:set_pos(margin_x, current_y)
+            current_y = current_y + 26
+            item_in_row = 0
+            goto nxt
+        end
+
+        -- 正常画组件
+        local x = margin_x + item_in_row * item_w
+        self:_create_tool_item(tool, x, current_y)
+
+        item_in_row = item_in_row + 1
+
+        if item_in_row >= 2 then
+            item_in_row = 0
+            current_y = current_y + item_h + 6
+        end
+
+        ::nxt::
     end
 end
-
 -- 创建单个工具项
-function LeftPanel:_create_tool_item(tool, y_offset)
-    local item_width = self.props.width - 14
-    local item_height = self.props.item_height
-    
+-- 创建单个工具项（完全保持你原版风格）
+-- 创建单个工具项（无重叠最终版）
+function LeftPanel:_create_tool_item(tool, x, y)
+    local item_w = (self.props.width - 22) / 2
+    local item_h = self.props.item_height
+
     local item_container = lv.obj_create(self.toolbox_content)
-    item_container:set_pos(0, y_offset)
-    item_container:set_size(item_width, item_height)
+    item_container:set_pos(x, y)
+    item_container:set_size(item_w - 2, item_h)
     item_container:set_style_bg_color(0x404040, 0)
     item_container:set_style_radius(4, 0)
     item_container:set_style_border_width(0, 0)
@@ -431,8 +471,8 @@ function LeftPanel:_create_tool_item(tool, y_offset)
     item_container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     item_container:remove_flag(lv.OBJ_FLAG_GESTURE_BUBBLE)
     item_container:clear_layout()
-    
-    -- 图标区域
+
+    -- 图标区域（完全保持你原版）
     local icon_box = lv.obj_create(item_container)
     icon_box:set_pos(4, 3)
     icon_box:set_size(36, 26)
@@ -442,42 +482,40 @@ function LeftPanel:_create_tool_item(tool, y_offset)
     icon_box:set_style_pad_all(0, 0)
     icon_box:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     icon_box:remove_flag(lv.OBJ_FLAG_CLICKABLE)
-    
+
     local icon_label = lv.label_create(icon_box)
     icon_label:set_text(tool.icon or "?")
     icon_label:set_style_text_color(self.props.text_color, 0)
     icon_label:center()
-    
+
     -- 名称
     local name_label = lv.label_create(item_container)
     name_label:set_text(tool.name)
     name_label:set_style_text_color(self.props.text_color, 0)
-    -- 设置中文字体
     local cjk_font = get_cjk_font()
     if cjk_font then
         name_label:set_style_text_font(cjk_font, 0)
     end
     name_label:align(lv.ALIGN_LEFT_MID, 46, 0)
-    
-    -- 工具项拖拽事件
+
+    -- 拖拽事件
     local this = self
     local tool_ref = tool
-    
+
     item_container:add_event_cb(function(e)
         this:_on_tool_pressed(tool_ref)
     end, lv.EVENT_PRESSED, nil)
-    
+
     item_container:add_event_cb(function(e)
         this:_on_tool_pressing(tool_ref)
     end, lv.EVENT_PRESSING, nil)
-    
+
     item_container:add_event_cb(function(e)
         this:_on_tool_released(tool_ref)
     end, lv.EVENT_RELEASED, nil)
-    
+
     return item_container
 end
-
 -- 工具项按下
 function LeftPanel:_on_tool_pressed(tool)
     local mouse_x = lv.get_mouse_x()

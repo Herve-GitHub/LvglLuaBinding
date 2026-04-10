@@ -1,19 +1,19 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-04-09 14:00:08
+-- 生成时间: 2026-04-10 15:28:42
 -- 工程版本: 1.0
 -- ==============================================
 
 -- 启动网络服务
 lvgl.start_network_service(3000)
-lvgl.connect("nil", 3000)
+lvgl.connect("ws://192.168.0.80:8085/ws/", 3000)
 
 -- 引用 LVGL
 local lv = require("lvgl")
 
 -- 引用控件模块
-local widgets_new_time = require("widgets.new_time")
+local widgets_new_chart = require("widgets.new_chart")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -45,18 +45,28 @@ local function create_page_1(parent)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
 
-    -- 控件 1: time_label
-    local widget_1 = widgets_new_time.new(container, {
-        text_color = "#FF99FF",
-        bg_color = "#915700",
-        bg_opa = 255,
+    -- 控件 1: trend_chart
+    local widget_1 = widgets_new_chart.new(container, {
+        point_count = 300,
+        x_label_height = 20,
+        x_label_color = "#CCCCCC",
+        custom_value = "",
+        height = 120,
+        bind_point = "THmeter.Energy",
+        range_min = 0,
+        x = 375,
+        y = 124,
+        websocket_url = "ws://192.168.0.80:8085/ws/",
+        on_updated_handler = "",
+        width = 300,
+        x_label_texts = "0s,5s,10s",
         instance_name = "",
+        x_label_count = 5,
         design_mode = false,
-        x = 421,
-        width = 200,
-        height = 30,
-        y = 58,
-        visible = true
+        update_interval = 1000,
+        event_action = "读取绑定数据点",
+        show_x_labels = true,
+        range_max = 100
     })
 
     return container

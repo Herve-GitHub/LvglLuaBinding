@@ -15,7 +15,7 @@ local ok, result = lvgl.query_sync(
     "192.168.0.99",                    -- server_url
     "scadaToken",                      -- token (直接传递，不需要key-value对)
     '["THmeter.AirRoomTemp1"]',        -- ids_json
-    5,                                 -- count (数字)
+    100,                                 -- count (数字)
     60,                                -- period (数字)
     "2026-01-06 13:11:00",            -- start_time
     "2026-01-07 13:11:00",            -- end_time

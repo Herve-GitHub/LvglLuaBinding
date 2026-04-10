@@ -13,11 +13,26 @@ MenuBar.__widget_meta = {
     version = "2.0",
 }
 
--- 获取应用程序目录
+
+-- ==============================================
+-- 🔥 修复：从 APP_DIR 自动获取盘符，不使用 arg，100% 不报错
+-- ==============================================
 local APP_DIR = _G.APP_DIR or ""
 
+local function get_current_drive_letter()
+    if APP_DIR and APP_DIR ~= "" then
+        local drive = APP_DIR:match("^([A-Za-z]:)")
+        if drive then return drive end
+    end
+    return "C:"
+end
+
+local FS_PREFIX = get_current_drive_letter()
+-- 获取应用程序目录
+--local APP_DIR = _G.APP_DIR or ""
+
 -- LVGL 文件系统前缀（与 lv_conf.h 中的 LV_FS_WIN32_LETTER 对应）
-local FS_PREFIX = "C:"
+--local FS_PREFIX = "C:"
 
 -- 辅助函数：构建完整路径（用于 LVGL 图片加载）
 local function build_path(relative_path)
