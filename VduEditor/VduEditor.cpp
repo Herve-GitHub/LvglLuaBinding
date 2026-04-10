@@ -420,6 +420,8 @@ int main(int argc, char* argv[])
     while (1) {
         uint32_t time_till_next = lv_timer_handler();
         lv_delay_ms(time_till_next);
+    
+
         Sleep(10);
     }
 

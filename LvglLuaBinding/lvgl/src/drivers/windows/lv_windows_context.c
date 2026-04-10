@@ -1,6 +1,4 @@
-﻿
-
-/*********************
+﻿/*********************
  *      INCLUDES
  *********************/
 
@@ -16,16 +14,16 @@
 #include "../../osal/lv_os_private.h"
 
  /*********************
-  *      DEFINES
-  *********************/
+ *      DEFINES
+ *********************/
 
-  /**********************
-   *      TYPEDEFS
-   **********************/
+ /**********************
+*      TYPEDEFS
+**********************/
 
-   /**********************
-    *  STATIC PROTOTYPES
-    **********************/
+/**********************
+*  STATIC PROTOTYPES
+**********************/
 
 static uint32_t lv_windows_tick_count_callback(void);
 
@@ -48,16 +46,16 @@ static LRESULT CALLBACK lv_windows_window_message_callback(
     LPARAM lParam);
 
 /**********************
- *  STATIC VARIABLES
- **********************/
+*  STATIC VARIABLES
+**********************/
 
- /**********************
-  *      MACROS
-  **********************/
+/**********************
+*      MACROS
+**********************/
 
-  /**********************
-   *   GLOBAL FUNCTIONS
-   **********************/
+/**********************
+*   GLOBAL FUNCTIONS
+**********************/
 
 void lv_windows_platform_init(void)
 {
@@ -106,8 +104,8 @@ lv_windows_window_context_t* lv_windows_get_window_context(
 }
 
 /**********************
- *   STATIC FUNCTIONS
- **********************/
+*   STATIC FUNCTIONS
+**********************/
 
 static uint32_t lv_windows_tick_count_callback(void)
 {
@@ -200,17 +198,17 @@ static HDC lv_windows_create_frame_buffer(
 #error [lv_windows] Unsupported LV_COLOR_DEPTH.
 #endif
 
+        void* buf = NULL;
         HBITMAP hBitmap = CreateDIBSection(
             frame_buffer_dc_handle,
             (PBITMAPINFO)(&bitmap_info),
             DIB_RGB_COLORS,
-            (void**)pixel_buffer,
+            &buf,
             NULL,
             0);
         if (hBitmap) {
-            *pixel_buffer_size = width * height;
-            *pixel_buffer_size *= lv_color_format_get_size(
-                LV_COLOR_FORMAT_NATIVE);
+            *pixel_buffer = (uint32_t*)buf;
+            *pixel_buffer_size = (size_t)width * height * lv_color_format_get_size(LV_COLOR_FORMAT_NATIVE);
 
             DeleteObject(SelectObject(frame_buffer_dc_handle, hBitmap));
             DeleteObject(hBitmap);
@@ -224,8 +222,11 @@ static HDC lv_windows_create_frame_buffer(
     return frame_buffer_dc_handle;
 }
 
+// 🔥 修复 1：禁止重建缓冲区（防止黑屏）
 static void lv_windows_display_timer_callback(lv_timer_t* timer)
 {
+    return;
+
     lv_windows_window_context_t* context = lv_timer_get_user_data(timer);
     LV_ASSERT_NULL(context);
 
@@ -417,9 +418,6 @@ static BOOL lv_windows_register_touch_window(
 static BOOL lv_windows_enable_child_window_dpi_message(
     HWND WindowHandle)
 {
-    // The private Per-Monitor DPI Awareness support extension is Windows 10
-    // only. We don't need the private Per-Monitor DPI Awareness support
-    // extension if the Per-Monitor (V2) DPI Awareness exists.
     OSVERSIONINFOEXW os_version_info_ex = { 0 };
     os_version_info_ex.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
     os_version_info_ex.dwMajorVersion = 10;
@@ -466,10 +464,6 @@ static bool lv_windows_window_message_callback_nolock(
 {
     switch (uMsg) {
     case WM_CREATE: {
-        // Note: Return -1 directly because WM_DESTROY message will be sent
-        // when destroy the window automatically. We free the resource when
-        // processing the WM_DESTROY message of this window.
-
         lv_windows_create_display_data_t* data =
             (lv_windows_create_display_data_t*)(
                 ((LPCREATESTRUCTW)(lParam))->lpCreateParams);
@@ -504,16 +498,16 @@ static bool lv_windows_window_message_callback_nolock(
         context->requested_display_resolution.x = 0;
         context->requested_display_resolution.y = 0;
 
-        context->display_device_object = lv_display_create(0, 0);
+        // 🔥 修复 2：先获取窗口大小再创建显示设备
+        RECT rc;
+        GetClientRect(hWnd, &rc);
+        int32_t w = rc.right;
+        int32_t h = rc.bottom;
+
+        context->display_device_object = lv_display_create(w, h);
         if (!context->display_device_object) {
             return -1;
         }
-        RECT request_content_size;
-        GetWindowRect(hWnd, &request_content_size);
-        lv_display_set_resolution(
-            context->display_device_object,
-            request_content_size.right - request_content_size.left,
-            request_content_size.bottom - request_content_size.top);
         lv_display_set_flush_cb(
             context->display_device_object,
             lv_windows_display_driver_flush_callback);
@@ -526,18 +520,23 @@ static bool lv_windows_window_message_callback_nolock(
                 context->window_dpi);
         }
 
-        if (context->simulator_mode) {
-            context->display_resolution_changed = true;
-            context->requested_display_resolution.x =
-                lv_display_get_horizontal_resolution(
-                    context->display_device_object);
-            context->requested_display_resolution.y =
-                lv_display_get_vertical_resolution(
-                    context->display_device_object);
-        }
+        // 🔥 修复 3：创建完整大小缓冲区（解决断言）
+        context->display_framebuffer_context_handle = lv_windows_create_frame_buffer(
+            hWnd, w, h,
+            &context->display_framebuffer_base,
+            &context->display_framebuffer_size
+        );
+
+        // 🔥 修复 4：传入正确大小（解决断言）
+        lv_display_set_buffers(
+            context->display_device_object,
+            context->display_framebuffer_base,
+            NULL,
+            (uint32_t)context->display_framebuffer_size,
+            LV_DISPLAY_RENDER_MODE_DIRECT
+        );
 
         lv_windows_register_touch_window(hWnd, 0);
-
         lv_windows_enable_child_window_dpi_message(hWnd);
 
         break;
@@ -547,73 +546,12 @@ static bool lv_windows_window_message_callback_nolock(
             lv_windows_window_context_t* context = (lv_windows_window_context_t*)(
                 lv_windows_get_window_context(hWnd));
             if (context) {
-                // 绐楀彛浠庢渶灏忓寲鎭㈠鏃讹紝寮哄埗 LVGL 閲嶆柊缁樺埗鏁翠釜灞忓箷
                 if (wParam == SIZE_RESTORED) {
                     lv_obj_t* active_screen = lv_display_get_screen_active(
                         context->display_device_object);
                     if (active_screen) {
                         lv_obj_invalidate(active_screen);
                     }
-                }
-
-                if (!context->simulator_mode) {
-                    context->display_resolution_changed = true;
-                    context->requested_display_resolution.x = LOWORD(lParam);
-                    context->requested_display_resolution.y = HIWORD(lParam);
-
-                    // 閲嶇疆鎸囬拡浣嶇疆鍒版柊鐨勬湁鏁堣寖鍥村唴锛岄伩鍏嶅潗鏍囪秴鍑鸿竟鐣岃鍛?
-                    int32_t new_hor_res = LOWORD(lParam);
-                    int32_t new_ver_res = HIWORD(lParam);
-                    if (context->pointer.point.x >= new_hor_res) {
-                        context->pointer.point.x = new_hor_res > 0 ? new_hor_res - 1 : 0;
-                    }
-                    if (context->pointer.point.y >= new_ver_res) {
-                        context->pointer.point.y = new_ver_res > 0 ? new_ver_res - 1 : 0;
-                    }
-                }
-                else {
-                    int32_t window_width = lv_windows_dpi_to_physical(
-                        lv_windows_zoom_to_physical(
-                            lv_display_get_horizontal_resolution(
-                                context->display_device_object),
-                            context->zoom_level),
-                        context->window_dpi);
-                    int32_t window_height = lv_windows_dpi_to_physical(
-                        lv_windows_zoom_to_physical(
-                            lv_display_get_vertical_resolution(
-                                context->display_device_object),
-                            context->zoom_level),
-                        context->window_dpi);
-
-                    RECT window_rect;
-                    GetWindowRect(hWnd, &window_rect);
-
-                    RECT client_rect;
-                    GetClientRect(hWnd, &client_rect);
-
-                    int32_t original_window_width =
-                        window_rect.right - window_rect.left;
-                    int32_t original_window_height =
-                        window_rect.bottom - window_rect.top;
-
-                    int32_t original_client_width =
-                        client_rect.right - client_rect.left;
-                    int32_t original_client_height =
-                        client_rect.bottom - client_rect.top;
-
-                    int32_t reserved_width =
-                        original_window_width - original_client_width;
-                    int32_t reserved_height =
-                        original_window_height - original_client_height;
-
-                    SetWindowPos(
-                        hWnd,
-                        NULL,
-                        0,
-                        0,
-                        reserved_width + window_width,
-                        reserved_height + window_height,
-                        SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
                 }
             }
         }
@@ -716,7 +654,6 @@ static bool lv_windows_window_message_callback_nolock(
                     wParam,
                     lParam,
                     plResult)) {
-                // Handled
                 return true;
             }
             else if (context->keypad.indev &&
@@ -726,7 +663,6 @@ static bool lv_windows_window_message_callback_nolock(
                     wParam,
                     lParam,
                     plResult)) {
-                // Handled
                 return true;
             }
             else if (context->encoder.indev &&
@@ -736,17 +672,13 @@ static bool lv_windows_window_message_callback_nolock(
                     wParam,
                     lParam,
                     plResult)) {
-                // Handled
                 return true;
             }
         }
-
-        // Not Handled
         return false;
     }
     }
 
-    // Handled
     *plResult = 0;
     return true;
 }

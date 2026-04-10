@@ -1,19 +1,20 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-04-10 15:28:42
+-- 生成时间: 2026-04-10 16:41:33
 -- 工程版本: 1.0
 -- ==============================================
 
 -- 启动网络服务
 lvgl.start_network_service(3000)
-lvgl.connect("ws://192.168.0.80:8085/ws/", 3000)
+lvgl.connect("", 3000)
 
 -- 引用 LVGL
 local lv = require("lvgl")
 
 -- 引用控件模块
-local widgets_new_chart = require("widgets.new_chart")
+local widgets_new_time = require("widgets.new_time")
+local widgets_new_label = require("widgets.new_label")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -45,28 +46,84 @@ local function create_page_1(parent)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
 
-    -- 控件 1: trend_chart
-    local widget_1 = widgets_new_chart.new(container, {
-        point_count = 300,
-        x_label_height = 20,
-        x_label_color = "#CCCCCC",
-        custom_value = "",
-        height = 120,
-        bind_point = "THmeter.Energy",
-        range_min = 0,
-        x = 375,
-        y = 124,
-        websocket_url = "ws://192.168.0.80:8085/ws/",
-        on_updated_handler = "",
-        width = 300,
-        x_label_texts = "0s,5s,10s",
+    -- 控件 1: label
+    local widget_1 = widgets_new_label.new(container, {
+        long_mode = "wrap",
+        alignment = "left",
+        false_bg_color = "#ffffff",
+        http_token = "",
+        false_color = "#ffffff",
+        http_data_type = "实时数据",
+        true_color = "#ffffff",
+        on_clicked_handler = "",
+        width = 100,
+        visible = true,
+        height = 30,
+        bg_opa = 0,
+        compare_value = "0",
+        text_color = "#FFFFFF",
+        bind_point = "",
         instance_name = "",
-        x_label_count = 5,
+        custom_value = "",
+        text = "Label",
         design_mode = false,
-        update_interval = 1000,
-        event_action = "读取绑定数据点",
-        show_x_labels = true,
-        range_max = 100
+        compare_operator = "大于",
+        font_size = 16,
+        bg_color = "#00000000",
+        true_bg_color = "#ffffff",
+        y = 95,
+        event_action = "写入绑定数据点",
+        http_url = "",
+        websocket_url = "",
+        x = 408,
+        custom_address = ""
+    })
+
+    -- 控件 2: label
+    local widget_2 = widgets_new_label.new(container, {
+        long_mode = "wrap",
+        alignment = "left",
+        false_bg_color = "#ffffff",
+        http_token = "",
+        false_color = "#ffffff",
+        http_data_type = "实时数据",
+        true_color = "#ffffff",
+        on_clicked_handler = "",
+        width = 100,
+        visible = true,
+        height = 30,
+        bg_opa = 0,
+        compare_value = "0",
+        text_color = "#FFFFFF",
+        bind_point = "",
+        instance_name = "",
+        custom_value = "",
+        text = "Label",
+        design_mode = false,
+        compare_operator = "大于",
+        font_size = 16,
+        bg_color = "#00000000",
+        true_bg_color = "#ffffff",
+        y = 153,
+        event_action = "写入绑定数据点",
+        http_url = "",
+        websocket_url = "",
+        x = 336,
+        custom_address = ""
+    })
+
+    -- 控件 3: time_label
+    local widget_3 = widgets_new_time.new(container, {
+        instance_name = "",
+        design_mode = false,
+        y = 165,
+        bg_color = "#000000",
+        x = 477,
+        text_color = "#FFFFFF",
+        visible = true,
+        bg_opa = 255,
+        height = 30,
+        width = 200
     })
 
     return container
