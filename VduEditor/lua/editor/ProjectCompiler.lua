@@ -17,6 +17,7 @@ local WIDGET_TYPE_TO_MODULE = {
     ["switch"] = "widgets.switch",
     ["image"] = "widgets.image" ,
     ["table"] = "widgets.new_table" ,
+    ["contain"] = "widgets.new_contain" ,
     ["timer"] = "widgets.new_time" ,
     ["PopupButton"] = "widgets.PopupButton" 
 }

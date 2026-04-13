@@ -61,6 +61,11 @@ local StatusBar = require("widgets.status_bar")
 local ProjectManager = require("ProjectManager")
 local ProjectCompiler = require("ProjectCompiler")
 local FileDialog = require("FileDialog")
+local PathDialog = require("PathDialog")
+local InstallConfig = require("install_config")
+
+
+
 
 -- 辅助函数：解析颜色值（支持字符串 "#RRGGBB" 或数字）
 local function parse_color(value, default)
@@ -984,6 +989,192 @@ end]]--
 
 
 
+
+
+
+-- ==============================
+-- 环境配置：弹出路径设置窗口
+-- ==============================
+-- ==============================
+-- 环境配置：弹出路径设置窗口
+-- ==============================
+
+-- ==============================
+-- 保存本地路径到 install_config.lua
+-- ==============================
+-- ==============================
+-- 保存本地路径到 install_config.lua
+-- ==============================
+-- ==============================
+-- 保存本地路径到 install_config.lua
+-- ==============================
+-- ==============================
+-- 保存本地路径到 install_config.lua
+-- ==============================
+local function save_install_config_local_dir(new_base_dir)
+    if not new_base_dir or new_base_dir == "" then
+        print("[配置] 路径不能为空")
+        return false
+    end
+
+    -- 让 Lua 自己找到 install_config.lua 的真实路径
+    local config_path = package.searchpath("install_config", package.path)
+    if not config_path then
+        print("[配置] 无法找到 install_config.lua 的路径")
+        return false
+    end
+
+    -- 读取
+    local f = io.open(config_path, "r")
+    if not f then
+        print("[配置] 无法打开文件: " .. config_path)
+        return false
+    end
+
+    local content = f:read("*a")
+    f:close()
+
+    -- 🔥 自动补全路径末尾的 \  👇👇👇
+    local cleaned_path = new_base_dir:gsub("/", "\\")
+    if not cleaned_path:match("\\$") then
+        cleaned_path = cleaned_path .. "\\"
+    end
+    local escaped_path = cleaned_path:gsub("\\", "\\\\")
+
+    -- 替换
+    content = content:gsub('local_base_dir = ".-"', 'local_base_dir = "' .. escaped_path .. '"')
+
+    -- 写入
+    local fw = io.open(config_path, "w")
+    if not fw then
+        print("[配置] 无法写入文件: " .. config_path)
+        return false
+    end
+
+    fw:write(content)
+    fw:close()
+
+    print("[配置] 成功保存到: " .. config_path)
+    return true
+end
+
+
+
+local function env_config()
+    -- 🔥 强制创建在最顶层，不会被任何控件盖住
+    local modal = lv.obj_create(lv.scr_act())
+    modal:set_size(500, 220)
+    modal:align(lv.ALIGN_CENTER, 0, 0)
+    modal:set_style_bg_color(0x3A3A3A, 0)
+    modal:set_style_radius(6, 0)
+    modal:set_style_border_color(0x777777, 0)
+    modal:set_style_border_width(1, 0)
+    modal:set_style_pad_all(15, 0)
+    modal:move_foreground() -- 🔥 强制置顶
+    modal:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+
+    -- 标题
+    local title = lv.label_create(modal)
+    title:set_text("环境配置")
+    title:set_style_text_color(0xFFFFFF, 0)
+    --title:set_style_text_font(14)
+    title:align(lv.ALIGN_TOP_MID, 0, 10)
+
+    -- 文字标签
+    local lab_path = lv.label_create(modal)
+    lab_path:set_text("下装路径：")
+    lab_path:set_style_text_color(0xFFFFFF, 0)
+    lab_path:set_pos(20, 60)
+
+    -- 输入框
+    local path_input = lv.textarea_create(modal)
+    path_input:set_size(330, 36)
+    path_input:set_pos(90, 55)
+    path_input:set_style_bg_color(0x252525, 0)
+    path_input:set_style_text_color(0xFFFFFF, 0)
+    path_input:move_foreground()
+    path_input:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+
+    -- 浏览按钮 ...
+    local btn_browse = lv.btn_create(modal)
+    btn_browse:set_size(40, 36)
+    btn_browse:set_pos(430, 55)
+   
+    btn_browse:set_style_bg_color(0x555555, 0)
+   -- btn_browse:move_foreground()
+   local btn_laber = lv.label_create(btn_browse)
+   btn_laber : set_text("...")
+   btn_laber : set_pos(-8,-2)
+
+    -- 选择路径
+ -- 选择路径
+btn_browse:add_event_cb(function(e)
+    PathDialog.new(lv.scr_act(), {
+        initial_dir = [[C:\]],
+        callback = function(folder_path)
+            -- 直接填入文件夹路径：C:\xxx\xxx
+            path_input:set_text(folder_path)
+        end
+    })
+end, lv.EVENT_CLICKED)
+
+    -- 确定按钮
+    local btn_ok = lv.btn_create(modal)
+    btn_ok:set_size(100, 36)
+    btn_ok:set_pos(130, 130)
+    btn_ok:set_style_bg_color(0x0078D4, 0)
+
+
+    local btn_right = lv.label_create(btn_ok)
+    btn_right : set_text("确定")
+    btn_right : align(lv.ALIGN_CENTER, 0, 0)
+
+    -- 取消按钮
+    local btn_cancel = lv.btn_create(modal)
+    btn_cancel:set_size(100, 36)
+    btn_cancel:set_pos(270, 130)
+    btn_cancel:set_style_bg_color(0x666666, 0)
+
+    local label_cancel = lv.label_create(btn_cancel)
+    label_cancel : set_text("取消")
+    label_cancel : align(lv.ALIGN_CENTER, 0, 0)
+
+
+    -- 确定
+ btn_ok:add_event_cb(function(e)
+    local p = path_input:get_text()
+    if p and p ~= "" then
+        _G.ENV_INSTALL_PATH = p
+        
+        -- ==========================================
+        -- 🔥 保存路径到 install_config.lua (自动格式化路径)
+        -- ==========================================
+        local save_path = p:gsub("/", "\\")  -- 统一转成 Windows 路径
+        save_install_config_local_dir(save_path)
+        
+        print("[环境配置] 已保存路径到配置文件: " .. save_path)
+    end
+    modal:delete()
+end, lv.EVENT_CLICKED)
+
+    -- 取消
+    btn_cancel:add_event_cb(function(e)
+        modal:delete()
+    end, lv.EVENT_CLICKED)
+
+    print("[环境配置] 窗口已打开")
+end
+
+
+
+
+
+
+
+
+
+
+
 -- ========== 菜单事件处理 ==========
 menu_bar:on("menu_action", function(self, menu_key, item_id)
     print("[Ribbon] 按钮点击: " .. tostring(item_id))
@@ -1064,6 +1255,8 @@ menu_bar:on("menu_action", function(self, menu_key, item_id)
     elseif item_id == "stopSim" then
         -- 停止仿真
         stop_simulator()
+    elseif item_id == "env_config" then
+        env_config()
     elseif item_id == "exit" then
         print("退出编辑器")
     end

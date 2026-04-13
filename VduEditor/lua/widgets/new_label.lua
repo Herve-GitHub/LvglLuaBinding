@@ -74,7 +74,7 @@ Label.__widget_meta = {
       description = "写入自定义地址时的值" },
 
     -- 事件处理代码属性
-    { name = "on_clicked_handler", type = "code", default = "", label = "点击处理代码",
+   { name = "on_clicked_handler", type = "code", default = "", label = "点击处理代码",
       event = "clicked", description = "点击标签时执行的Lua代码" },
   },
   events = { "clicked" },

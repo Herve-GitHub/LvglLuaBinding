@@ -190,6 +190,24 @@ MenuBar.RIBBON_TABS = {
             },
         },
     },
+
+
+        {
+        id = "env",          -- 标签唯一ID（自定义，建议简短）
+        label = "配置",   -- 标签显示文字（核心需求）
+        groups = {           -- 单个分组，内部一个「环境配置」按钮
+            {
+                id = "env_group",
+                label = "配置",
+                buttons = {
+                    -- 极简按钮：仅环境配置，可直接复用现有图标/样式
+                    { id = "env_config", label = "环境配置", icon = "peizhi.png", size = "large" },
+                },
+            },
+        },
+    },
+
+
 }
 
 -- 尺寸定义

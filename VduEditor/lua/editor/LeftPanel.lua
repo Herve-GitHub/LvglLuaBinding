@@ -37,7 +37,7 @@ LeftPanel.DEFAULT_TOOLS = {
     { id = "image", name = "图像", icon = "IMG", module_path = "widgets.image" },
     { id = "timer", name = "时间组件", icon = "TIM", module_path = "widgets.new_time" },
     { id = "tangchuang", name = "弹窗", icon = "TCZ", module_path = "widgets.PopupButton" },
-
+    { id = "new_contain", name = "容器", icon = "RQZ", module_path = "widgets.new_contain" },
     { group = "交互控件" },
     { id = "checkbox", name = "复选框", icon = "CHK", module_path = "widgets.checkbox" },
     { id = "switch", name = "开关", icon = "SWT", module_path = "widgets.switch" },
