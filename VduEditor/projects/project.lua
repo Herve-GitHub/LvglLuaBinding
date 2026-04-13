@@ -1,18 +1,20 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-04-13 10:05:22
+-- 生成时间: 2026-04-13 16:51:41
 -- 工程版本: 1.0
 -- ==============================================
 
 -- 启动网络服务
 lvgl.start_network_service(3000)
-lvgl.connect("nil", 3000)
+lvgl.connect("", 3000)
 
 -- 引用 LVGL
 local lv = require("lvgl")
 
 -- 引用控件模块
+local widgets_new_label = require("widgets.new_label")
+local widgets_new_button = require("widgets.new_button")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -43,6 +45,76 @@ local function create_page_1(parent)
     container:set_style_border_width(0, 0)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
+
+    -- 控件 1: custom_button
+    local widget_1 = widgets_new_button.new(container, {
+        enabled = true,
+        false_color = "#ffffff",
+        event_action = "写入绑定数据点",
+        enable_page_navigation = false,
+        compare_operator = "大于",
+        http_data_type = "实时数据",
+        label = "OK",
+        font_size = 16,
+        y = 177,
+        custom_value = "",
+        on_single_clicked_handler = "",
+        navigation_action = "goto_page",
+        x = 684,
+        on_double_clicked_handler = "",
+        bg_color = "#007acc",
+        websocket_url = "",
+        false_bg_color = "#ffffff",
+        http_token = "",
+        http_url = "",
+        alignment = "center",
+        instance_name = "",
+        bind_point = "",
+        compare_value = "0",
+        target_page_index = 1,
+        target_page_name = "",
+        custom_address = "",
+        true_bg_color = "#ffffff",
+        design_mode = false,
+        on_clicked_handler = "",
+        height = 53,
+        width = 68,
+        color = "#ffffff",
+        true_color = "#ffffff"
+    })
+
+    -- 控件 2: label
+    local widget_2 = widgets_new_label.new(container, {
+        long_mode = "wrap",
+        x = 528,
+        custom_address = "",
+        bg_opa = 0,
+        bg_color = "#00000000",
+        event_action = "写入绑定数据点",
+        websocket_url = "",
+        false_bg_color = "#ffffff",
+        http_token = "",
+        height = 63,
+        alignment = "left",
+        width = 102,
+        text = "Label",
+        instance_name = "",
+        text_color = "#FFFFFF",
+        http_data_type = "实时数据",
+        bind_point = "",
+        false_color = "#ffffff",
+        on_clicked_handler = "",
+        font_size = 16,
+        true_color = "#ffffff",
+        http_url = "",
+        compare_operator = "大于",
+        design_mode = false,
+        true_bg_color = "#ffffff",
+        y = 83,
+        compare_value = "0",
+        custom_value = "",
+        visible = true
+    })
 
     return container
 end

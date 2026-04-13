@@ -80,17 +80,18 @@ function TrendChart.new(parent, props)
     self.chart = lv.chart_create(self.container)
     self.chart:set_pos(0, 0)
     self.chart:set_size(self.props.width, self.props.height)
-    self.chart:set_type(lv.CHART_TYPE_LINE)
+   -- self.chart:set_type(lv.CHART_TYPE_LINE)
     self.chart:set_point_count(self.props.point_count)
-    self.chart:set_update_mode(lv.CHART_UPDATE_MODE_SHIFT)
-    self.chart:set_div_line_count(3, 3)
+    self.chart:set_type(lv.CHART_TYPE_LINE)
+    --self.chart:set_update_mode(lv.CHART_UPDATE_MODE_SHIFT)
+   -- self.chart:set_div_line_count(3, 3)
 
     --self.chart:set_style_bg_color(0x000000, 0)
     --self.chart:set_style_bg_opa(lv.OPA_COVER, 0)
    -- self.chart:set_style_border_width(1, 0)
-
-    self.series = self.chart:add_series(0xFF0000, lv.CHART_AXIS_PRIMARY_Y)
     self.chart:set_range(lv.CHART_AXIS_PRIMARY_Y, self.props.range_min, self.props.range_max)
+    self.series = self.chart:add_series(0xFF0000, lv.CHART_AXIS_PRIMARY_Y)
+   -- self.chart:set_range(lv.CHART_AXIS_PRIMARY_Y, self.props.range_min, self.props.range_max)
 
     function self._emit(self, event_name, ...)
         local listeners = self._event_listeners[event_name]

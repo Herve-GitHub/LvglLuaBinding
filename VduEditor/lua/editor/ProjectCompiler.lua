@@ -8,8 +8,8 @@ ProjectCompiler.__index = ProjectCompiler
 
 -- 控件类型到模块路径的映射
 local WIDGET_TYPE_TO_MODULE = {
-    ["custom_button"] = "widgets.button",
-    ["label"] = "weidgets.label",
+  --  ["custom_button"] = "widgets.button",
+    ["label"] = "weidgets.new_label",
     ["button"] = "widgets.new_button",
     ["valve"] = "widgets.valve",
     ["trend_chart"] = "widgets.new_chart",

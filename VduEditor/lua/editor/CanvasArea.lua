@@ -958,23 +958,40 @@ function CanvasArea:_create_selection_box(widget_entry)
     box:remove_flag(lv.OBJ_FLAG_CLICKABLE)
     box:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     
-    local handle_size = 8
-    local handle_positions = {
-        { x = -handle_size/2, y = -handle_size/2 },
-        { x = w - handle_size/2, y = -handle_size/2 },
-        { x = -handle_size/2, y = h - handle_size/2 },
-        { x = w - handle_size/2, y = h - handle_size/2 },
-    }
-    
-    for _, pos in ipairs(handle_positions) do
-        local handle = lv.obj_create(box)
-        handle:set_pos(pos.x, pos.y)
-        handle:set_size(handle_size, handle_size)
-        handle:set_style_bg_color(0x007ACC, 0)
-        handle:set_style_radius(1, 0)
-        handle:set_style_border_width(0, 0)
-        handle:remove_flag(lv.OBJ_FLAG_CLICKABLE)
-    end
+   local handle_size = 8
+local handle_positions = {
+    { x = -handle_size/2, y = -handle_size/2, dir = "tl" },
+    { x = w - handle_size/2, y = -handle_size/2, dir = "tr" },
+    { x = -handle_size/2, y = h - handle_size/2, dir = "bl" },
+    { x = w - handle_size/2, y = h - handle_size/2, dir = "br" },
+}
+
+for _, pos in ipairs(handle_positions) do
+    local handle = lv.obj_create(box)
+    handle:set_pos(pos.x, pos.y)
+    handle:set_size(handle_size, handle_size)
+    handle:set_style_bg_color(0x007ACC, 0)
+    handle:set_style_radius(1, 0)
+    handle:set_style_border_width(0, 0)
+    handle:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    handle:add_flag(lv.OBJ_FLAG_CLICKABLE)
+
+    local dir = pos.dir
+    local widget = widget_entry
+    local this = self
+
+    handle:add_event_cb(function(e)
+        this:_on_resize_handle_pressed(dir, widget)
+    end, lv.EVENT_PRESSED, nil)
+
+    handle:add_event_cb(function(e)
+        this:_on_resize_handle_pressing()
+    end, lv.EVENT_PRESSING, nil)
+
+    handle:add_event_cb(function(e)
+        this:_on_resize_handle_released()
+    end, lv.EVENT_RELEASED, nil)
+end
     
     local box_index = #self._selection_boxes + 1
     table.insert(self._selection_boxes, box)
@@ -1286,5 +1303,129 @@ function CanvasArea:align_selected(align_type)
     self:_update_all_selection_boxes()
     self:_emit("widgets_moved", self._selected_widgets)
 end
+
+
+
+
+
+
+
+-- ==============================
+-- 控件缩放功能 —— 最终无错版
+-- ==============================
+function CanvasArea:_on_resize_handle_pressed(dir, widget)
+    if not widget then return end
+
+    local obj = widget.instance.btn or widget.instance.container or widget.instance.obj or widget.instance.chart
+    if not obj then return end
+
+    self._resize_state = {
+        is_resizing = true,
+        dir = dir,
+        widget = widget,
+        obj = obj,
+        start_x = obj:get_x(),
+        start_y = obj:get_y(),
+        start_w = obj:get_width(),
+        start_h = obj:get_height(),
+        start_mx = lv.get_mouse_x(),
+        start_my = lv.get_mouse_y(),
+    }
+end
+
+function CanvasArea:_on_resize_handle_pressing()
+    if not self._resize_state or not self._resize_state.is_resizing then return end
+    local s = self._resize_state
+
+    local dx = lv.get_mouse_x() - s.start_mx
+    local dy = lv.get_mouse_y() - s.start_my
+
+    local new_w, new_h = s.start_w, s.start_h
+    local new_x, new_y = s.start_x, s.start_y
+
+    if s.dir == "br" then
+        new_w = s.start_w + dx
+        new_h = s.start_h + dy
+    elseif s.dir == "bl" then
+        new_w = s.start_w - dx
+        new_h = s.start_h + dy
+        new_x = s.start_x + dx
+    elseif s.dir == "tr" then
+        new_w = s.start_w + dx
+        new_h = s.start_h - dy
+        new_y = s.start_y + dy
+    elseif s.dir == "tl" then
+        new_w = s.start_w - dx
+        new_h = s.start_h - dy
+        new_x = s.start_x + dx
+        new_y = s.start_y + dy
+    end
+
+    new_w = math.max(30, new_w)
+    new_h = math.max(30, new_h)
+    new_x = math.max(0, new_x)
+    new_y = math.max(0, new_y)
+    if new_x + new_w > self.props.width then new_w = self.props.width - new_x end
+    if new_y + new_h > self.props.height then new_h = self.props.height - new_y end
+
+    s.obj:set_pos(math.floor(new_x), math.floor(new_y))
+    s.obj:set_size(math.floor(new_w), math.floor(new_h))
+
+    local widget = s.widget
+    if widget.instance.props then
+        widget.instance.props.x = new_x
+        widget.instance.props.y = new_y
+        widget.instance.props.width = new_w
+        widget.instance.props.height = new_h
+    end
+    widget.props.x = new_x
+    widget.props.y = new_y
+    widget.props.width = new_w
+    widget.props.height = new_h
+
+    self:_update_all_selection_boxes()
+end
+
+function CanvasArea:_on_resize_handle_released()
+    if not self._resize_state or not self._resize_state.is_resizing then
+        self._resize_state = nil
+        return
+    end
+
+    local s = self._resize_state
+    local widget = s.widget
+    local obj = s.obj
+
+    local fx, fy = self:snap_position(obj:get_x(), obj:get_y())
+    local fw, fh = self:snap_position(obj:get_width(), obj:get_height())
+    fw = math.max(30, fw)
+    fh = math.max(30, fh)
+
+    obj:set_pos(fx, fy)
+    obj:set_size(fw, fh)
+
+    if widget.instance.props then
+        widget.instance.props.x = fx
+        widget.instance.props.y = fy
+        widget.instance.props.width = fw
+        widget.instance.props.height = fh
+    end
+    widget.props.x = fx
+    widget.props.y = fy
+    widget.props.width = fw
+    widget.props.height = fh
+
+    self:_update_all_selection_boxes()
+    self:_save_state()
+    self:_emit("widget_resized", widget)
+    self._resize_state = nil
+end
+
+
+
+
+
+
+
 
 return CanvasArea

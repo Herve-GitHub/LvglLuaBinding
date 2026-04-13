@@ -915,6 +915,26 @@ local function start_install()
     if install_cfg.verbose then
         print("[下装] 执行命令: " .. cmd)
     end
+
+
+      -- =============================================
+    -- 🔥 【新增】执行完 scp 下装后，自动运行 image_ssh.bat
+    -- =============================================
+    local bat_path = x64_dir .. "image_ssh.bat"
+    local bat_file = io.open(bat_path, "r")
+    if bat_file then
+        bat_file:close()
+
+        print("[下装] 启动批处理文件: " .. bat_path)
+
+        -- 新开窗口运行，不阻塞当前编辑器
+        local bat_cmd = 'start "" cmd /c "cd /d "' .. x64_dir .. '" && image_ssh.bat"'
+        os.execute(bat_cmd)
+    else
+        print("[下装] 未找到 image_ssh.bat，跳过执行: " .. bat_path)
+    end
+
+
     
     local result = os.execute(cmd)
     

@@ -3,14 +3,13 @@
 -- 使用找到的正确常量
 local chart = lv.chart_create(lv.scr_act())
 chart:set_size(300, 200)
-chart:set_point_count(2)
+--chart:set_point_count(2)
 chart:set_type(lv.CHART_TYPE_LINE)
-
-
-
+chart:set_point_count(2)
 
 
 chart:set_range(lv.CHART_AXIS_PRIMARY_Y, 0, 100)
+--chart:set_range(lv.CHART_AXIS_PRIMARY_Y, 0, 100)
 
 local series = chart:add_series(0xFF0000, lv.CHART_AXIS_PRIMARY_Y)
 
@@ -19,7 +18,7 @@ for i = 1, 10 do
 end
 
 
-
+--chart:set_range(lv.CHART_AXIS_PRIMARY_Y, 0, 100)
 
 
 
