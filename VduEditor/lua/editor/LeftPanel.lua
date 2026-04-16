@@ -134,11 +134,12 @@ function LeftPanel.new(parent, props)
     
     -- 计算内容区域高度
     self._toolbox_content_height = #self._tools * (self.props.item_height + 4) + 10
-    self._pages_content_height = 200  -- 初始高度，后续会根据内容调整
+    self._pages_content_height = 300  -- 初始高度，后续会根据内容调整
     
     -- 计算总高度（折叠时只显示标题栏）
     --self._total_height = self.props.title_height + self._tab_height + self._toolbox_content_height + 8
-    self._total_height = 500  
+   -- self._total_height = 500
+   self._total_height = self.props.title_height + self._tab_height + 470 + 8
     -- 创建主容器（浮动窗口样式）
     self.container = lv.obj_create(parent)
     self.container:set_pos(self.props.x, self.props.y)

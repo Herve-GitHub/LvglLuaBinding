@@ -106,7 +106,7 @@ local RIGHT_PANEL_WIDTH = 280
 
 -- 获取窗口尺寸
 local function get_window_size()
-    local w, h = 1024, 768
+    local w, h = 1024, 768 --768
     if scr and scr.get_width and scr.get_height then
         local ok1, ww = pcall(function() return scr:get_width() end)
         local ok2, hh = pcall(function() return scr:get_height() end)
@@ -832,26 +832,36 @@ end]]--
 
 -- ========== 下装功能 ==========
 -- 加载配置文件的函数
+-- ========== 下装功能 ==========
+
 local function load_install_config()
-    local ok, config = pcall(require, "install_config")
-    if ok and config then
-        print("[配置] 加载配置文件成功")
-        return config
-    else
-        print("[配置] 未找到配置文件，使用默认配置")
-        -- 默认配置
-        return {
-            remote_host = "192.168.1.230",
-            remote_user = "root",
-            remote_path = "/root/",
-            password = "LM&PASSw0rdl",
-            local_base_dir = "C:\\Users\\86188\\Desktop\\LvgLuaBling\\git\\LvglLuaBinding\\Output\\Binaries\\Release\\x64\\",
-            sshpass_exe = "sshpass.exe",
-            lua_file = "lua\\project.lua",
-            compile_before_install = true,
-            verbose = true
-        }
+    -- 1. 先尝试找到文件的真实路径
+    local config_path = package.searchpath("install_config", package.path)
+    
+    -- 2. 如果找到了路径，强制用 dofile 读取最新内容（绕过 require 缓存）
+    if config_path then
+        local ok, config = pcall(dofile, config_path)
+        if ok and config then
+            print("[配置] 从文件加载成功: " .. config_path)
+            return config
+        else
+            print("[配置] 文件存在但读取/解析失败: " .. tostring(config)) -- config 这里其实是错误信息
+        end
     end
+
+    -- 3. 如果找不到文件，或者读取失败，才使用默认配置
+    print("[配置] 未找到配置文件，使用默认配置")
+    return {
+        remote_host = "192.168.1.230",
+        remote_user = "root",
+        remote_path = "/root/",
+        password = "LM&PASSw0rdl",
+        local_base_dir = "C:\\Users\\86188\\Desktop\\LvgLuaBling\\git\\LvglLuaBinding\\Output\\Binaries\\Release\\x64\\",
+        sshpass_exe = "sshpass.exe",
+        lua_file = "lua\\project.lua",
+        compile_before_install = true,
+        verbose = true
+    }
 end
 
 -- 加载配置
@@ -863,7 +873,7 @@ local function start_install()
         print("[下装] ========== 启动下装 ==========")
     end
     
-    -- 1. 可选：编译工程
+    -- 1. 编译（保留不动）
     if install_cfg.compile_before_install then
         if install_cfg.verbose then
             print("[下装] 编译工程...")
@@ -878,64 +888,50 @@ local function start_install()
         end
     end
     
-    -- 2. 从配置获取文件路径
-    local x64_dir = install_cfg.local_base_dir
-    local sshpass_path = x64_dir .. install_cfg.sshpass_exe
-    local lua_file = x64_dir .. install_cfg.lua_file
-    local remote = install_cfg.remote_user .. "@" .. install_cfg.remote_host .. ":" .. install_cfg.remote_path
-    local password = install_cfg.password
-    
+    -- ==========================================
+    -- 🔥 唯一正确路径：APP_DIR 相对路径
+    -- ==========================================
+    local run_dir = APP_DIR or ""
+
+    -- 打印正确的新信息 ✅
     if install_cfg.verbose then
         print("[下装] 配置信息:")
-        print("  本地目录: " .. x64_dir)
-        print("  sshpass: " .. sshpass_path)
-        print("  上传文件: " .. lua_file)
-        print("  远程地址: " .. remote)
+        print("  运行目录: " .. run_dir)
+        print("  上传文件: .\\lua\\project.lua")
+        print("  远程地址: " .. install_cfg.remote_user .. "@" .. install_cfg.remote_host .. ":" .. install_cfg.remote_path)
     end
-    
-    -- 3. 检查文件是否存在
+
+    -- 检查 sshpass
+    local sshpass_path = run_dir .. "sshpass.exe"
     local f = io.open(sshpass_path, "r")
     if not f then
-        print("[下装] 错误: 找不到 sshpass.exe - " .. sshpass_path)
+        print("[下装] 错误: 找不到 sshpass.exe → " .. sshpass_path)
         return false
     end
     f:close()
-    
-    f = io.open(lua_file, "r")
-    if not f then
-        print("[下装] 错误: 找不到 project.lua - " .. lua_file)
-        return false
-    end
-    f:close()
-    
-    -- 4. 构建命令并执行
-    local cmd = 'cd /d "' .. x64_dir .. '" && ' ..
-                install_cfg.sshpass_exe .. ' -p"' .. password .. '" scp ' .. install_cfg.lua_file .. ' ' .. remote
-    
+
+    -- 执行命令（完全正确的相对路径）
+    local cmd = 
+        'cd /d "' .. run_dir .. '" && ' ..
+        'sshpass -p "' .. install_cfg.password .. '" ' ..
+        'scp -r .\\lua\\project.lua ' ..
+        install_cfg.remote_user .. '@' .. install_cfg.remote_host .. ':' .. install_cfg.remote_path
+
     if install_cfg.verbose then
         print("[下装] 执行命令: " .. cmd)
     end
 
-
-      -- =============================================
-    -- 🔥 【新增】执行完 scp 下装后，自动运行 image_ssh.bat
-    -- =============================================
-    local bat_path = x64_dir .. "image_ssh.bat"
+    -- 执行 bat
+    local bat_path = run_dir .. "image_ssh.bat"
     local bat_file = io.open(bat_path, "r")
     if bat_file then
         bat_file:close()
-
         print("[下装] 启动批处理文件: " .. bat_path)
-
-        -- 新开窗口运行，不阻塞当前编辑器
-        local bat_cmd = 'start "" cmd /c "cd /d "' .. x64_dir .. '" && image_ssh.bat"'
+        local bat_cmd = 'start "" cmd /c "cd /d "' .. run_dir .. '" && image_ssh.bat"'
         os.execute(bat_cmd)
-    else
-        print("[下装] 未找到 image_ssh.bat，跳过执行: " .. bat_path)
     end
-
-
     
+    -- 执行下装
     local result = os.execute(cmd)
     
     if result then
@@ -946,6 +942,10 @@ local function start_install()
         return false
     end
 end
+
+
+
+
 
 --[[local function start_install()
     print("[下装] ========== 启动下装 ==========")
@@ -1080,102 +1080,255 @@ end
 
 
 
+-- 保存 HTML IP 到 install_config.lua 的 remote_host
+local function save_install_config_remote_host(new_remote_host)
+    if not new_remote_host or new_remote_host == "" then
+        print("[配置] Remote Host 不能为空")
+        return false
+    end
+
+    -- 让 Lua 自己找到 install_config.lua 的真实路径
+    local config_path = package.searchpath("install_config", package.path)
+    if not config_path then
+        print("[配置] 无法找到 install_config.lua 的路径")
+        return false
+    end
+
+    -- 读取文件
+    local f = io.open(config_path, "r")
+    if not f then
+        print("[配置] 无法打开文件: " .. config_path)
+        return false
+    end
+
+    local content = f:read("*a")
+    f:close()
+
+    -- 直接替换 remote_host（IP 地址不需要转义斜杠）
+    content = content:gsub('remote_host = ".-"', 'remote_host = "' .. new_remote_host .. '"')
+
+    -- 写入文件
+    local fw = io.open(config_path, "w")
+    if not fw then
+        print("[配置] 无法写入文件: " .. config_path)
+        return false
+    end
+
+    fw:write(content)
+    fw:close()
+
+    print("[配置] 成功保存 remote_host: " .. new_remote_host)
+    return true
+end
+
+
+
+
+
+
+-- 保存图片路径到 widgets.config.lua 的 image_path
+local function save_widgets_config_image_path(new_image_path)
+    if not new_image_path or new_image_path == "" then
+        print("[配置] 图片路径不能为空")
+        return false
+    end
+
+    -- 自动查找 widgets.config 文件路径
+    local config_path = package.searchpath("widgets.config", package.path)
+    if not config_path then
+        print("[配置] 无法找到 widgets/config.lua 路径")
+        return false
+    end
+
+    -- 读取文件
+    local f = io.open(config_path, "r")
+    if not f then
+        print("[配置] 无法打开文件: " .. config_path)
+        return false
+    end
+    local content = f:read("*a")
+    f:close()
+
+    -- 统一路径格式（和你原来逻辑完全一样）
+    local cleaned_path = new_image_path:gsub("/", "\\")
+    if not cleaned_path:match("\\$") then
+        cleaned_path = cleaned_path .. "\\"
+    end
+    local escaped_path = cleaned_path:gsub("\\", "\\\\")
+
+    -- 替换 image_path（精准匹配 config 里的写法）
+    content = content:gsub('image_path = ".-"', 'image_path = "' .. escaped_path .. '"')
+
+    -- 写入保存
+    local fw = io.open(config_path, "w")
+    if not fw then
+        print("[配置] 无法写入文件: " .. config_path)
+        return false
+    end
+    fw:write(content)
+    fw:close()
+
+    print("[配置] 成功保存图片路径: " .. new_image_path)
+    return true
+end
+
+
+
+
+
+
+
+
 local function env_config()
     -- 🔥 强制创建在最顶层，不会被任何控件盖住
     local modal = lv.obj_create(lv.scr_act())
-    modal:set_size(500, 220)
+    modal:set_size(500, 300)
     modal:align(lv.ALIGN_CENTER, 0, 0)
     modal:set_style_bg_color(0x3A3A3A, 0)
     modal:set_style_radius(6, 0)
     modal:set_style_border_color(0x777777, 0)
     modal:set_style_border_width(1, 0)
     modal:set_style_pad_all(15, 0)
-    modal:move_foreground() -- 🔥 强制置顶
+    modal:move_foreground()
     modal:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
 
     -- 标题
     local title = lv.label_create(modal)
     title:set_text("环境配置")
     title:set_style_text_color(0xFFFFFF, 0)
-    --title:set_style_text_font(14)
     title:align(lv.ALIGN_TOP_MID, 0, 10)
 
-    -- 文字标签
-    local lab_path = lv.label_create(modal)
-    lab_path:set_text("下装路径：")
-    lab_path:set_style_text_color(0xFFFFFF, 0)
-    lab_path:set_pos(20, 60)
+    -------------------------- 1. HMI 服务地址（核心输入） --------------------------
+    local lab_html_ip = lv.label_create(modal)
+    lab_html_ip:set_text("HMI 地址：")
+    lab_html_ip:set_style_text_color(0xFFFFFF, 0)
+    lab_html_ip:set_pos(30, 67)
 
-    -- 输入框
-    local path_input = lv.textarea_create(modal)
-    path_input:set_size(330, 36)
-    path_input:set_pos(90, 55)
-    path_input:set_style_bg_color(0x252525, 0)
-    path_input:set_style_text_color(0xFFFFFF, 0)
-    path_input:move_foreground()
-    path_input:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    local html_ip_input = lv.textarea_create(modal)
+    html_ip_input:set_size(330, 36)
+    html_ip_input:set_pos(90, 55)
+    html_ip_input:set_style_bg_color(0x252525, 0)
+    html_ip_input:set_style_text_color(0xFFFFFF, 0)
+    html_ip_input:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+    -- 默认填充当前IP
+    if _G.ENV_HTML_IP then
+        html_ip_input:set_text(_G.ENV_HTML_IP)
+    end
 
-    -- 浏览按钮 ...
-    local btn_browse = lv.btn_create(modal)
-    btn_browse:set_size(40, 36)
-    btn_browse:set_pos(430, 55)
-   
-    btn_browse:set_style_bg_color(0x555555, 0)
-   -- btn_browse:move_foreground()
-   local btn_laber = lv.label_create(btn_browse)
-   btn_laber : set_text("...")
-   btn_laber : set_pos(-8,-2)
+    -------------------------- 2. 图片资源路径 --------------------------
+    local lab_img_path = lv.label_create(modal)
+    lab_img_path:set_text("图片资源路径：")
+    lab_img_path:set_style_text_color(0xFFFFFF, 0)
+    lab_img_path:set_pos(-5, 121)
 
-    -- 选择路径
- -- 选择路径
-btn_browse:add_event_cb(function(e)
-    PathDialog.new(lv.scr_act(), {
-        initial_dir = [[C:\]],
-        callback = function(folder_path)
-            -- 直接填入文件夹路径：C:\xxx\xxx
-            path_input:set_text(folder_path)
-        end
-    })
-end, lv.EVENT_CLICKED)
+    local img_path_input = lv.textarea_create(modal)
+    img_path_input:set_size(330, 36)
+    img_path_input:set_pos(90, 110)
+    img_path_input:set_style_bg_color(0x252525, 0)
+    img_path_input:set_style_text_color(0xFFFFFF, 0)
+    img_path_input:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
 
-    -- 确定按钮
+    -- 图片路径浏览按钮
+    local btn_browse_img = lv.btn_create(modal)
+    btn_browse_img:set_size(40, 36)
+    btn_browse_img:set_pos(430, 110)
+    btn_browse_img:set_style_bg_color(0x555555, 0)
+    
+    local lab_browse_img = lv.label_create(btn_browse_img)
+    lab_browse_img:set_text("...")
+    lab_browse_img:align(lv.ALIGN_CENTER, 0, 0)
+
+    -------------------------- 按钮事件 --------------------------
+    btn_browse_img:add_event_cb(function(e)
+        PathDialog.new(lv.scr_act(), {
+            initial_dir = [[C:\]],
+            callback = function(folder_path)
+                img_path_input:set_text(folder_path)
+            end
+        })
+    end, lv.EVENT_CLICKED)
+
+    -------------------------- 确定 / 取消 --------------------------
     local btn_ok = lv.btn_create(modal)
     btn_ok:set_size(100, 36)
-    btn_ok:set_pos(130, 130)
+    btn_ok:set_pos(130, 220)
     btn_ok:set_style_bg_color(0x0078D4, 0)
-
-
+    
     local btn_right = lv.label_create(btn_ok)
-    btn_right : set_text("确定")
-    btn_right : align(lv.ALIGN_CENTER, 0, 0)
+    btn_right:set_text("确定")
+    btn_right:align(lv.ALIGN_CENTER, 0, 0)
 
-    -- 取消按钮
     local btn_cancel = lv.btn_create(modal)
     btn_cancel:set_size(100, 36)
-    btn_cancel:set_pos(270, 130)
+    btn_cancel:set_pos(270, 220)
     btn_cancel:set_style_bg_color(0x666666, 0)
-
+    
     local label_cancel = lv.label_create(btn_cancel)
-    label_cancel : set_text("取消")
-    label_cancel : align(lv.ALIGN_CENTER, 0, 0)
+    label_cancel:set_text("取消")
+    label_cancel:align(lv.ALIGN_CENTER, 0, 0)
 
+    -- ====================== ✅ 【确定按钮：核心逻辑】 ======================
+    btn_ok:add_event_cb(function(e)
+        -- 1. 获取输入的 HMI 地址
+        local HMI_IP = html_ip_input:get_text()
+        local img_path = img_path_input:get_text()
 
-    -- 确定
- btn_ok:add_event_cb(function(e)
-    local p = path_input:get_text()
-    if p and p ~= "" then
-        _G.ENV_INSTALL_PATH = p
-        
-        -- ==========================================
-        -- 🔥 保存路径到 install_config.lua (自动格式化路径)
-        -- ==========================================
-        local save_path = p:gsub("/", "\\")  -- 统一转成 Windows 路径
-        save_install_config_local_dir(save_path)
-        
-        print("[环境配置] 已保存路径到配置文件: " .. save_path)
-    end
-    modal:delete()
-end, lv.EVENT_CLICKED)
+        if HMI_IP == "" then
+            print("❌ 请输入 HMI 地址")
+            return
+        end
+
+        -- 2. 保存全局变量
+        _G.ENV_HTML_IP = HMI_IP
+        save_install_config_remote_host(HMI_IP)
+
+        if img_path ~= "" then
+            _G.ENV_IMAGE_PATH = img_path
+            save_widgets_config_image_path(img_path)
+        end
+
+        --------------------------------------------------------------------
+        -- 🔥 3. 自动拉取标签树 + 生成配置文件（你要的核心功能）
+        --------------------------------------------------------------------
+        print("🔄 正在拉取标签树：" .. HMI_IP)
+        lvgl.start_network_service()
+
+        local token = "scadaToken"
+        local ok, json_resp = lvgl.get_tags_tree(HMI_IP, token)
+        if not ok then
+            print("❌ 获取标签树失败")
+            modal:delete()
+            return
+        end
+
+        -- 解析所有数据点
+        local tag_list = lvgl.parse_tags_tree(json_resp)
+        local data_points = {}
+        for i, tag in ipairs(tag_list) do
+            table.insert(data_points, tag.id)
+        end
+
+        -- 拼接 WS 地址
+        local ws_url = "ws://" .. HMI_IP .. ":8085/ws"
+        local result = {
+            data_points = data_points,
+            websocket_urls = { ws_url }  -- 只用输入的IP
+        }
+
+        -- 保存到配置文件
+        local json = require("json")
+        local f = io.open("data_editor_config.json", "w")
+        if f then
+            f:write(json.encode(result, {indent = true}))
+            f:close()
+            print("✅ 配置已保存：data_editor_config.json")
+            print("📌 数据点数量：", #data_points)
+            print("📌 WebSocket 地址：", ws_url)
+        end
+
+        modal:delete()
+        print("✅ 环境配置完成！")
+    end, lv.EVENT_CLICKED)
 
     -- 取消
     btn_cancel:add_event_cb(function(e)
@@ -1184,7 +1337,6 @@ end, lv.EVENT_CLICKED)
 
     print("[环境配置] 窗口已打开")
 end
-
 
 
 

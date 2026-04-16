@@ -1480,6 +1480,186 @@ static int lua_get_real_data(lua_State* L) {
 }
 
 
+
+
+// ===== 获取标签树（所有数据点）HTTP接口 =====
+// ===== 获取标签树（所有数据点）接口 =====
+// ===== 获取标签树（所有数据点）接口 =====
+static int lua_get_tags_tree(lua_State* L) {
+    const char* server_url = luaL_checkstring(L, 1);  // IP
+    const char* token = luaL_checkstring(L, 2);       // scadaToken
+
+    printf("\n[GET_TAGS_TREE] 获取标签树...\n");
+    printf("  服务器: %s\n", server_url);
+    printf("  Token: %s\n", token);
+
+    memset(&sync_ctx, 0, sizeof(SyncQueryData));
+    init_sync_network_manager();
+
+    char url[512];
+    snprintf(url, sizeof(url), "http://%s/scada/getTagsTree", server_url);
+
+    char host[256];
+    const char* host_start = server_url;
+    if (strstr(server_url, "http://") == server_url) {
+        host_start += 7;
+    }
+    const char* path_start = strchr(host_start, '/');
+    if (path_start) {
+        size_t host_len = path_start - host_start;
+        snprintf(host, sizeof(host), "%.*s", (int)host_len, host_start);
+    }
+    else {
+        snprintf(host, sizeof(host), "%s", host_start);
+    }
+
+    struct mg_connection* conn = mg_http_connect(&sync_mgr, url, sync_query_handler, NULL);
+    if (!conn) {
+        lua_pushboolean(L, false);
+        lua_pushstring(L, "连接创建失败");
+        return 2;
+    }
+    sync_ctx.conn = conn;
+
+    // ✅【关键修复】无body的POST必须严格这样写，不能多一行\r\n
+    mg_printf(conn,
+        "POST /scada/getTagsTree HTTP/1.1\r\n"
+        "Host: %s\r\n"
+        "Content-Type: application/json\r\n"
+        "token: %s\r\n"
+        "Content-Length: 0\r\n"
+        "Connection: close\r\n\r\n",
+        host,
+        token
+    );
+
+    lv_timer_t* timeout_timer = lv_timer_create(sync_query_timeout_cb, 5000, &sync_ctx);
+    int timeout_ms = 5000;
+    int poll_interval = 10;
+    int max_polls = timeout_ms / poll_interval;
+    int poll_count = 0;
+
+    while (!sync_ctx.completed && poll_count < max_polls) {
+        mg_mgr_poll(&sync_mgr, 0);
+        lv_tick_inc(poll_interval);
+        lv_timer_handler();
+        poll_count++;
+        SLEEP_MS(poll_interval);
+    }
+
+    lv_timer_del(timeout_timer);
+
+    bool business_success = false;
+    const char* result_msg = sync_ctx.response_json;
+
+    if (sync_ctx.completed) {
+        if (sync_ctx.status_code == 200) {
+            business_success = true;
+        }
+        else {
+            business_success = false;
+            if (sync_ctx.status_code == 401) result_msg = "Token 无效(401)";
+            else if (sync_ctx.status_code == 404) result_msg = "接口不存在 /scada/getTagsTree";
+            else result_msg = sync_ctx.response_json;
+        }
+    }
+    else {
+        business_success = false;
+        result_msg = "请求超时(5000ms)";
+    }
+
+    lua_pushboolean(L, business_success);
+    lua_pushstring(L, result_msg);
+
+    if (sync_ctx.conn) {
+        mg_close_conn(sync_ctx.conn);
+        sync_ctx.conn = NULL;
+    }
+    for (int i = 0; i < 10; i++) {
+        mg_mgr_poll(&sync_mgr, 1);
+        SLEEP_MS(1);
+    }
+
+    return 2;
+}
+
+
+
+
+
+
+
+
+
+// 递归解析标签树，将数据点压入 Lua table
+static void parse_tags_recursive(lua_State* L, cJSON* node) {
+    if (!node) return;
+
+    // 如果当前节点有 id → 是数据点，加入 table
+    cJSON* id = cJSON_GetObjectItemCaseSensitive(node, "id");
+    cJSON* name = cJSON_GetObjectItemCaseSensitive(node, "name");
+
+    if (cJSON_IsString(id) && id->valuestring) {
+        // 创建一个子表 { id = "...", name = "..." }
+        lua_createtable(L, 0, 2);
+
+        lua_pushstring(L, id->valuestring);
+        lua_setfield(L, -2, "id");
+
+        lua_pushstring(L, (name && cJSON_IsString(name)) ? name->valuestring : "");
+        lua_setfield(L, -2, "name");
+
+        // 插入到结果数组
+        lua_rawseti(L, -2, lua_rawlen(L, -2) + 1);
+    }
+
+    // 递归解析 children
+    cJSON* children = cJSON_GetObjectItemCaseSensitive(node, "children");
+    if (cJSON_IsArray(children)) {
+        int sz = cJSON_GetArraySize(children);
+        for (int i = 0; i < sz; i++) {
+            cJSON* child = cJSON_GetArrayItem(children, i);
+            parse_tags_recursive(L, child);
+        }
+    }
+}
+
+// ===== Lua 绑定：解析标签树 JSON → 直接返回 Lua 表
+static int lua_parse_tags_tree(lua_State* L) {
+    const char* json_str = luaL_checkstring(L, 1);
+    if (!json_str || strlen(json_str) == 0) {
+        lua_newtable(L);
+        return 1;
+    }
+
+    cJSON* root = cJSON_Parse(json_str);
+    if (!root) {
+        lua_newtable(L);
+        return 1;
+    }
+
+    // 创建返回数组
+    lua_newtable(L);
+
+    // ✅ 修复：先取 code == 200，再取 data
+    cJSON* code = cJSON_GetObjectItemCaseSensitive(root, "code");
+    cJSON* data = cJSON_GetObjectItemCaseSensitive(root, "data");
+
+    if (code && cJSON_IsString(code) && strcmp(code->valuestring, "200") == 0 && cJSON_IsArray(data)) {
+        int sz = cJSON_GetArraySize(data);
+        for (int i = 0; i < sz; i++) {
+            cJSON* child = cJSON_GetArrayItem(data, i);
+            parse_tags_recursive(L, child);
+        }
+    }
+
+    cJSON_Delete(root);
+    return 1; // 返回一个 Lua table
+}
+
+
+
+
 // ===== WebSocket 方法注册 =====
 static const luaL_Reg lv_mongoose_methods[] = {
     {"connect", lua_ws_connect},
@@ -1494,6 +1674,8 @@ static const luaL_Reg lv_mongoose_methods[] = {
    // {"read_multiple", lua_ws_read_values}, // 别名
     {"query_sync", lua_query_history_sync},
     {"get_real_data", lua_get_real_data},  // 新增实时数据接口
+    {"get_tags_tree", lua_get_tags_tree},  //  <-- 加这一行
+    {"parse_tags_tree", lua_parse_tags_tree},  // <-- 加这行
     {"start_network_service", lua_start_network_service},
     {NULL, NULL}
 };

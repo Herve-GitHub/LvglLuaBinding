@@ -17,7 +17,7 @@ MenuBar.__widget_meta = {
 -- ==============================================
 -- 🔥 修复：从 APP_DIR 自动获取盘符，不使用 arg，100% 不报错
 -- ==============================================
-local APP_DIR = _G.APP_DIR or ""
+--[[local APP_DIR = _G.APP_DIR or ""
 
 local function get_current_drive_letter()
     if APP_DIR and APP_DIR ~= "" then
@@ -42,7 +42,33 @@ local function build_path(relative_path)
         return FS_PREFIX .. path
     end
     return FS_PREFIX .. relative_path
+end]]--
+
+-- ==============================================
+-- 🔥 修复：自动获取盘符，100% 不报错，支持 C/D/E 盘
+-- ==============================================
+local APP_DIR = _G.APP_DIR or ""
+
+local function get_current_drive_letter()
+    if APP_DIR and APP_DIR ~= "" then
+        local drive = APP_DIR:match("^([A-Za-z]:)")
+        if drive then return drive end
+    end
+    return "C:"
 end
+
+local FS_PREFIX = get_current_drive_letter()
+
+-- 辅助函数：构建完整路径（用于 LVGL 图片加载）
+local function build_path(relative_path)
+    if APP_DIR and APP_DIR ~= "" then
+        local path = APP_DIR .. relative_path:gsub("/", "\\")
+        return path  -- 🔥 这里绝对不能加 FS_PREFIX
+    end
+    return FS_PREFIX .. relative_path
+end
+
+
 
 -- 颜色定义
 MenuBar.COLORS = {
@@ -122,21 +148,21 @@ MenuBar.RIBBON_TABS = {
                     { id = "align_bottom", label = "底部", icon = "align_bottom.png", size = "large" },
                 }
             },
-            {
+           --[[ {
                 id = "distribute",
                 label = "分布",
                 buttons = {
                     { id = "distribute_h", label = "水平分布", icon = "distribute_h.png", size = "large" },
                     { id = "distribute_v", label = "垂直分布", icon = "distribute_v.png", size = "large" },
                 }
-            },
+            },]]--
         }
     },
     {
         id = "view",
         label = "视图",
         groups = {
-            {
+          --[[  {
                 id = "zoom",
                 label = "缩放",
                 buttons = {
@@ -144,7 +170,7 @@ MenuBar.RIBBON_TABS = {
                     { id = "zoom_out", label = "缩小", icon = "zoom_out.png", size = "large", shortcut = "Ctrl+-" },
                     { id = "zoom_reset", label = "重置", icon = "zoom_reset.png", size = "large", shortcut = "Ctrl+0" },
                 }
-            },
+            },]]--
             {
                 id = "display",
                 label = "显示",
@@ -164,7 +190,7 @@ MenuBar.RIBBON_TABS = {
                 label = "仿真操作",
                 buttons = {
                     { id = "startSim", label = "启动", icon = "start_sim.png", size = "large" },
-                    { id = "stopSim", label = "停止", icon = "stop_sim.png", size = "large" },
+                  --  { id = "stopSim", label = "停止", icon = "stop_sim.png", size = "large" },
                 }
             },
         },
@@ -185,7 +211,7 @@ MenuBar.RIBBON_TABS = {
                 label = "下装操作",
                 buttons = {
                     { id = "startInstall", label = "启动下装", icon = "install.png", size = "large" },
-                    { id = "stopInstall", label = "停止下装", icon = "stop_install.png", size = "large" },
+                   -- { id = "stopInstall", label = "停止下装", icon = "stop_install.png", size = "large" },
                 }
             },
         },

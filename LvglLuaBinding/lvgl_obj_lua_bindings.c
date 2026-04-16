@@ -5,6 +5,8 @@
 
 #include "lvgl_lua_bindings_internal.h"
 
+
+
 // ========== Object Methods (for obj:method() syntax) ==========
 // keyboard:set_textarea(textarea)
 static int l_keyboard_set_textarea(lua_State* L) {

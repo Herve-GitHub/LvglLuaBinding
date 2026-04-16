@@ -24,7 +24,7 @@ Label.__widget_meta = {
     { name = "text_color", type = "color", default = "#FFFFFF", label = "文本颜色" },
     { name = "bg_color", type = "color", default = "#00000000", label = "背景色" },
     { name = "bg_opa", type = "number", default = 0, label = "背景透明度", min = 0, max = 255 },
-    { name = "font_size", type = "number", default = 16, label = "字体大小" },
+    --{ name = "font_size", type = "number", default = 16, label = "字体大小" },
     { name = "alignment", type = "enum", default = "left", label = "对齐方式",
       options = {
         { value = "left", label = "左对齐" },
@@ -152,6 +152,7 @@ function Label.new(parent, state)
   self.container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
   self.container:clear_layout()
   
+
   -- 创建标签
   self.label = lv.label_create(self.container)
   self.label:set_text(self.props.text)

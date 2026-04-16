@@ -17,7 +17,7 @@ Image.__widget_meta = {
     { name = "y", type = "number", default = 0, label = "Y" },
     { name = "width", type = "number", default = 100, label = "宽度" },
     { name = "height", type = "number", default = 100, label = "高度" },
-    { name = "src", type = "boolean", default = "", label = "图像名称" }, -- 🔥 改回string
+    { name = "src", type = "boolean", default = "", label = "图像选择" }, -- 🔥 改回string
     { name = "mode", type = "enum", default = "normal", options = {"normal","cover","contain","stretch"}, label = "显示模式" },
     { name = "rotation", type = "number", default = 0, label = "旋转角度" },
     { name = "scale", type = "number", default = 256, label = "缩放" },

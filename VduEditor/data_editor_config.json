@@ -1,1 +1,29 @@
-{"data_points": ["Device1.tag0001","Device1.tag0002","Device2.tag0001","user.tag0001","Device2.humidity","System.status","THmeter.AirRoomTemp1","THmeter.AirRoomTemp2","THmeter.AirRoomTemp3","暖通空调.AirRoomTemp1","暖通空调.AirRoomTemp2","暖通空调.AirRoomTemp3","暖通空调.CoilHumidity","暖通空调.CoilHumidity","暖通空调.DRoomTemp","暖通空调.ReAirVelocity","暖通空调.ShopHumidity","THmeter.Energy"],"websocket_urls": ["ws://192.168.0.100:8085/ws","ws://192.168.0.60:8085/ws","ws://192.168.0.99:8085/ws","ws://localhost:8085/ws","ws://192.168.0.16:8085/ws/","ws://192.168.0.80:8085/ws/","ws://192.168.1.230:8085/ws/"]}
+{
+  "data_points": [
+    "Device1.tag0001",
+    "Device1.tag0002",
+    "Device1.tag0003",
+    "Device1.tag0004",
+    "system.ALL_NET",
+    "system.CPU_USAGE",
+    "system.CSQ",
+    "system.Cops",
+    "system.Device1_status",
+    "system.ICCID",
+    "system.IMEI",
+    "system.IMSI",
+    "system.IOPoints",
+    "system.LATITUDE",
+    "system.LONGITUDE",
+    "system.Lac_ci",
+    "system.MEMORY",
+    "system.START_TIME",
+    "system.STORAGE",
+    "system.TIME",
+    "system.TIME_MINUTE",
+    "system.TIME_SECOND"
+  ],
+  "websocket_urls": [
+    "ws://192.168.1.230:8085/ws"
+  ]
+}

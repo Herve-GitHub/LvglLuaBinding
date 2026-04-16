@@ -26,7 +26,7 @@ Button.__widget_meta = {
     -- 实例名称（用于编译时变量命名）
     { name = "instance_name", type = "string", default = "", label = "实例名称",
       description = "用于编译时的变量名，留空则自动生成" },
-    { name = "label", type = "string", default = "OK", label = "文本" },
+    { name = "label", type = "string", default = "Button", label = "文本" },
     { name = "x", type = "number", default = 0, label = "X" },
     { name = "y", type = "number", default = 0, label = "Y" },
     { name = "width", type = "number", default = 100, label = "宽度" },

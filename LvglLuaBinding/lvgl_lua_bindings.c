@@ -33,6 +33,13 @@ lv_font_t* get_current_ttf_font(void)
     return g_current_ttf_font;
 }
 
+
+
+
+
+
+
+
 // ========== Helper functions ==========
 
 // Helper: push lv_obj_t* as userdata with metatable
@@ -45,6 +52,14 @@ void push_lv_obj(lua_State* L, lv_obj_t* obj) {
     *ud = obj;
     luaL_setmetatable(L, "lv_obj");
 }
+
+
+
+
+
+
+
+
 
 // Helper: get lv_obj_t* from userdata
 lv_obj_t* check_lv_obj(lua_State* L, int idx) {
@@ -588,6 +603,7 @@ extern int l_lv_textarea_get_text(lua_State* L);
 
 // ========== Module Functions Table ==========
 static const luaL_Reg lvgl_funcs[] = {
+   
     {"create_time_label", l_create_time_label},
     // ✅ 新增：温度计创建接口
     {"create_wendu", l_create_wendu},
