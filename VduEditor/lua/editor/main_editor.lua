@@ -1309,7 +1309,7 @@ local function env_config()
         end
 
         -- 拼接 WS 地址
-        local ws_url = "ws://" .. HMI_IP .. ":8085/ws"
+        local ws_url = "ws://" .. HMI_IP .. ":8085/ws/"
         local result = {
             data_points = data_points,
             websocket_urls = { ws_url }  -- 只用输入的IP

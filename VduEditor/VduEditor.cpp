@@ -10,9 +10,14 @@ extern "C" {
 static const int WINDOW_WIDTH = 1124;
 static const int WINDOW_HEIGHT = 730;//960
 
+
+// 保存原始的窗口过程
+static WNDPROC g_original_wndproc = nullptr;
+
+
 // 默认脚本路径（相对于可执行文件目录）
-//static const char* DEFAULT_SCRIPT_PATH = "websocket\\httpDate.lua";  // 修改为 websocket 测试脚本
-static const char* DEFAULT_SCRIPT_PATH = "lua\\editor\\main_editor.lua";  // 修改为 websocket 测试脚本
+//static const char* DEFAULT_SCRIPT_PATH = "websocket\\chart.lua";  // 修改为 websocket 测试脚本
+static const char* DEFAULT_SCRIPT_PATH = "lua\\editor\\Admin.lua";  // 修改为 websocket 测试脚本
 // static const char* DEFAULT_SCRIPT_PATH = "projects\\project.lua";  // 修改为 websocket 测试脚本
 // 默认 Lua 搜索路径（相对于可执行文件目录）
 static const char* DEFAULT_LUA_PATH_TEMPLATE =
@@ -296,6 +301,88 @@ static void cleanup_lua()
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * @brief 自定义窗口过程，处理关闭事件
+ */
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch (uMsg)
+    {
+    case WM_CLOSE:
+    {
+        // 弹出提示框
+        MessageBoxA(
+            hwnd,
+            "工程已经保存到 lua\\project.lua",
+            "提示",
+            MB_OK | MB_ICONINFORMATION
+        );
+
+        // 销毁窗口并退出程序
+        DestroyWindow(hwnd);
+        return 0;
+    }
+
+    case WM_DESTROY:
+    {
+        PostQuitMessage(0);
+        return 0;
+    }
+    }
+
+    // 将其他消息传递给原始的窗口过程（让 LVGL 处理）
+    if (g_original_wndproc)
+    {
+        return CallWindowProc(g_original_wndproc, hwnd, uMsg, wParam, lParam);
+    }
+
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+/**
+ * @brief 设置自定义窗口过程
+ */
+static void set_window_proc(HWND hwnd)
+{
+    // 保存原始窗口过程（LVGL 的消息处理函数）
+    g_original_wndproc = (WNDPROC)GetWindowLongPtr(hwnd, GWLP_WNDPROC);
+
+    // 替换为自定义窗口过程
+    SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)WindowProc);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * @brief 主函数
  */
@@ -353,6 +440,16 @@ int main(int argc, char* argv[])
         std::cerr << "Failed to get window handle" << std::endl;
         return -1;
     }
+
+
+
+
+
+    // 【添加这行】设置自定义窗口过程
+    set_window_proc(window_handle);
+
+
+
     // 将窗口居中显示
     center_window(window_handle);
 

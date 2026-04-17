@@ -337,7 +337,7 @@ function PropertyDataEditor.display(property_area)
     -- 修复：接收两个返回值（input和btn）
     local url_input, url_btn = create_input_with_button(
         content, 10, y, props.width - 20, 35,
-        "ws://192.168.1.100:8080/ws", websocket_url, "url"
+        "ws://192.168.1.100:8080/ws/", websocket_url, "url"
     )
     y = y + 45
     

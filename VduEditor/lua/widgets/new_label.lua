@@ -157,9 +157,14 @@ function Label.new(parent, state)
   self.label = lv.label_create(self.container)
   self.label:set_text(self.props.text)
   self.label:set_style_text_color(parse_color(self.props.text_color), 0)
+
+
+
+
+  --self.label:ttf_set_size(18)
   
   -- 设置标签尺寸与容器一致
-  self.label:set_size(self.props.width, self.props.height)
+  --self.label:set_size(self.props.width, self.props.height)
   
   -- 设置长文本模式
   if self.label.set_long_mode then

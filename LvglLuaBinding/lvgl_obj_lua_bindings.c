@@ -6,6 +6,47 @@
 #include "lvgl_lua_bindings_internal.h"
 
 
+ // Global TTF font storage (for applying to objects)
+//static lv_font_t* g_current_ttf_font = NULL;
+
+
+
+// ================== 【局部版】TTF 字体大小设置 ==================
+#if LV_USE_TINY_TTF
+
+static int l_obj_ttf_set_size(lua_State* L) {
+    // 1. 冒号调用：第一个参数是对象自己（self）
+    lv_obj_t* obj = check_lv_obj(L, 1);
+    if (!obj) {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    // 2. 第二个参数才是新大小
+    int32_t new_size = luaL_checkinteger(L, 2);
+
+    // 3. 获取这个对象【自己正在使用的字体】（局部字体！）
+    const lv_font_t* current_font = lv_obj_get_style_text_font(obj, 0);
+    if (!current_font) {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    // 4. 只修改【这个字体】的大小（局部生效）
+    lv_tiny_ttf_set_size((lv_font_t*)current_font, new_size);
+
+    // 5. 刷新对象显示
+    lv_obj_invalidate(obj);
+
+    lua_pushboolean(L, true);
+    return 1;
+}
+
+#endif // LV_USE_TINY_TTF
+
+
+
+
 
 // ========== Object Methods (for obj:method() syntax) ==========
 // keyboard:set_textarea(textarea)
@@ -728,6 +769,7 @@ static int l_obj_has_state(lua_State* L) {
 
 // ========== Object Methods Table ==========
 static const luaL_Reg lv_obj_methods[] = {
+    {"ttf_set_size", l_obj_ttf_set_size},  // 这一行保留
     {"keyboard_set_textarea", l_keyboard_set_textarea},
     {"set_pos", l_obj_set_pos},
     {"set_size", l_obj_set_size},

@@ -137,6 +137,8 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>LvglLuaBinding.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)lua" "$(TargetDir)lua\" /S /Y
@@ -156,6 +158,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\actions\DataOperation.lua" />
     <None Include="lua\actions\SitwchAction.lua" />
     <None Include="lua\actions\ValueChange.lua" />
+    <None Include="lua\editor\Admin.lua" />
     <None Include="lua\editor\clipboard.lua" />
     <None Include="lua\demo_button.lua" />
     <None Include="lua\demo_trend_chart.lua" />

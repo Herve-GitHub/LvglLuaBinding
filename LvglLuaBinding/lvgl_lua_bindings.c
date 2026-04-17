@@ -115,6 +115,32 @@ lv_timer_t* check_lv_timer(lua_State* L, int idx) {
 
 
 
+
+
+
+static int lua_load_file(lua_State* L) {
+    const char* filename = luaL_checkstring(L, 1);
+
+    printf("[SCRIPT] Loading: %s\n", filename);
+
+    // ======================
+    // 注释掉这两行！！！
+    // ======================
+    // cleanup_before_switch();
+    // clear_screen();
+
+    int result = luaL_dofile(L, filename);
+    if (result != LUA_OK) {
+        printf("[ERROR] %s\n", lua_tostring(L, -1));
+        lua_pop(L, 1);
+    }
+    lua_pushboolean(L, result == LUA_OK);
+    return 1;
+}
+
+
+
+
 // ===================== 时间标签（无定时器，纯静态，必显示） =====================
 // ===================== 时间标签（无定时器，纯静态，必显示） =====================
 // ===================== 【终极绝杀版】时间标签 —— 和温度计完全一样 =====================
@@ -603,7 +629,7 @@ extern int l_lv_textarea_get_text(lua_State* L);
 
 // ========== Module Functions Table ==========
 static const luaL_Reg lvgl_funcs[] = {
-   
+    {"loadfile",lua_load_file},
     {"create_time_label", l_create_time_label},
     // ✅ 新增：温度计创建接口
     {"create_wendu", l_create_wendu},

@@ -95,7 +95,7 @@ DataManager.set_external_callback({
 DataManager.init()
 
 print("开始连接 WebSocket")
-lvgl.connect("ws://192.168.0.80:8085/ws/", 3000)
+lvgl.connect("ws://192.168.1.230:8085/ws/", 3000)
 print("连接函数调用完成")
 
 -- 可选：启动轮询（如果需要自动定时读取）

@@ -140,6 +140,7 @@
     <None Include="lua\widgets\new_contain.lua" />
     <None Include="lua\editor\PathDialog.lua" />
     <None Include="websocket\httpDate.lua" />
+    <None Include="lua\editor\Admin.lua" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\simhei.ttf">

@@ -24,6 +24,6 @@
     "system.TIME_SECOND"
   ],
   "websocket_urls": [
-    "ws://192.168.1.230:8085/ws"
+    "ws://192.168.1.230:8085/ws/"
   ]
 }

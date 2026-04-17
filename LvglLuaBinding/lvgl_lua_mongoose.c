@@ -353,7 +353,7 @@ static int lua_query_history_sync(lua_State* L) {
 }
 
 // ===== WebSocket事件处理器 =====
-static void ws_event_handler(struct mg_connection* c, int ev, void* ev_data, void* fn_data) {
+/*static void ws_event_handler(struct mg_connection* c, int ev, void* ev_data, void* fn_data) {
     if (ev == MG_EV_OPEN) {
         MUTEX_LOCK(ws_mutex);
         ws_state.connecting = 1;
@@ -432,6 +432,129 @@ static void ws_event_handler(struct mg_connection* c, int ev, void* ev_data, voi
         ws_conn = NULL;
         ws_state.connecting = 0;
         MUTEX_UNLOCK(ws_mutex);
+        try_reconnect();
+    }
+}*/
+
+// ===== WebSocket事件处理器（客户端完整可用版）=====
+static void ws_event_handler(struct mg_connection* c, int ev, void* ev_data, void* fn_data) {
+    if (ev == MG_EV_OPEN) {
+        MUTEX_LOCK(ws_mutex);
+        ws_state.connecting = 1;
+        printf("[WS_EVENT] Connection opened, waiting for WebSocket handshake...\n");
+        MUTEX_UNLOCK(ws_mutex);
+    }
+    else if (ev == MG_EV_WS_OPEN) {
+        MUTEX_LOCK(ws_mutex);
+        printf("[WS_EVENT] WebSocket 连接成功！\n");
+        is_connected = 1;
+        ws_conn = c;
+        ws_state.connecting = 0;
+        ws_state.last_error = 0;
+        reconnect_attempts = 0;
+        MUTEX_UNLOCK(ws_mutex);
+
+        // Lua 连接回调
+        if (ws_callbacks.lua_connect_callback_ref && ws_callbacks.L) {
+            lua_State* L = ws_callbacks.L;
+            lua_rawgeti(L, LUA_REGISTRYINDEX, ws_callbacks.lua_connect_callback_ref);
+            lua_pushboolean(L, true);
+            lua_pushstring(L, "connected");
+            lua_pcall(L, 2, 0, 0);
+        }
+    }
+    else if (ev == MG_EV_WS_MSG) {
+        struct mg_ws_message* wm = (struct mg_ws_message*)ev_data;
+        printf("[WS_EVENT] Received message, length: %d\n", (int)wm->data.len);
+
+        // 直接解析 JSON
+        const char* json_data = (const char*)wm->data.buf;
+        cJSON* root = cJSON_Parse(json_data);
+
+        if (root) {
+            cJSON* code = cJSON_GetObjectItemCaseSensitive(root, "code");
+            cJSON* data = cJSON_GetObjectItemCaseSensitive(root, "data");
+
+            if (cJSON_IsNumber(code) && code->valueint == 200 && cJSON_IsArray(data)) {
+                int count = cJSON_GetArraySize(data);
+                for (int i = 0; i < count; i++) {
+                    cJSON* item = cJSON_GetArrayItem(data, i);
+                    if (!item) continue;
+
+                    cJSON* id = cJSON_GetObjectItemCaseSensitive(item, "id");
+                    cJSON* val = cJSON_GetObjectItemCaseSensitive(item, "val");
+                    cJSON* status = cJSON_GetObjectItemCaseSensitive(item, "status");
+
+                    if (cJSON_IsString(id) && cJSON_IsString(val)) {
+                        if (ws_callbacks.lua_message_callback_ref && ws_callbacks.L) {
+                            lua_State* L = ws_callbacks.L;
+                            lua_rawgeti(L, LUA_REGISTRYINDEX, ws_callbacks.lua_message_callback_ref);
+                            lua_pushstring(L, id->valuestring);
+                            lua_pushstring(L, val->valuestring);
+                            lua_pushstring(L, status && cJSON_IsString(status) ? status->valuestring : "Good");
+                            lua_pcall(L, 3, 0, 0);
+                        }
+                    }
+                }
+            }
+            cJSON_Delete(root);
+        }
+        else {
+            // JSON解析失败，传递原始消息
+            if (ws_callbacks.lua_message_callback_ref && ws_callbacks.L) {
+                lua_State* L = ws_callbacks.L;
+                lua_rawgeti(L, LUA_REGISTRYINDEX, ws_callbacks.lua_message_callback_ref);
+                lua_pushlstring(L, (const char*)wm->data.buf, wm->data.len);
+                lua_pushstring(L, "");
+                lua_pushstring(L, "");
+                lua_pcall(L, 3, 0, 0);
+            }
+        }
+    }
+    else if (ev == MG_EV_ERROR) {
+        const char* error_msg = (const char*)ev_data;
+        printf("[WS_EVENT] Error: %s\n", error_msg ? error_msg : "unknown");
+
+        MUTEX_LOCK(ws_mutex);
+        is_connected = 0;
+        ws_conn = NULL;
+        ws_state.connecting = 0;
+        ws_state.last_error = -1;
+        if (error_msg) {
+            snprintf(ws_state.error_msg, sizeof(ws_state.error_msg), "%s", error_msg);
+        }
+        MUTEX_UNLOCK(ws_mutex);
+
+        // 调用Lua错误回调
+        if (ws_callbacks.lua_error_callback_ref && ws_callbacks.L) {
+            lua_State* L = ws_callbacks.L;
+            lua_rawgeti(L, LUA_REGISTRYINDEX, ws_callbacks.lua_error_callback_ref);
+            lua_pushstring(L, error_msg ? error_msg : "unknown error");
+            lua_pcall(L, 1, 0, 0);
+        }
+
+        // 触发重连
+        try_reconnect();
+    }
+    else if (ev == MG_EV_CLOSE) {
+        printf("[WS_EVENT] Connection closed\n");
+
+        MUTEX_LOCK(ws_mutex);
+        is_connected = 0;
+        ws_conn = NULL;
+        ws_state.connecting = 0;
+        MUTEX_UNLOCK(ws_mutex);
+
+        // 调用Lua断开连接回调
+        if (ws_callbacks.lua_connect_callback_ref && ws_callbacks.L) {
+            lua_State* L = ws_callbacks.L;
+            lua_rawgeti(L, LUA_REGISTRYINDEX, ws_callbacks.lua_connect_callback_ref);
+            lua_pushboolean(L, false);
+            lua_pushstring(L, "disconnected");
+            lua_pcall(L, 2, 0, 0);
+        }
+
+        // 触发重连
         try_reconnect();
     }
 }

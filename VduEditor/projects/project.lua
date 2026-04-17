@@ -1,19 +1,19 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-04-16 10:45:19
+-- 生成时间: 2026-04-17 15:58:53
 -- 工程版本: 1.0
 -- ==============================================
 
 -- 启动网络服务
 lvgl.start_network_service(3000)
-lvgl.connect("", 3000)
+lvgl.connect("ws://192.168.1.230:8085/ws/", 3000)
 
 -- 引用 LVGL
 local lv = require("lvgl")
 
 -- 引用控件模块
-local widgets_new_label = require("widgets.new_label")
+local widgets_new_button = require("widgets.new_button")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -45,37 +45,41 @@ local function create_page_1(parent)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
 
-    -- 控件 1: label
-    local widget_1 = widgets_new_label.new(container, {
-        design_mode = false,
-        websocket_url = "",
-        http_url = "",
-        x = 474,
-        bind_point = "",
-        visible = true,
-        bg_opa = 0,
-        long_mode = "wrap",
-        y = 121,
-        custom_address = "",
-        bg_color = "#00000000",
-        alignment = "left",
-        false_color = "#ffffff",
-        font_size = 16,
-        http_data_type = "实时数据",
-        text = "演员",
-        false_bg_color = "#ffffff",
-        instance_name = "",
-        true_bg_color = "#ffffff",
-        height = 30,
-        http_token = "",
+    -- 控件 1: custom_button
+    local widget_1 = widgets_new_button.new(container, {
+        width = 100,
         on_clicked_handler = "",
         compare_value = "0",
-        text_color = "#FFFFFF",
+        label = "Button",
         true_color = "#ffffff",
+        true_bg_color = "#ffffff",
+        y = 119,
+        x = 438,
+        target_page_name = "",
         compare_operator = "大于",
-        width = 100,
+        font_size = 16,
+        alignment = "center",
+        enable_page_navigation = false,
+        http_token = "",
+        websocket_url = "ws://192.168.1.230:8085/ws/",
+        instance_name = "",
+        custom_address = "",
+        target_page_index = 1,
+        color = "#ffffff",
+        navigation_action = "goto_page",
         custom_value = "",
-        event_action = "写入绑定数据点"
+        bind_point = "system.IMSI",
+        false_bg_color = "#ffffff",
+        height = 40,
+        http_url = "",
+        bg_color = "#007acc",
+        on_double_clicked_handler = "",
+        enabled = true,
+        http_data_type = "实时数据",
+        on_single_clicked_handler = "",
+        design_mode = false,
+        event_action = "读取绑定数据点",
+        false_color = "#ffffff"
     })
 
     return container

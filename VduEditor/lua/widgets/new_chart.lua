@@ -66,32 +66,29 @@ function TrendChart.new(parent, props)
     self.data_history = {}
     self.timer = nil
 
-    -- ==========================
-    -- 🔥 创建一个空白容器（唯一新增）
-    -- ==========================
     self.container = lv.obj_create(parent)
     self.container:set_pos(self.props.x, self.props.y)
     self.container:set_size(self.props.width+50, self.props.height + 60)
-    self.container:set_style_bg_opa(0, 0)    -- 透明
-    self.container:set_style_border_width(0, 0) -- 无边框
+    self.container:set_style_bg_opa(0, 0)
+    self.container:set_style_border_width(0, 0)
     self.container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
 
-    -- 图表创建在容器内
     self.chart = lv.chart_create(self.container)
     self.chart:set_pos(0, 0)
     self.chart:set_size(self.props.width, self.props.height)
-   -- self.chart:set_type(lv.CHART_TYPE_LINE)
-    self.chart:set_point_count(self.props.point_count)
     self.chart:set_type(lv.CHART_TYPE_LINE)
-    --self.chart:set_update_mode(lv.CHART_UPDATE_MODE_SHIFT)
-   -- self.chart:set_div_line_count(3, 3)
+    self.chart:set_point_count(self.props.point_count)
+   -- self.chart:set_update_mode(lv.CHART_UPDATE_MODE_SHIFT)
+    --self.chart:set_div_line_count(3, 3)
 
-    --self.chart:set_style_bg_color(0x000000, 0)
-    --self.chart:set_style_bg_opa(lv.OPA_COVER, 0)
-   -- self.chart:set_style_border_width(1, 0)
-    self.chart:set_range(lv.CHART_AXIS_PRIMARY_Y, self.props.range_min, self.props.range_max)
-    self.series = self.chart:add_series(0xFF0000, lv.CHART_AXIS_PRIMARY_Y)
+
    -- self.chart:set_range(lv.CHART_AXIS_PRIMARY_Y, self.props.range_min, self.props.range_max)
+    self.series = self.chart:add_series(0xFF0000, lv.CHART_AXIS_PRIMARY_Y)
+    --self.chart:set_range(lv.CHART_AXIS_PRIMARY_Y, self.props.range_min, self.props.range_max)
+
+
+
+
 
     function self._emit(self, event_name, ...)
         local listeners = self._event_listeners[event_name]
@@ -105,28 +102,24 @@ function TrendChart.new(parent, props)
         end
     end
 
-    -- ==========================
-    -- X 标签也创建在容器内
-    -- ==========================
     function self.update_x_labels(self)
         if self.label_container then
             self.label_container:delete()
             self.label_container = nil
             self.x_labels = {}
         end
-        
+
         if not self.props.show_x_labels then
             return
         end
-        
-        -- 父级改为 container
+
         self.label_container = lv.obj_create(self.container)
         self.label_container:set_size(self.props.width + 50, self.props.x_label_height + 15)
         self.label_container:set_pos(-25, self.props.height)
         self.label_container:set_style_bg_opa(0, 0)
         self.label_container:set_style_border_opa(0, 0)
         self.label_container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
-        
+
         local custom_texts = {}
         if self.props.x_label_texts and self.props.x_label_texts ~= "" then
             for text in string.gmatch(self.props.x_label_texts, "([^,]+)") do
@@ -136,10 +129,10 @@ function TrendChart.new(parent, props)
                 end
             end
         end
-        
+
         local label_count
         local label_texts = {}
-        
+
         if #custom_texts > 0 then
             label_count = #custom_texts
             label_texts = custom_texts
@@ -149,12 +142,12 @@ function TrendChart.new(parent, props)
                 label_texts[i + 1] = tostring(math.floor(i * (self.props.point_count / (label_count - 1))))
             end
         end
-        
+
         local label_spacing = self.props.width / (label_count - 1)
         local label_color = parse_color(self.props.x_label_color)
-        
+
         local temp_labels = {}
-        
+
         for i = 1, label_count do
             local label = lv.label_create(self.label_container)
             label:set_style_text_color(label_color, 0)
@@ -162,7 +155,7 @@ function TrendChart.new(parent, props)
             label:set_text(label_texts[i])
             table.insert(temp_labels, label)
         end
-        
+
         for i = 1, label_count do
             local label = temp_labels[i]
             local label_width = label:get_width()
@@ -181,15 +174,15 @@ function TrendChart.new(parent, props)
         local val = tonumber(value) or 0
         if val < self.props.range_min then val = self.props.range_min end
         if val > self.props.range_max then val = self.props.range_max end
-        
+
         self.chart:set_next_value(self.series, val)
         table.insert(self.data_history, val)
         while #self.data_history > self.props.point_count do
             table.remove(self.data_history, 1)
         end
-        
+
         self:_emit("updated", val)
-        
+
         if self.props.on_updated_handler and self.props.on_updated_handler ~= "" then
             local handler = load(self.props.on_updated_handler)
             if handler then
@@ -252,7 +245,7 @@ function TrendChart.new(parent, props)
     function self.set_property(self, name, value)
         local old_value = self.props[name]
         self.props[name] = value
-        
+
         if name == "x" or name == "y" then
             self.container:set_pos(self.props.x, self.props.y)
         elseif name == "width" or name == "height" then
@@ -278,7 +271,7 @@ function TrendChart.new(parent, props)
             if value and value ~= "" then
                 self:_bind_event()
             end
-        elseif name == "show_x_labels" or name == "x_label_count" or name == "x_label_height" or 
+        elseif name == "show_x_labels" or name == "x_label_count" or name == "x_label_height" or
                name == "x_label_texts" or name == "x_label_color" then
             self:update_x_labels()
         end
@@ -292,8 +285,8 @@ function TrendChart.new(parent, props)
     end
 
     function self.apply_properties(self, props_table)
-        for k, v in pairs(props_table) do 
-            self:set_property(k, v) 
+        for k, v in pairs(props_table) do
+            self:set_property(k, v)
         end
         return true
     end
@@ -303,8 +296,8 @@ function TrendChart.new(parent, props)
     end
 
     function self.on(self, event_name, callback)
-        if not self._event_listeners[event_name] then 
-            self._event_listeners[event_name] = {} 
+        if not self._event_listeners[event_name] then
+            self._event_listeners[event_name] = {}
         end
         table.insert(self._event_listeners[event_name], callback)
     end
@@ -312,7 +305,7 @@ function TrendChart.new(parent, props)
     function self._bind_event(self)
         local action = self.props.event_action or "读取绑定数据点"
         local addr = self.props.bind_point
-        
+
         if addr and addr ~= "" then
             if action == "读取绑定数据点" or action == "读写数据点" then
                 DataManager.register_chart(addr, self)
@@ -322,37 +315,30 @@ function TrendChart.new(parent, props)
         return false
     end
 
-    -- ==========================
-    -- 销毁：只删容器
-    -- ==========================
     function self.destroy(self)
         self:stop()
-        
+
         if self.props.bind_point and self.props.bind_point ~= "" then
             DataManager.unregister_chart(self.props.bind_point, self)
         end
-        
-        -- 🔥 只删容器，图表和标签自动删除
+
         if self.container then
             self.container:delete()
         end
     end
 
-    -- ==========================
-    -- 暴露容器给编辑器
-    -- ==========================
     function self.get_container()
         return self.container
     end
 
     self:update_x_labels()
-    
+
     if self.props.bind_point and self.props.bind_point ~= "" then
         self:_bind_event()
     end
-    
-    if self.props.auto_update then 
-        self:start() 
+
+    if self.props.auto_update then
+        self:start()
     end
 
     return self

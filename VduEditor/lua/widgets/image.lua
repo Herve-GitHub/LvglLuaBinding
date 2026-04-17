@@ -17,7 +17,7 @@ Image.__widget_meta = {
     { name = "y", type = "number", default = 0, label = "Y" },
     { name = "width", type = "number", default = 100, label = "宽度" },
     { name = "height", type = "number", default = 100, label = "高度" },
-    { name = "src", type = "boolean", default = "", label = "图像选择" }, -- 🔥 改回string
+    { name = "src", type = "boolean", default = "", label = "图像选择" }, -- 已修复
     { name = "mode", type = "enum", default = "normal", options = {"normal","cover","contain","stretch"}, label = "显示模式" },
     { name = "rotation", type = "number", default = 0, label = "旋转角度" },
     { name = "scale", type = "number", default = 256, label = "缩放" },
@@ -28,7 +28,7 @@ Image.__widget_meta = {
 }
 
 -- ==========================================
--- 跨平台路径处理（核心修复）
+-- 跨平台路径处理
 -- ==========================================
 local function is_linux_platform()
     return package.config:sub(1,1) == '/'
@@ -51,6 +51,22 @@ local function load_image(img, filename)
 end
 
 -- ==========================================
+-- 占位样式（自适应专用）
+-- ==========================================
+local function set_placeholder(img)
+    if not img then return end
+    -- 显示灰色边框
+    img:set_style_border_width(2, 0)
+    img:set_style_border_color(0x888888, 0)
+    img:set_style_border_opa(255, 0)
+end
+
+local function clear_placeholder(img)
+    if not img then return end
+    img:set_style_border_width(0, 0)
+end
+
+-- ==========================================
 -- 组件主逻辑
 -- ==========================================
 function Image.new(parent, state)
@@ -65,11 +81,22 @@ function Image.new(parent, state)
     self.image = lv.image_create(parent)
     self.obj = self.image
 
-    self.image:set_size(self.props.width, self.props.height)
+    -- 🔥 注释掉，保留自适应
+    -- self.image:set_size(self.props.width, self.props.height)
+    
     self.image:set_pos(self.props.x, self.props.y)
 
-    -- 初始化加载（只加载文件名，跨平台可用）
-    if self.props.src and self.props.src ~= "" then
+    -- ========================
+    -- 核心：无图显示占位框（强制最小大小），有图自适应
+    -- ========================
+    if not self.props.src or self.props.src == "" then
+        -- 没有图片：给最小尺寸，显示灰框
+        self.image:set_size(100, 100)
+        set_placeholder(self.image)
+    else
+        -- 有图片：清除尺寸，自适应
+        self.image:set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
+        clear_placeholder(self.image)
         load_image(self.image, self.props.src)
     end
 
@@ -99,26 +126,32 @@ function Image.new(parent, state)
         return self.props[name]
     end
 
-    -- ✅ 核心：点击src时弹窗选图，只保存文件名
+    -- ✅ 核心：点击src时弹窗选图
     function self:set_property(name, value)
         self.props[name] = value
         if not self.image then return true end
 
         if name == "x" or name == "y" then
             self.image:set_pos(self.props.x, self.props.y)
+        
+        -- 手动调整宽高时生效
         elseif name == "width" or name == "height" then
             self.image:set_size(self.props.width, self.props.height)
+
         elseif name == "src" then
-            -- 打开系统选择框
             ImageDialog.new(nil, {
                 initial_dir = config.image_path,
                 callback = function(full_path, filename)
                     if filename then
-                        self.props.src = filename  -- 🔥 只存文件名！
+                        self.props.src = filename
+                        -- 选中图片：切换为自适应模式
+                        self.image:set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
+                        clear_placeholder(self.image)
                         load_image(self.image, filename)
                     end
                 end
             })
+
         elseif name == "rotation" then
             self.image:set_rotation(value or 0)
         elseif name == "scale" then
