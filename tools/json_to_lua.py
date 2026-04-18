@@ -71,7 +71,10 @@ EVENT_DEFAULT_PARAMS: dict[str, str] = {
     "changed":        "self",
 }
 
-# Action modules always imported in generated scripts
+# Action modules always imported in generated scripts.
+# NOTE: "SitwchAction" is the actual filename in the repository
+# (VduEditor/lua/actions/SitwchAction.lua) – the "Sitwch" spelling
+# is intentional to match that existing file.
 ACTION_MODULES: list[str] = [
     "actions.page_navigation",
     "editor.DataAction",
