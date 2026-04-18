@@ -1,0 +1,282 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Herve-GitHub/LvglLuaBinding/tools/schema/project_schema.json",
+  "title": "VduEditor Project",
+  "description": "Schema for VduEditor / VduSimulator HMI project files. Use json_to_lua.py to compile to a Lua script.",
+  "type": "object",
+  "required": ["version", "pages"],
+  "additionalProperties": false,
+  "properties": {
+
+    "version": {
+      "type": "string",
+      "description": "Project format version",
+      "default": "1.0",
+      "examples": ["1.0"]
+    },
+
+    "created_at": {
+      "type": "string",
+      "description": "Creation timestamp (informational)",
+      "examples": ["2026-01-01 08:00:00"]
+    },
+
+    "modified_at": {
+      "type": "string",
+      "description": "Last modification timestamp (informational)",
+      "examples": ["2026-01-01 08:00:00"]
+    },
+
+    "current_page_index": {
+      "type": "integer",
+      "description": "1-based index of the page shown on startup",
+      "minimum": 1,
+      "default": 1
+    },
+
+    "settings": {
+      "type": "object",
+      "description": "Editor display settings (optional; used by VduEditor only)",
+      "additionalProperties": true,
+      "properties": {
+        "window_width":  { "type": "integer", "default": 1024 },
+        "window_height": { "type": "integer", "default": 768 },
+        "show_grid":     { "type": "boolean", "default": false },
+        "snap_to_grid":  { "type": "boolean", "default": false },
+        "grid_size":     { "type": "integer", "default": 20, "minimum": 1 }
+      }
+    },
+
+    "status_bar": {
+      "type": ["object", "null"],
+      "description": "Optional persistent status bar displayed at the bottom of the screen",
+      "additionalProperties": false,
+      "properties": {
+        "enabled":            { "type": "boolean", "default": false },
+        "instance_name":      { "type": "string",  "default": "" },
+        "position":           { "type": "string",  "enum": ["top", "bottom"], "default": "bottom" },
+        "lamp_status":        { "type": "string",  "description": "#RRGGBB colour of the status lamp", "default": "#00FF00" },
+        "lamp_text":          { "type": "string",  "default": "CH1" },
+        "lamp_size":          { "type": "integer", "default": 14, "minimum": 6 },
+        "bg_color":           { "type": "string",  "default": "#252526" },
+        "text_color":         { "type": "string",  "default": "#CCCCCC" },
+        "show_time":          { "type": "boolean", "default": true },
+        "on_updated_handler": { "type": "string",  "default": "", "description": "Lua code / function body for the 'updated' event" },
+        "on_time_tick_handler": { "type": "string","default": "", "description": "Lua code / function body for the 'time_tick' event" }
+      }
+    },
+
+    "pages": {
+      "type": "array",
+      "description": "List of HMI pages. At least one page is required.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the page (e.g. 'page_1')",
+            "examples": ["page_1"]
+          },
+
+          "name": {
+            "type": "string",
+            "description": "Display name shown in the editor and in runtime log messages",
+            "examples": ["主页", "Main Page"]
+          },
+
+          "width": {
+            "type": "integer",
+            "description": "Page canvas width in pixels",
+            "default": 800,
+            "minimum": 1
+          },
+
+          "height": {
+            "type": "integer",
+            "description": "Page canvas height in pixels",
+            "default": 600,
+            "minimum": 1
+          },
+
+          "bg_color": {
+            "type": "string",
+            "description": "Background colour in #RRGGBB format",
+            "default": "#1E1E1E",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+
+          "widgets": {
+            "type": "array",
+            "description": "Widgets placed on this page",
+            "default": [],
+            "items": { "$ref": "#/definitions/widget" }
+          }
+        }
+      }
+    }
+  },
+
+  "definitions": {
+
+    "widget": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+
+        "type": {
+          "type": "string",
+          "description": "Widget type identifier. Determines which Lua module is loaded.",
+          "enum": [
+            "custom_button",
+            "button",
+            "label",
+            "new_label",
+            "valve",
+            "trend_chart",
+            "status_bar",
+            "switch",
+            "image",
+            "PopupButton",
+            "checkbox",
+            "dropdown",
+            "slider"
+          ]
+        },
+
+        "module_path": {
+          "type": "string",
+          "description": "Override the default Lua module path (e.g. 'widgets.my_custom_btn'). Omit to use the default mapping for the widget type."
+        },
+
+        "props": { "$ref": "#/definitions/widget_props" }
+      }
+    },
+
+    "widget_props": {
+      "type": "object",
+      "description": "Property bag for a widget. Common fields are listed below; widget-specific extras are allowed.",
+      "additionalProperties": true,
+      "properties": {
+
+        "instance_name": {
+          "type": "string",
+          "default": "",
+          "description": "Becomes the Lua local variable name in the compiled script. Leave empty for auto-naming."
+        },
+        "x":       { "type": "integer", "default": 0,   "description": "Left edge position (px)" },
+        "y":       { "type": "integer", "default": 0,   "description": "Top edge position (px)" },
+        "width":   { "type": "integer", "default": 100, "description": "Widget width (px)" },
+        "height":  { "type": "integer", "default": 40,  "description": "Widget height (px)" },
+
+        "design_mode": {
+          "type": "boolean",
+          "default": true,
+          "description": "Set to false in runtime scripts (json_to_lua.py forces this to false automatically)"
+        },
+
+        "enabled": { "type": "boolean", "default": true },
+
+        "bg_color":    { "type": "string", "description": "#RRGGBB background colour" },
+        "color":       { "type": "string", "description": "#RRGGBB text / foreground colour" },
+        "font_size":   { "type": "integer", "default": 16, "minimum": 6 },
+        "text_color":  { "type": "string", "description": "#RRGGBB text colour (alias for color on some widgets)" },
+        "border_color":{ "type": "string", "description": "#RRGGBB border colour" },
+
+        "label": { "type": "string", "default": "OK", "description": "Button / label text" },
+        "alignment": {
+          "type": "string",
+          "default": "center",
+          "enum": ["left", "center", "right"]
+        },
+
+        "bind_point": {
+          "type": "string",
+          "default": "",
+          "description": "Data-point address, e.g. 'Device1.tag0001'"
+        },
+        "websocket_url": {
+          "type": "string",
+          "default": "",
+          "description": "WebSocket gateway URL, e.g. 'ws://192.168.0.100:8085/ws/'"
+        },
+        "http_url":   { "type": "string", "default": "" },
+        "http_token": { "type": "string", "default": "" },
+        "http_data_type": {
+          "type": "string",
+          "enum": ["实时数据", "历史数据", "批量数据", "告警数据", "统计数据"],
+          "default": "实时数据"
+        },
+        "event_action": {
+          "type": "string",
+          "enum": [
+            "写入绑定数据点",
+            "读取绑定数据点",
+            "读写数据点",
+            "写入自定义地址",
+            "读取自定义地址",
+            "发送HTTP请求"
+          ],
+          "default": "写入绑定数据点"
+        },
+        "custom_address": { "type": "string", "default": "" },
+        "custom_value":   { "type": "string", "default": "" },
+
+        "compare_operator": {
+          "type": "string",
+          "enum": ["大于", "小于", "等于", "大于等于", "小于等于", "不等于"],
+          "default": "大于"
+        },
+        "compare_value": { "type": "string", "default": "0" },
+        "true_color":    { "type": "string" },
+        "false_color":   { "type": "string" },
+        "true_bg_color": { "type": "string" },
+        "false_bg_color":{ "type": "string" },
+
+        "on_clicked_handler":        { "type": "string", "default": "", "description": "Lua code executed on click" },
+        "on_single_clicked_handler": { "type": "string", "default": "" },
+        "on_double_clicked_handler": { "type": "string", "default": "" },
+        "on_changed_handler":        { "type": "string", "default": "" },
+        "on_angle_changed_handler":  { "type": "string", "default": "" },
+        "on_toggled_handler":        { "type": "string", "default": "" },
+        "on_updated_handler":        { "type": "string", "default": "" },
+
+        "point_count":      { "type": "integer", "default": 300, "minimum": 1 },
+        "update_interval":  { "type": "integer", "default": 1000, "minimum": 10 },
+        "range_min":        { "type": "number",  "default": 0 },
+        "range_max":        { "type": "number",  "default": 100 },
+        "auto_update":      { "type": "boolean", "default": true },
+
+        "angle":       { "type": "number",  "default": 0 },
+        "open_angle":  { "type": "number",  "default": 90 },
+        "close_angle": { "type": "number",  "default": 0 },
+        "size":        { "type": "integer", "default": 100 },
+        "handle_color":{ "type": "string" },
+
+        "checked":     { "type": "boolean", "default": false },
+        "text":        { "type": "string",  "default": "选项" },
+        "box_color":   { "type": "string" },
+        "check_color": { "type": "string" },
+        "box_size":    { "type": "integer", "default": 20 },
+
+        "options":         { "type": "string",  "default": "选项1\n选项2\n选项3" },
+        "selected_index":  { "type": "integer", "default": 0 },
+        "selected_color":  { "type": "string" },
+        "list_bg_color":   { "type": "string" },
+
+        "value":            { "type": "number",  "default": 50 },
+        "min_value":        { "type": "number",  "default": 0 },
+        "max_value":        { "type": "number",  "default": 100 },
+        "show_value":       { "type": "boolean", "default": true },
+        "indicator_color":  { "type": "string" },
+        "knob_color":       { "type": "string" },
+
+        "src": { "type": "string", "description": "Image source path or symbol name" }
+      }
+    }
+  }
+}

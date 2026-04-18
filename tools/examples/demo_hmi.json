@@ -1,0 +1,289 @@
+{
+  "version": "1.0",
+  "created_at": "2026-04-18 08:00:00",
+  "modified_at": "2026-04-18 08:00:00",
+  "current_page_index": 1,
+  "settings": {
+    "window_width": 1024,
+    "window_height": 600,
+    "show_grid": false,
+    "snap_to_grid": false,
+    "grid_size": 20
+  },
+  "status_bar": {
+    "enabled": true,
+    "position": "bottom",
+    "lamp_status": "#00FF00",
+    "lamp_text": "在线",
+    "lamp_size": 14,
+    "bg_color": "#252526",
+    "text_color": "#CCCCCC",
+    "show_time": true
+  },
+  "pages": [
+    {
+      "id": "page_1",
+      "name": "主页",
+      "width": 1024,
+      "height": 572,
+      "bg_color": "#1E1E2E",
+      "widgets": [
+        {
+          "type": "label",
+          "props": {
+            "instance_name": "title_label",
+            "x": 50,
+            "y": 20,
+            "width": 400,
+            "height": 36,
+            "label": "设备监控系统",
+            "color": "#FFFFFF",
+            "font_size": 24,
+            "alignment": "left"
+          }
+        },
+        {
+          "type": "custom_button",
+          "props": {
+            "instance_name": "btn_page2",
+            "x": 50,
+            "y": 80,
+            "width": 120,
+            "height": 40,
+            "label": "趋势图",
+            "bg_color": "#007ACC",
+            "color": "#FFFFFF",
+            "font_size": 16,
+            "on_clicked_handler": "function(self)\n    actions_page_navigation.goto_page(2)\nend"
+          }
+        },
+        {
+          "type": "custom_button",
+          "props": {
+            "instance_name": "btn_page3",
+            "x": 190,
+            "y": 80,
+            "width": 120,
+            "height": 40,
+            "label": "阀门控制",
+            "bg_color": "#388E3C",
+            "color": "#FFFFFF",
+            "font_size": 16,
+            "on_clicked_handler": "function(self)\n    actions_page_navigation.goto_page(3)\nend"
+          }
+        },
+        {
+          "type": "custom_button",
+          "props": {
+            "instance_name": "btn_read_temp",
+            "x": 50,
+            "y": 150,
+            "width": 160,
+            "height": 40,
+            "label": "读取温度",
+            "bg_color": "#5C6BC0",
+            "color": "#FFFFFF",
+            "font_size": 16,
+            "event_action": "读取绑定数据点",
+            "bind_point": "THmeter.AirRoomTemp1",
+            "websocket_url": "ws://192.168.0.60:8085/ws/"
+          }
+        },
+        {
+          "type": "label",
+          "props": {
+            "instance_name": "temp_display",
+            "x": 230,
+            "y": 150,
+            "width": 200,
+            "height": 40,
+            "label": "温度: --",
+            "color": "#FFD700",
+            "font_size": 18,
+            "alignment": "left"
+          }
+        },
+        {
+          "type": "slider",
+          "props": {
+            "instance_name": "brightness_slider",
+            "x": 50,
+            "y": 220,
+            "width": 300,
+            "height": 24,
+            "min_value": 0,
+            "max_value": 100,
+            "value": 75,
+            "show_value": true,
+            "bg_color": "#3C3C3C",
+            "indicator_color": "#007ACC",
+            "knob_color": "#FFFFFF",
+            "on_changed_handler": "function(self)\n    print(\"亮度:\", self:get_property(\"value\"))\nend"
+          }
+        },
+        {
+          "type": "switch",
+          "props": {
+            "instance_name": "light_switch",
+            "x": 50,
+            "y": 270,
+            "width": 60,
+            "height": 30,
+            "on_changed_handler": "function(self)\n    local is_on = self:get_property(\"checked\")\n    print(\"灯:\", is_on and \"开\" or \"关\")\nend"
+          }
+        },
+        {
+          "type": "checkbox",
+          "props": {
+            "instance_name": "alarm_checkbox",
+            "x": 50,
+            "y": 320,
+            "width": 160,
+            "height": 30,
+            "text": "启用报警",
+            "checked": false,
+            "text_color": "#FFFFFF",
+            "on_changed_handler": "function(self)\n    local checked = self:get_property(\"checked\")\n    print(\"报警:\", checked and \"已启用\" or \"已禁用\")\nend"
+          }
+        },
+        {
+          "type": "dropdown",
+          "props": {
+            "instance_name": "channel_dropdown",
+            "x": 50,
+            "y": 370,
+            "width": 200,
+            "height": 36,
+            "options": "通道1\n通道2\n通道3\n通道4",
+            "selected_index": 0,
+            "bg_color": "#3C3C3C",
+            "text_color": "#FFFFFF",
+            "on_changed_handler": "function(self)\n    local idx = self:get_property(\"selected_index\")\n    print(\"选择通道:\", idx + 1)\nend"
+          }
+        }
+      ]
+    },
+    {
+      "id": "page_2",
+      "name": "趋势图",
+      "width": 1024,
+      "height": 572,
+      "bg_color": "#1E1E2E",
+      "widgets": [
+        {
+          "type": "trend_chart",
+          "props": {
+            "instance_name": "temp_chart",
+            "x": 30,
+            "y": 30,
+            "width": 700,
+            "height": 300,
+            "point_count": 120,
+            "update_interval": 1000,
+            "range_min": 0,
+            "range_max": 100,
+            "auto_update": true,
+            "on_updated_handler": "function(self, value)\n    print(\"图表更新:\", value)\nend"
+          }
+        },
+        {
+          "type": "custom_button",
+          "props": {
+            "instance_name": "btn_back_from_chart",
+            "x": 30,
+            "y": 360,
+            "width": 120,
+            "height": 40,
+            "label": "返回主页",
+            "bg_color": "#607D8B",
+            "color": "#FFFFFF",
+            "font_size": 16,
+            "on_clicked_handler": "function(self)\n    actions_page_navigation.goto_page(1)\nend"
+          }
+        }
+      ]
+    },
+    {
+      "id": "page_3",
+      "name": "阀门控制",
+      "width": 1024,
+      "height": 572,
+      "bg_color": "#1E2E1E",
+      "widgets": [
+        {
+          "type": "valve",
+          "props": {
+            "instance_name": "valve_inlet",
+            "x": 80,
+            "y": 60,
+            "size": 120,
+            "angle": 0,
+            "open_angle": 90,
+            "close_angle": 0,
+            "handle_color": "#FF5722",
+            "on_toggled_handler": "function(self, is_open)\n    print(\"进水阀:\", is_open and \"开\" or \"关\")\n    if is_open then\n        lvgl.write(\"Device1.InletValve\", \"1\")\n    else\n        lvgl.write(\"Device1.InletValve\", \"0\")\n    end\nend"
+          }
+        },
+        {
+          "type": "valve",
+          "props": {
+            "instance_name": "valve_outlet",
+            "x": 240,
+            "y": 60,
+            "size": 120,
+            "angle": 0,
+            "open_angle": 90,
+            "close_angle": 0,
+            "handle_color": "#4CAF50",
+            "on_toggled_handler": "function(self, is_open)\n    print(\"出水阀:\", is_open and \"开\" or \"关\")\nend"
+          }
+        },
+        {
+          "type": "custom_button",
+          "props": {
+            "instance_name": "btn_open_all_valves",
+            "x": 80,
+            "y": 210,
+            "width": 120,
+            "height": 40,
+            "label": "一键全开",
+            "bg_color": "#388E3C",
+            "color": "#FFFFFF",
+            "font_size": 16,
+            "on_clicked_handler": "function()\n    print(\"执行：一键全开\")\n    widgets_valve.open_all()\nend"
+          }
+        },
+        {
+          "type": "custom_button",
+          "props": {
+            "instance_name": "btn_close_all_valves",
+            "x": 220,
+            "y": 210,
+            "width": 120,
+            "height": 40,
+            "label": "一键全关",
+            "bg_color": "#C62828",
+            "color": "#FFFFFF",
+            "font_size": 16,
+            "on_clicked_handler": "function()\n    print(\"执行：一键全关\")\n    widgets_valve.close_all()\nend"
+          }
+        },
+        {
+          "type": "custom_button",
+          "props": {
+            "instance_name": "btn_back_from_valve",
+            "x": 80,
+            "y": 270,
+            "width": 120,
+            "height": 40,
+            "label": "返回主页",
+            "bg_color": "#607D8B",
+            "color": "#FFFFFF",
+            "font_size": 16,
+            "on_clicked_handler": "function(self)\n    actions_page_navigation.goto_page(1)\nend"
+          }
+        }
+      ]
+    }
+  ]
+}
