@@ -1,6 +1,11 @@
-﻿/*********************
- *      INCLUDES
- *********************/
+﻿/**
+ * @file lv_windows_context.c
+ *
+ */
+
+ /*********************
+  *      INCLUDES
+  *********************/
 
 #include "lv_windows_context.h"
 #if LV_USE_WINDOWS
@@ -13,17 +18,17 @@
 #include "lv_windows_input_private.h"
 #include "../../osal/lv_os_private.h"
 
- /*********************
- *      DEFINES
- *********************/
+  /*********************
+   *      DEFINES
+   *********************/
 
- /**********************
-*      TYPEDEFS
-**********************/
+   /**********************
+    *      TYPEDEFS
+    **********************/
 
-/**********************
-*  STATIC PROTOTYPES
-**********************/
+    /**********************
+     *  STATIC PROTOTYPES
+     **********************/
 
 static uint32_t lv_windows_tick_count_callback(void);
 
@@ -45,17 +50,19 @@ static LRESULT CALLBACK lv_windows_window_message_callback(
     WPARAM wParam,
     LPARAM lParam);
 
-/**********************
-*  STATIC VARIABLES
-**********************/
+static void lv_windows_resize_display(lv_windows_window_context_t* context, int32_t width, int32_t height);
 
 /**********************
-*      MACROS
-**********************/
+ *  STATIC VARIABLES
+ **********************/
 
-/**********************
-*   GLOBAL FUNCTIONS
-**********************/
+ /**********************
+  *      MACROS
+  **********************/
+
+  /**********************
+   *   GLOBAL FUNCTIONS
+   **********************/
 
 void lv_windows_platform_init(void)
 {
@@ -104,8 +111,8 @@ lv_windows_window_context_t* lv_windows_get_window_context(
 }
 
 /**********************
-*   STATIC FUNCTIONS
-**********************/
+ *   STATIC FUNCTIONS
+ **********************/
 
 static uint32_t lv_windows_tick_count_callback(void)
 {
@@ -198,17 +205,17 @@ static HDC lv_windows_create_frame_buffer(
 #error [lv_windows] Unsupported LV_COLOR_DEPTH.
 #endif
 
-        void* buf = NULL;
         HBITMAP hBitmap = CreateDIBSection(
             frame_buffer_dc_handle,
             (PBITMAPINFO)(&bitmap_info),
             DIB_RGB_COLORS,
-            &buf,
+            (void**)pixel_buffer,
             NULL,
             0);
         if (hBitmap) {
-            *pixel_buffer = (uint32_t*)buf;
-            *pixel_buffer_size = (size_t)width * height * lv_color_format_get_size(LV_COLOR_FORMAT_NATIVE);
+            *pixel_buffer_size = width * height;
+            *pixel_buffer_size *= lv_color_format_get_size(
+                LV_COLOR_FORMAT_NATIVE);
 
             DeleteObject(SelectObject(frame_buffer_dc_handle, hBitmap));
             DeleteObject(hBitmap);
@@ -222,45 +229,51 @@ static HDC lv_windows_create_frame_buffer(
     return frame_buffer_dc_handle;
 }
 
-// 🔥 修复 1：禁止重建缓冲区（防止黑屏）
+// 修复：禁用定时器重建缓冲区，避免黑屏
 static void lv_windows_display_timer_callback(lv_timer_t* timer)
 {
-    return;
-
+    // 缓冲区重建已移至WM_SIZE消息处理中，此回调仅用于刷新
     lv_windows_window_context_t* context = lv_timer_get_user_data(timer);
     LV_ASSERT_NULL(context);
 
-    if (!context->display_resolution_changed) {
-        return;
+    // 只处理显示刷新，不重建缓冲区
+    if (context->display_device_object) {
+        lv_refr_now(context->display_device_object);
+    }
+}
+
+// 新增：安全的显示大小调整函数
+static void lv_windows_resize_display(lv_windows_window_context_t* context, int32_t width, int32_t height)
+{
+    if (!context || !context->display_device_object) return;
+
+    // 防止无效尺寸
+    if (width <= 0) width = 1;
+    if (height <= 0) height = 1;
+
+    // 保存当前活动屏幕对象
+    lv_obj_t* active_screen = lv_display_get_screen_active(context->display_device_object);
+
+    // 更新显示分辨率
+    lv_display_set_resolution(context->display_device_object, width, height);
+
+    // 重建帧缓冲区
+    if (context->display_framebuffer_context_handle) {
+        context->display_framebuffer_base = NULL;
+        context->display_framebuffer_size = 0;
+        DeleteDC(context->display_framebuffer_context_handle);
+        context->display_framebuffer_context_handle = NULL;
     }
 
-    lv_display_set_resolution(
-        context->display_device_object,
-        context->requested_display_resolution.x,
-        context->requested_display_resolution.y);
-
-    int32_t hor_res = lv_display_get_horizontal_resolution(
-        context->display_device_object);
-    int32_t ver_res = lv_display_get_vertical_resolution(
-        context->display_device_object);
-
-    HWND window_handle = lv_windows_get_display_window_handle(
-        context->display_device_object);
+    HWND window_handle = lv_windows_get_display_window_handle(context->display_device_object);
     if (window_handle) {
-        if (context->display_framebuffer_context_handle) {
-            context->display_framebuffer_base = NULL;
-            context->display_framebuffer_size = 0;
-            DeleteDC(context->display_framebuffer_context_handle);
-            context->display_framebuffer_context_handle = NULL;
-        }
+        context->display_framebuffer_context_handle = lv_windows_create_frame_buffer(
+            window_handle,
+            width,
+            height,
+            &context->display_framebuffer_base,
+            &context->display_framebuffer_size);
 
-        context->display_framebuffer_context_handle =
-            lv_windows_create_frame_buffer(
-                window_handle,
-                hor_res,
-                ver_res,
-                &context->display_framebuffer_base,
-                &context->display_framebuffer_size);
         if (context->display_framebuffer_context_handle) {
             lv_display_set_buffers(
                 context->display_device_object,
@@ -271,9 +284,11 @@ static void lv_windows_display_timer_callback(lv_timer_t* timer)
         }
     }
 
-    context->display_resolution_changed = false;
-    context->requested_display_resolution.x = 0;
-    context->requested_display_resolution.y = 0;
+    // 强制刷新显示
+    if (active_screen) {
+        lv_obj_invalidate(active_screen);
+        lv_refr_now(context->display_device_object);
+    }
 }
 
 static void lv_windows_display_driver_flush_callback(
@@ -282,6 +297,7 @@ static void lv_windows_display_driver_flush_callback(
     uint8_t* px_map)
 {
     LV_UNUSED(area);
+    LV_UNUSED(px_map);
 
     HWND window_handle = lv_windows_get_display_window_handle(display);
     if (!window_handle) {
@@ -297,44 +313,33 @@ static void lv_windows_display_driver_flush_callback(
     }
 
     if (lv_display_flush_is_last(display)) {
-#if (LV_COLOR_DEPTH == 32) || \
-    (LV_COLOR_DEPTH == 24) || \
-    (LV_COLOR_DEPTH == 16)
-        UNREFERENCED_PARAMETER(px_map);
-#else
-#error [lv_windows] Unsupported LV_COLOR_DEPTH.
-#endif
-
         HDC hdc = GetDC(window_handle);
-        if (hdc) {
+        if (hdc && context->display_framebuffer_context_handle) {
             SetStretchBltMode(hdc, HALFTONE);
 
             RECT client_rect;
             GetClientRect(window_handle, &client_rect);
 
-            int32_t width = lv_windows_zoom_to_logical(
-                client_rect.right - client_rect.left,
-                context->zoom_level);
-            int32_t height = lv_windows_zoom_to_logical(
-                client_rect.bottom - client_rect.top,
-                context->zoom_level);
-            if (context->simulator_mode) {
-                width = lv_windows_dpi_to_logical(width, context->window_dpi);
-                height = lv_windows_dpi_to_logical(height, context->window_dpi);
-            }
+            int32_t draw_width = client_rect.right - client_rect.left;
+            int32_t draw_height = client_rect.bottom - client_rect.top;
 
-            StretchBlt(
-                hdc,
-                client_rect.left,
-                client_rect.top,
-                client_rect.right - client_rect.left,
-                client_rect.bottom - client_rect.top,
-                context->display_framebuffer_context_handle,
-                0,
-                0,
-                width,
-                height,
-                SRCCOPY);
+            int32_t fb_width = lv_display_get_horizontal_resolution(display);
+            int32_t fb_height = lv_display_get_vertical_resolution(display);
+
+            if (draw_width > 0 && draw_height > 0 && fb_width > 0 && fb_height > 0) {
+                StretchBlt(
+                    hdc,
+                    client_rect.left,
+                    client_rect.top,
+                    draw_width,
+                    draw_height,
+                    context->display_framebuffer_context_handle,
+                    0,
+                    0,
+                    fb_width,
+                    fb_height,
+                    SRCCOPY);
+            }
 
             ReleaseDC(window_handle, hdc);
         }
@@ -481,6 +486,7 @@ static bool lv_windows_window_message_callback_nolock(
         }
 
         if (!SetPropW(hWnd, L"LVGL.Window.Context", (HANDLE)(context))) {
+            HeapFree(GetProcessHeap(), 0, context);
             return -1;
         }
 
@@ -489,55 +495,64 @@ static bool lv_windows_window_message_callback_nolock(
         context->allow_dpi_override = data->allow_dpi_override;
         context->simulator_mode = data->simulator_mode;
 
-        context->display_timer_object = lv_timer_create(
-            lv_windows_display_timer_callback,
-            LV_DEF_REFR_PERIOD,
-            context);
+        // 获取窗口客户区大小
+        RECT client_rect;
+        GetClientRect(hWnd, &client_rect);
+        int32_t init_width = client_rect.right - client_rect.left;
+        int32_t init_height = client_rect.bottom - client_rect.top;
 
-        context->display_resolution_changed = false;
-        context->requested_display_resolution.x = 0;
-        context->requested_display_resolution.y = 0;
+        if (init_width <= 0) init_width = 800;
+        if (init_height <= 0) init_height = 600;
 
-        // 🔥 修复 2：先获取窗口大小再创建显示设备
-        RECT rc;
-        GetClientRect(hWnd, &rc);
-        int32_t w = rc.right;
-        int32_t h = rc.bottom;
-
-        context->display_device_object = lv_display_create(w, h);
+        // 创建显示设备（使用实际窗口大小）
+        context->display_device_object = lv_display_create(init_width, init_height);
         if (!context->display_device_object) {
+            RemovePropW(hWnd, L"LVGL.Window.Context");
+            HeapFree(GetProcessHeap(), 0, context);
             return -1;
         }
+
         lv_display_set_flush_cb(
             context->display_device_object,
             lv_windows_display_driver_flush_callback);
         lv_display_set_driver_data(
             context->display_device_object,
             hWnd);
+
         if (!context->allow_dpi_override) {
             lv_display_set_dpi(
                 context->display_device_object,
                 context->window_dpi);
         }
 
-        // 🔥 修复 3：创建完整大小缓冲区（解决断言）
+        // 立即创建帧缓冲区
         context->display_framebuffer_context_handle = lv_windows_create_frame_buffer(
-            hWnd, w, h,
+            hWnd,
+            init_width,
+            init_height,
             &context->display_framebuffer_base,
-            &context->display_framebuffer_size
-        );
+            &context->display_framebuffer_size);
 
-        // 🔥 修复 4：传入正确大小（解决断言）
-        lv_display_set_buffers(
-            context->display_device_object,
-            context->display_framebuffer_base,
-            NULL,
-            (uint32_t)context->display_framebuffer_size,
-            LV_DISPLAY_RENDER_MODE_DIRECT
-        );
+        if (context->display_framebuffer_context_handle) {
+            lv_display_set_buffers(
+                context->display_device_object,
+                context->display_framebuffer_base,
+                NULL,
+                (uint32_t)context->display_framebuffer_size,
+                LV_DISPLAY_RENDER_MODE_DIRECT);
+        }
+
+        // 创建定时器（用于定期刷新）
+        context->display_timer_object = lv_timer_create(
+            lv_windows_display_timer_callback,
+            LV_DEF_REFR_PERIOD,
+            context);
 
         lv_windows_register_touch_window(hWnd, 0);
         lv_windows_enable_child_window_dpi_message(hWnd);
+
+        // 初始刷新
+        lv_refr_now(context->display_device_object);
 
         break;
     }
@@ -545,17 +560,67 @@ static bool lv_windows_window_message_callback_nolock(
         if (wParam != SIZE_MINIMIZED) {
             lv_windows_window_context_t* context = (lv_windows_window_context_t*)(
                 lv_windows_get_window_context(hWnd));
-            if (context) {
-                if (wParam == SIZE_RESTORED) {
-                    lv_obj_t* active_screen = lv_display_get_screen_active(
-                        context->display_device_object);
-                    if (active_screen) {
-                        lv_obj_invalidate(active_screen);
+            if (context && context->display_device_object) {
+                int32_t new_width = LOWORD(lParam);
+                int32_t new_height = HIWORD(lParam);
+
+                if (new_width > 0 && new_height > 0) {
+                    // 直接调整显示大小，不依赖定时器
+                    lv_windows_resize_display(context, new_width, new_height);
+
+                    // 重置指针位置
+                    if (context->pointer.point.x >= new_width) {
+                        context->pointer.point.x = new_width > 0 ? new_width - 1 : 0;
+                    }
+                    if (context->pointer.point.y >= new_height) {
+                        context->pointer.point.y = new_height > 0 ? new_height - 1 : 0;
                     }
                 }
             }
         }
         break;
+    }
+    case WM_PAINT: {
+        lv_windows_window_context_t* context = (lv_windows_window_context_t*)(
+            lv_windows_get_window_context(hWnd));
+        if (context && context->display_framebuffer_context_handle) {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hWnd, &ps);
+            if (hdc) {
+                SetStretchBltMode(hdc, HALFTONE);
+
+                RECT client_rect;
+                GetClientRect(hWnd, &client_rect);
+
+                int32_t fb_width = lv_display_get_horizontal_resolution(context->display_device_object);
+                int32_t fb_height = lv_display_get_vertical_resolution(context->display_device_object);
+
+                if (fb_width > 0 && fb_height > 0) {
+                    StretchBlt(
+                        hdc,
+                        client_rect.left,
+                        client_rect.top,
+                        client_rect.right - client_rect.left,
+                        client_rect.bottom - client_rect.top,
+                        context->display_framebuffer_context_handle,
+                        0,
+                        0,
+                        fb_width,
+                        fb_height,
+                        SRCCOPY);
+                }
+
+                EndPaint(hWnd, &ps);
+            }
+
+            *plResult = 0;
+            return true;
+        }
+        break;
+    }
+    case WM_ERASEBKGND: {
+        // 返回TRUE防止背景擦除（减少闪烁）
+        return TRUE;
     }
     case WM_DPICHANGED: {
         lv_windows_window_context_t* context = (lv_windows_window_context_t*)(
@@ -576,51 +641,9 @@ static bool lv_windows_window_message_callback_nolock(
                 NULL,
                 suggested_rect->left,
                 suggested_rect->top,
-                suggested_rect->right,
-                suggested_rect->bottom,
+                suggested_rect->right - suggested_rect->left,
+                suggested_rect->bottom - suggested_rect->top,
                 SWP_NOZORDER | SWP_NOACTIVATE);
-        }
-
-        break;
-    }
-    case WM_ERASEBKGND: {
-        return TRUE;
-    }
-    case WM_PAINT: {
-        lv_windows_window_context_t* context = (lv_windows_window_context_t*)(
-            lv_windows_get_window_context(hWnd));
-        if (context && context->display_framebuffer_context_handle) {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            if (hdc) {
-                SetStretchBltMode(hdc, HALFTONE);
-
-                RECT client_rect;
-                GetClientRect(hWnd, &client_rect);
-
-                int32_t hor_res = lv_display_get_horizontal_resolution(
-                    context->display_device_object);
-                int32_t ver_res = lv_display_get_vertical_resolution(
-                    context->display_device_object);
-
-                StretchBlt(
-                    hdc,
-                    client_rect.left,
-                    client_rect.top,
-                    client_rect.right - client_rect.left,
-                    client_rect.bottom - client_rect.top,
-                    context->display_framebuffer_context_handle,
-                    0,
-                    0,
-                    hor_res,
-                    ver_res,
-                    SRCCOPY);
-
-                EndPaint(hWnd, &ps);
-            }
-
-            *plResult = 0;
-            return true;
         }
         break;
     }
@@ -628,19 +651,26 @@ static bool lv_windows_window_message_callback_nolock(
         lv_windows_window_context_t* context = (lv_windows_window_context_t*)(
             RemovePropW(hWnd, L"LVGL.Window.Context"));
         if (context) {
+            if (context->display_timer_object) {
+                lv_timer_delete(context->display_timer_object);
+            }
+
             lv_display_t* display_device_object =
                 context->display_device_object;
             context->display_device_object = NULL;
-            lv_display_delete(display_device_object);
-            DeleteDC(context->display_framebuffer_context_handle);
 
-            lv_timer_delete(context->display_timer_object);
+            if (display_device_object) {
+                lv_display_delete(display_device_object);
+            }
+
+            if (context->display_framebuffer_context_handle) {
+                DeleteDC(context->display_framebuffer_context_handle);
+            }
 
             HeapFree(GetProcessHeap(), 0, context);
         }
 
         PostQuitMessage(0);
-
         break;
     }
     default: {

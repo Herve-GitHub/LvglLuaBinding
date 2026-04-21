@@ -348,7 +348,7 @@
 #define LV_USE_LODEPNG 1
 #define LV_USE_LIBPNG 0
 #define LV_USE_BMP 0
-#define LV_USE_TJPGD 0
+#define LV_USE_TJPGD 1
 #define LV_USE_LIBJPEG_TURBO 0
 #define LV_USE_GIF 1
 #define LV_BIN_DECODER_RAM_LOAD 0

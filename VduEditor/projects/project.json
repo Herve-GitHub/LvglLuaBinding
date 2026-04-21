@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-04-17 15:58:53",
+  "created_at": "2026-04-21 09:55:48",
   "current_page_index": 1,
-  "modified_at": "2026-04-17 15:58:53",
+  "modified_at": "2026-04-21 09:55:48",
   "pages": [
     {
       "bg_color": "#1E1E1E",
@@ -14,7 +14,7 @@
           "props": {
             "alignment": "center",
             "bg_color": "#007acc",
-            "bind_point": "system.IMSI",
+            "bind_point": "",
             "color": "#ffffff",
             "compare_operator": "大于",
             "compare_value": "0",
@@ -23,16 +23,16 @@
             "design_mode": true,
             "enable_page_navigation": false,
             "enabled": true,
-            "event_action": "读取绑定数据点",
+            "event_action": "写入绑定数据点",
             "false_bg_color": "#ffffff",
             "false_color": "#ffffff",
-            "font_size": 16,
-            "height": 40,
+            "font_size": 24,
+            "height": 94,
             "http_data_type": "实时数据",
             "http_token": "",
             "http_url": "",
             "instance_name": "",
-            "label": "Button",
+            "label": "颜",
             "navigation_action": "goto_page",
             "on_clicked_handler": "",
             "on_double_clicked_handler": "",
@@ -41,10 +41,10 @@
             "target_page_name": "",
             "true_bg_color": "#ffffff",
             "true_color": "#ffffff",
-            "websocket_url": "ws://192.168.1.230:8085/ws/",
-            "width": 100,
-            "x": 438,
-            "y": 119
+            "websocket_url": "",
+            "width": 145,
+            "x": 436,
+            "y": 126
           },
           "type": "custom_button"
         }

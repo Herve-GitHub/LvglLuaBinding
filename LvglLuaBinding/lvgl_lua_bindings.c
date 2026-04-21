@@ -623,12 +623,18 @@ static int l_lv_timer_create(lua_State* L) {
 static int l_lv_timer_delete(lua_State* L) {
     return l_timer_delete(L);
 }
+// lv.image_create(parent)
+static int l_lv_gif_create(lua_State* L) {
+    push_lv_obj(L, lv_gif_create(check_lv_obj(L, 1)));
+    return 1;
+}
 
 // External declaration for textarea module function
 extern int l_lv_textarea_get_text(lua_State* L);
 
 // ========== Module Functions Table ==========
 static const luaL_Reg lvgl_funcs[] = {
+    {"gif_create",l_lv_gif_create},
     {"loadfile",lua_load_file},
     {"create_time_label", l_create_time_label},
     // ✅ 新增：温度计创建接口

@@ -3,7 +3,7 @@
 local lv = require("lvgl")
 local gen = require("general")
 local DataAction = require("editor.DataAction")
-
+local APP_DIR = lvgl.APP_DIR or _G.APP_DIR or ""
 -- 引用页面导航模块（如果存在）
 local PageNavigation = nil
 local has_page_navigation = pcall(function()
@@ -188,6 +188,11 @@ function Button.new(parent, state)
     self.label = lv.label_create(self.btn)
     self.label:set_text(self.props.label)
     self.label:center()
+
+
+    local font_size = self.props.font_size
+    local font = lv.tiny_ttf_create_file(APP_DIR .. "fonts/simhei.ttf", font_size)
+    self.label:set_style_text_font(font, 0)
     
     -- 应用样式
     apply_styles(self)
@@ -262,6 +267,9 @@ function Button.new(parent, state)
             self.btn:set_pos(self.props.x, self.props.y)
         elseif name == "width" or name == "height" then
             self.btn:set_size(self.props.width, self.props.height)
+        elseif name == "font_size" then
+            local font = lv.tiny_ttf_create_file(APP_DIR .. "fonts/simhei.ttf", value)
+            self.label:set_style_text_font(font, 0)
         elseif name == "event_action" and value ~= old_value then
             print("[Button] 事件动作更新为: " .. tostring(value))
             if not self.props.design_mode then

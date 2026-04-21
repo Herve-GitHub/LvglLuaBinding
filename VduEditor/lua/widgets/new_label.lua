@@ -2,7 +2,7 @@
 -- 文本标签控件，包含数据绑定和事件配置
 local lv = require("lvgl")
 local LabelAction = require("actions.LabelAction")
-
+local APP_DIR = lvgl.APP_DIR or _G.APP_DIR or ""
 local Label = {}
 Label.__index = Label
 
@@ -24,7 +24,7 @@ Label.__widget_meta = {
     { name = "text_color", type = "color", default = "#FFFFFF", label = "文本颜色" },
     { name = "bg_color", type = "color", default = "#00000000", label = "背景色" },
     { name = "bg_opa", type = "number", default = 0, label = "背景透明度", min = 0, max = 255 },
-    --{ name = "font_size", type = "number", default = 16, label = "字体大小" },
+    { name = "font_size", type = "number", default = 16, label = "字体大小" },
     { name = "alignment", type = "enum", default = "left", label = "对齐方式",
       options = {
         { value = "left", label = "左对齐" },
@@ -159,6 +159,9 @@ function Label.new(parent, state)
   self.label:set_style_text_color(parse_color(self.props.text_color), 0)
 
 
+  local font_size = self.props.font_size
+  local font = lv.tiny_ttf_create_file(APP_DIR .. "fonts/simhei.ttf", font_size)
+  self.label:set_style_text_font(font, 0)
 
 
   --self.label:ttf_set_size(18)
@@ -367,6 +370,9 @@ function Label:set_property(name, value)
         self.container:add_flag(lv.OBJ_FLAG_HIDDEN)
       end
     end
+  elseif name == "font_size" then
+    local font = lv.tiny_ttf_create_file(APP_DIR .. "fonts/simhei.ttf", value)
+    self.label:set_style_text_font(font, 0)
   elseif name == "design_mode" then
     -- 设计模式下禁用点击事件
     if value then

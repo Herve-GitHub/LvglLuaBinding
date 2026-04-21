@@ -1,13 +1,13 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-04-17 15:58:53
+-- 生成时间: 2026-04-21 09:55:48
 -- 工程版本: 1.0
 -- ==============================================
 
 -- 启动网络服务
 lvgl.start_network_service(3000)
-lvgl.connect("ws://192.168.1.230:8085/ws/", 3000)
+lvgl.connect("", 3000)
 
 -- 引用 LVGL
 local lv = require("lvgl")
@@ -47,39 +47,39 @@ local function create_page_1(parent)
 
     -- 控件 1: custom_button
     local widget_1 = widgets_new_button.new(container, {
-        width = 100,
-        on_clicked_handler = "",
-        compare_value = "0",
-        label = "Button",
-        true_color = "#ffffff",
-        true_bg_color = "#ffffff",
-        y = 119,
-        x = 438,
-        target_page_name = "",
-        compare_operator = "大于",
-        font_size = 16,
-        alignment = "center",
-        enable_page_navigation = false,
-        http_token = "",
-        websocket_url = "ws://192.168.1.230:8085/ws/",
-        instance_name = "",
-        custom_address = "",
-        target_page_index = 1,
-        color = "#ffffff",
         navigation_action = "goto_page",
-        custom_value = "",
-        bind_point = "system.IMSI",
-        false_bg_color = "#ffffff",
-        height = 40,
-        http_url = "",
-        bg_color = "#007acc",
-        on_double_clicked_handler = "",
-        enabled = true,
-        http_data_type = "实时数据",
-        on_single_clicked_handler = "",
+        compare_operator = "大于",
+        x = 436,
+        y = 126,
+        http_token = "",
+        event_action = "写入绑定数据点",
+        target_page_name = "",
+        label = "颜",
         design_mode = false,
-        event_action = "读取绑定数据点",
-        false_color = "#ffffff"
+        http_data_type = "实时数据",
+        websocket_url = "",
+        height = 94,
+        true_color = "#ffffff",
+        bg_color = "#007acc",
+        color = "#ffffff",
+        true_bg_color = "#ffffff",
+        font_size = 24,
+        http_url = "",
+        on_double_clicked_handler = "",
+        custom_value = "",
+        instance_name = "",
+        enable_page_navigation = false,
+        bind_point = "",
+        false_color = "#ffffff",
+        false_bg_color = "#ffffff",
+        alignment = "center",
+        enabled = true,
+        width = 145,
+        on_clicked_handler = "",
+        on_single_clicked_handler = "",
+        target_page_index = 1,
+        custom_address = "",
+        compare_value = "0"
     })
 
     return container
