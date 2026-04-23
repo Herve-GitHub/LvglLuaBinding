@@ -35,12 +35,13 @@ StatusBar.__widget_meta = {
     { name = "lamp_text", type = "string", default = "CH1", label = "通道名称" },
     { name = "lamp_size", type = "number", default = 14, label = "状态灯大小" },
     -- 事件处理代码属性
-    { name = "on_updated_handler", type = "code", default = "", label = "更新处理代码",
+   --[[ { name = "on_updated_handler", type = "code", default = "", label = "更新处理代码",
       event = "updated", description = "状态更新时执行的Lua代码" },
     { name = "on_time_tick_handler", type = "code", default = "", label = "时间变化处理代码",
-      event = "time_tick", description = "时间变化时执行的Lua代码" },
+      event = "time_tick", description = "时间变化时执行的Lua代码" },]]--
   },
-  events = { "updated", "time_tick" },
+ -- events = { "updated", "time_tick" },
+ events = {  },
 }
 
 -- 解析颜色值（支持 "#RRGGBB" 字符串或数字）

@@ -89,7 +89,7 @@ function PropertyArea.new(parent, props)
     }
     
     -- 计算总高度
-    self._total_height = self.props.title_height + self.props.tab_height + 400  -- 内容区域最小高度
+    self._total_height = self.props.title_height + self.props.tab_height + 550  -- 内容区域最小高度
     self._content_height = 400  -- 内容区域高度
     
     -- 创建主容器（浮动窗口样式）

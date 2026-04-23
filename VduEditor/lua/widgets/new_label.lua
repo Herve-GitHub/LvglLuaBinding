@@ -74,10 +74,11 @@ Label.__widget_meta = {
       description = "写入自定义地址时的值" },
 
     -- 事件处理代码属性
-   { name = "on_clicked_handler", type = "code", default = "", label = "点击处理代码",
-      event = "clicked", description = "点击标签时执行的Lua代码" },
+   --[[{ name = "on_clicked_handler", type = "code", default = "", label = "点击处理代码",
+      event = "clicked", description = "点击标签时执行的Lua代码" },]]
   },
-  events = { "clicked" },
+  --events = { "clicked" },
+    events = {  },
 }
 
 -- 解析颜色值（支持 "#RRGGBB" 或 "#AARRGGBB" 字符串或数字）
@@ -203,6 +204,10 @@ function Label:_apply_alignment()
   if not self.label then return end
   
   local align = self.props.alignment
+
+
+   -- 让标签填满整个容器
+  self.label:set_size(self.props.width, self.props.height)
   
   -- 使用 set_style_text_align 设置文本对齐
   if self.label.set_style_text_align then
@@ -211,7 +216,7 @@ function Label:_apply_alignment()
   
   -- 同时设置标签在容器中的垂直居中位置
   self.label:set_pos(0, 0)
-  self.label:align(lv.ALIGN_CENTER, 0, 0)
+  --self.label:align(lv.ALIGN_CENTER, 0, 0)
 end
 
 -- 事件订阅

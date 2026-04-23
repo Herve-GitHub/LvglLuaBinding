@@ -42,10 +42,11 @@ Label.__widget_meta = {
     { name = "visible", type = "boolean", default = true, label = "可见" },
     { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
     -- 事件处理代码属性
-    { name = "on_clicked_handler", type = "code", default = "", label = "点击处理代码",
-      event = "clicked", description = "点击标签时执行的Lua代码" },
+    --[[{ name = "on_clicked_handler", type = "code", default = "", label = "点击处理代码",
+      event = "clicked", description = "点击标签时执行的Lua代码" },]]--
   },
-  events = { "clicked" },
+  --events = { "clicked" },
+    events = {  },
 }
 
 -- 解析颜色值（支持 "#RRGGBB" 或 "#AARRGGBB" 字符串或数字）

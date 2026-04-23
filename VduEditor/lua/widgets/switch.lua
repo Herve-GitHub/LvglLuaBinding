@@ -40,10 +40,11 @@ Switch.__widget_meta = {
     
     
     -- 事件处理代码
-    { name = "on_value_changed_handler", type = "code", default = "", label = "值改变处理代码",
-      event = "value_changed" },
+   --[[ { name = "on_value_changed_handler", type = "code", default = "", label = "值改变处理代码",
+      event = "value_changed" },]]--
   },
-  events = { "value_changed" },
+ -- events = { "value_changed" },
+    events = {  },
 }
 
 -- 辅助函数：解析颜色

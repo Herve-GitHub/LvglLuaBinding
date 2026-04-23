@@ -137,7 +137,12 @@ function PropertyWidgetEditor.create_properties_table(ctx, y_pos, widget_entry, 
         elseif prop_type == "number" then
             PropertyInputs.create_number_input(ctx, prop_name, tonumber(prop_value) or 0, prop_def.min, prop_def.max, is_read_only, widget_entry, y_pos)
         elseif prop_type == "boolean" then
-            PropertyInputs.create_checkbox_input(ctx, prop_name, prop_value, is_read_only, widget_entry, y_pos)
+    -- 专门给启用页面跳转使用独立复选框
+             if prop_name == "enable_page_navigation" then
+                 PropertyInputs.create_page_navigation_checkbox(ctx, prop_name, prop_value, is_read_only, widget_entry, y_pos)
+            else
+                  PropertyInputs.create_checkbox_input(ctx, prop_name, prop_value, is_read_only, widget_entry, y_pos)
+            end
         elseif prop_type == "color" then
             PropertyInputs.create_color_input(ctx, prop_name, prop_value, is_read_only, widget_entry, y_pos)
         elseif prop_type == "enum" then

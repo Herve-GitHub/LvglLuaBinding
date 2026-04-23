@@ -337,6 +337,9 @@
     #define LV_FS_WIN32_PATH_2 ""
 
 
+#define LV_FS_WIN32_LETTER_3 'E'
+#define LV_FS_WIN32_PATH_3 ""
+
     #define LV_FS_WIN32_CACHE_SIZE 0
 #endif
 #define LV_USE_FS_FATFS 0

@@ -23,9 +23,10 @@ Slider.__widget_meta = {
         { name = "knob_color", type = "color", default = "#FFFFFF", label = "滑块颜色" },
         { name = "enabled", type = "boolean", default = true, label = "启用" },
         { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
-        { name = "on_changed_handler", type = "code", default = "", label = "值变化处理代码", event = "changed" },
+       -- { name = "on_changed_handler", type = "code", default = "", label = "值变化处理代码", event = "changed" },
     },
-    events = { "changed" },
+   -- events = { "changed" },
+     events = {  },
 }
 
 local function parse_color(c)

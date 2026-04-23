@@ -106,7 +106,7 @@ local RIGHT_PANEL_WIDTH = 280
 
 -- 获取窗口尺寸
 local function get_window_size()
-    local w, h = 1024, 768 --768
+    local w, h = 1024, 600 --768
     if scr and scr.get_width and scr.get_height then
         local ok1, ww = pcall(function() return scr:get_width() end)
         local ok2, hh = pcall(function() return scr:get_height() end)

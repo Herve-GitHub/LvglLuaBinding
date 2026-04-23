@@ -21,8 +21,8 @@ Image.__widget_meta = {
     { name = "mode", type = "enum", default = "normal", options = {"normal","cover","contain","stretch"}, label = "显示模式" },
     { name = "rotation", type = "number", default = 0, label = "旋转角度" },
     { name = "scale", type = "number", default = 256, label = "缩放" },
-    { name = "scale_x", type = "number", default = 256, label = "水平缩放" },
-    { name = "scale_y", type = "number", default = 256, label = "垂直缩放" },
+  --  { name = "scale_x", type = "number", default = 256, label = "水平缩放" },
+   -- { name = "scale_y", type = "number", default = 256, label = "垂直缩放" },
     { name = "opa", type = "number", default = 255, label = "透明度", min=0,max=255 },
   },
 }
@@ -103,8 +103,8 @@ function Image.new(parent, state)
     -- 属性应用
     if self.image.set_rotation then self.image:set_rotation(self.props.rotation) end
     if self.image.set_scale then self.image:set_scale(self.props.scale) end
-    if self.image.set_scale_x then self.image:set_scale_x(self.props.scale_x) end
-    if self.image.set_scale_y then self.image:set_scale_y(self.props.scale_y) end
+  --  if self.image.set_scale_x then self.image:set_scale_x(self.props.scale_x) end
+  --  if self.image.set_scale_y then self.image:set_scale_y(self.props.scale_y) end
     if self.image.set_opa then self.image:set_opa(self.props.opa) end
 
     self._callbacks = {}
@@ -127,53 +127,53 @@ function Image.new(parent, state)
     end
 
     -- ✅ 核心：点击src时弹窗选图
-    function self:set_property(name, value)
-        self.props[name] = value
-        if not self.image then return true end
+  function self:set_property(name, value)
+    self.props[name] = value  -- ✅ 这行会把大部分属性自动保存，但 scale 手动分支需要显式处理
+    if not self.image then return true end
 
-        if name == "x" or name == "y" then
-            self.image:set_pos(self.props.x, self.props.y)
-        
-        -- 手动调整宽高时生效
-        elseif name == "width" or name == "height" then
-            self.image:set_size(self.props.width, self.props.height)
+    if name == "x" or name == "y" then
+        self.image:set_pos(self.props.x, self.props.y)
+    
+    elseif name == "width" or name == "height" then
+        self.image:set_size(self.props.width, self.props.height)
 
-        elseif name == "src" then
-            ImageDialog.new(nil, {
-                initial_dir = config.image_path,
-                callback = function(full_path, filename)
-                    if filename then
-                        self.props.src = filename
-                        -- 选中图片：切换为自适应模式
-                        self.image:set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
-                        clear_placeholder(self.image)
-                        load_image(self.image, filename)
-                    end
+    elseif name == "src" then
+        ImageDialog.new(nil, {
+            initial_dir = config.image_path,
+            callback = function(full_path, filename)
+                if filename then
+                    self.props.src = filename
+                    self.image:set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
+                    clear_placeholder(self.image)
+                    load_image(self.image, filename)
                 end
-            })
+            end
+        })
 
-        elseif name == "rotation" then
-            self.image:set_rotation(value or 0)
-        elseif name == "scale" then
-            self.image:set_scale(value or 256)
-        elseif name == "scale_x" then
-            self.image:set_scale_x(value or 256)
-        elseif name == "scale_y" then
-            self.image:set_scale_y(value or 256)
-        elseif name == "opa" then
-            self.image:set_opa(value or 255)
-        end
-
-        if self.image.invalidate then
-            self.image:invalidate()
-        end
-
-        if self._callbacks.property_changed then
-            self._callbacks.property_changed(name, value)
-        end
-
-        return true
+    elseif name == "rotation" then
+        self.image:set_rotation(value or 0)
+    elseif name == "scale" then
+        -- ✅ 修复：强制保存属性 + 设置控件
+        self.props.scale = value or 256
+        self.image:set_scale(self.props.scale)
+   --[[ elseif name == "scale_x" then
+        self.image:set_scale_x(value or 256)
+    elseif name == "scale_y" then
+        self.image:set_scale_y(value or 256)]]--
+    elseif name == "opa" then
+        self.image:set_opa(value or 255)
     end
+
+    if self.image.invalidate then
+        self.image:invalidate()
+    end
+
+    if self._callbacks.property_changed then
+        self._callbacks.property_changed(name, value)
+    end
+
+    return true
+end
 
     function self:get_properties()
         local out = {}

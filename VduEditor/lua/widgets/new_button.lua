@@ -35,6 +35,9 @@ Button.__widget_meta = {
     { name = "font_size", type = "number", default = 16, label = "字体大小" },
     { name = "alignment", type = "string", default = "center", label = "对齐方式" },
     { name = "bg_color", type = "color", default = "#007acc", label = "背景色" },
+    { name = "border_width", type = "number", default =  2, label = "边框宽度" },
+    { name = "border_color", type = "color", default =  "#007acc", label = "边框颜色" },
+    { name = "border_side", type = "number", default =  2, label = "边框棱角" },
     { name = "enabled", type = "boolean", default = true, label = "启用" },
     { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
     
@@ -80,14 +83,15 @@ Button.__widget_meta = {
       description = "写入自定义地址时的值" },
     
     -- 原始代码事件处理（保持兼容）
-    { name = "on_clicked_handler", type = "code", default = "", label = "点击处理代码",
+  --[[  { name = "on_clicked_handler", type = "code", default = "", label = "点击处理代码",
       event = "clicked", description = "点击按钮时执行的Lua代码" },
     { name = "on_single_clicked_handler", type = "code", default = "", label = "单击处理代码",
       event = "single_clicked", description = "单击按钮时执行的Lua代码" },
     { name = "on_double_clicked_handler", type = "code", default = "", label = "双击处理代码",
-      event = "double_clicked", description = "双击按钮时执行的Lua代码" },
+      event = "double_clicked", description = "双击按钮时执行的Lua代码" },]]--
   },
-  events = { "clicked", "single_clicked", "double_clicked" },
+ -- events = { "clicked", "single_clicked", "double_clicked" },
+    events = {  },
 }
 
 -- 辅助函数：解析颜色
@@ -184,6 +188,9 @@ function Button.new(parent, state)
     self.btn = lv.button_create(parent)
     self.btn:set_size(self.props.width, self.props.height)
     self.btn:set_pos(self.props.x, self.props.y)
+    self.btn:set_style_border_width(self.props.border_width, 0)
+    self.btn:set_style_border_color(parse_color(self.props.border_color), 0)
+    self.btn:set_style_radius(self.props.border_side)
 
     self.label = lv.label_create(self.btn)
     self.label:set_text(self.props.label)
@@ -270,6 +277,12 @@ function Button.new(parent, state)
         elseif name == "font_size" then
             local font = lv.tiny_ttf_create_file(APP_DIR .. "fonts/simhei.ttf", value)
             self.label:set_style_text_font(font, 0)
+        elseif name == "border_width" then
+             self.btn:set_style_border_width(value, 0)
+        elseif name == "border_color" then
+              self.btn:set_style_border_color(parse_color(value), 0)
+        elseif name == "border_side" then
+               self.btn:set_style_radius(value)
         elseif name == "event_action" and value ~= old_value then
             print("[Button] 事件动作更新为: " .. tostring(value))
             if not self.props.design_mode then

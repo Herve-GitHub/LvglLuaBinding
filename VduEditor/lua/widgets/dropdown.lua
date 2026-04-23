@@ -29,10 +29,11 @@ Dropdown.__widget_meta = {
         { name = "enabled", type = "boolean", default = true, label = "启用" },
         { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
         -- 事件处理代码属性
-        { name = "on_changed_handler", type = "code", default = "", label = "选择变化处理代码",
-          event = "changed", description = "选择变化时执行的Lua代码" },
+       --[[ { name = "on_changed_handler", type = "code", default = "", label = "选择变化处理代码",
+          event = "changed", description = "选择变化时执行的Lua代码" },]]--
     },
-    events = { "changed" },
+    --events = { "changed" },
+     events = {  },
 }
 
 -- 解析颜色值（支持 "#RRGGBB" 字符串或数字）

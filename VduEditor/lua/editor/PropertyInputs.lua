@@ -227,9 +227,14 @@ end
 
 -- 创建数字输入框
 function PropertyInputs.create_number_input(ctx, prop_name, value, min_val, max_val, is_read_only, widget_entry, y_pos)
+    local ta_width = ctx.props.width - 105 - 48 -- 给按钮留出空间
+    local btn_width = 22
+    local btn_height = 22
+
+    -- 1. 创建数字输入框
     local textarea = lv.textarea_create(ctx.content)
     textarea:set_pos(95, y_pos + 2)
-    textarea:set_size(ctx.props.width - 105, 22)
+    textarea:set_size(ta_width, btn_height)
     textarea:set_style_bg_color(0x1E1E1E, 0)
     textarea:set_style_border_width(1, 0)
     textarea:set_style_border_color(0x555555, 0)
@@ -240,46 +245,85 @@ function PropertyInputs.create_number_input(ctx, prop_name, value, min_val, max_
     textarea:set_one_line(true)
     textarea:set_text(tostring(math.floor(value)))
     textarea:set_accepted_chars("0123456789-")
-    
-    -- 设置基本属性
+
     textarea:add_flag(lv.OBJ_FLAG_CLICKABLE)
     textarea:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
-    
-    -- 启用文本选择功能
     setup_text_selection(textarea)
-    
+
+    -- 2. 创建 - 按钮
+    local btn_sub = lv.button_create(ctx.content)
+    btn_sub:set_pos(95 + ta_width, y_pos + 2)
+    btn_sub:set_size(btn_width, btn_height)
+    btn_sub:set_style_bg_color(0x333333, 0)
+    btn_sub:set_style_border_width(1, 0)
+    btn_sub:set_style_border_color(0x555555, 0)
+    local lbl_sub = lv.label_create(btn_sub)
+    lbl_sub:set_text("-")
+    lbl_sub:align(lv.ALIGN_CENTER, 0, 0) -- 修复这里
+
+    -- 3. 创建 + 按钮
+    local btn_add = lv.button_create(ctx.content)
+    btn_add:set_pos(95 + ta_width + btn_width, y_pos + 2)
+    btn_add:set_size(btn_width, btn_height)
+    btn_add:set_style_bg_color(0x333333, 0)
+    btn_add:set_style_border_width(1, 0)
+    btn_add:set_style_border_color(0x555555, 0)
+    local lbl_add = lv.label_create(btn_add)
+    lbl_add:set_text("+")
+    lbl_add:align(lv.ALIGN_CENTER, 0, 0) -- 修复这里
+
+    -- 只读处理
     if is_read_only then
         textarea:add_state(lv.STATE_DISABLED)
-    else
-        local ta = textarea
-        local last_value = value  -- 记录上次的值，避免重复触发
-        
-        -- 提交属性变更的函数
-        local function commit_change()
-            local new_value = tonumber(lv.textarea_get_text(ta)) or 0
-            if min_val and new_value < min_val then new_value = min_val end
-            if max_val and new_value > max_val then new_value = max_val end
-            if new_value ~= last_value then
-                last_value = new_value
-                if widget_entry.instance and widget_entry.instance.set_property then
-                    widget_entry.instance:set_property(prop_name, new_value)
-                end
-                ctx:_emit("property_changed", prop_name, new_value, widget_entry)
-            end
-        end
-        
-        -- 按回车键时触发设置
-        textarea:add_event_cb(function(e)
-            commit_change()
-        end, lv.EVENT_READY, nil)
-        
-        -- 失去焦点时也触发设置
-        textarea:add_event_cb(function(e)
-            commit_change()
-        end, lv.EVENT_DEFOCUSED, nil)
+        btn_sub:add_state(lv.STATE_DISABLED)
+        btn_add:add_state(lv.STATE_DISABLED)
+        return textarea, btn_sub, btn_add
     end
-    
-    return textarea
+
+    local last_value = value
+
+    -- 统一提交变更（原逻辑不变）
+    local function commit_change(new_val)
+        local num_val = tonumber(new_val) or 0
+        num_val = math.floor(num_val)
+
+        -- 限制最大最小值
+        if min_val ~= nil then num_val = math.max(num_val, min_val) end
+        if max_val ~= nil then num_val = math.min(num_val, max_val) end
+
+        if num_val == last_value then return end
+
+        last_value = num_val
+        textarea:set_text(tostring(num_val))
+
+        -- 同步到控件
+        if widget_entry.instance and widget_entry.instance.set_property then
+            widget_entry.instance:set_property(prop_name, num_val)
+        end
+        ctx:_emit("property_changed", prop_name, num_val, widget_entry)
+    end
+
+    -- 输入框变更提交
+    textarea:add_event_cb(function()
+        commit_change(textarea:get_text())
+    end, lv.EVENT_READY, nil)
+    textarea:add_event_cb(function()
+        commit_change(textarea:get_text())
+    end, lv.EVENT_DEFOCUSED, nil)
+
+    -- - 按钮：减 1
+    btn_sub:add_event_cb(function()
+        local current = tonumber(textarea:get_text()) or 0
+        commit_change(current - 1)
+    end, lv.EVENT_CLICKED, nil)
+
+    -- + 按钮：加 1
+    btn_add:add_event_cb(function()
+        local current = tonumber(textarea:get_text()) or 0
+        commit_change(current + 1)
+    end, lv.EVENT_CLICKED, nil)
+
+    return textarea, btn_sub, btn_add
 end
 
 -- 创建复选框
@@ -312,6 +356,50 @@ function PropertyInputs.create_checkbox_input(ctx, prop_name, value, is_read_onl
     
     return checkbox
 end
+
+
+
+
+
+
+-- ========== 【新建】专门用于：启用页面跳转（默认false） ==========
+function PropertyInputs.create_page_navigation_checkbox(ctx, prop_name, value, is_read_only, widget_entry, y_pos)
+    -- 强制初始状态未选中（false）
+    local is_checked = false
+
+    local checkbox = lv.obj_create(ctx.content)
+    checkbox:set_pos(95, y_pos + 2)
+    checkbox:set_size(20, 20)
+    checkbox:set_style_bg_color(is_checked and 0x007ACC or 0x1E1E1E, 0)
+    checkbox:set_style_border_width(1, 0)
+    checkbox:set_style_border_color(0x555555, 0)
+    checkbox:set_style_radius(0, 0)
+    checkbox:set_style_pad_all(0, 0)
+    checkbox:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
+
+    if not is_read_only then
+        checkbox:add_flag(lv.OBJ_FLAG_CLICKABLE)
+
+        checkbox:add_event_cb(function(e)
+            is_checked = not is_checked
+            checkbox:set_style_bg_color(is_checked and 0x007ACC or 0x1E1E1E, 0)
+
+            if widget_entry.instance and widget_entry.instance.set_property then
+                widget_entry.instance:set_property(prop_name, is_checked)
+            end
+            ctx:_emit("property_changed", prop_name, is_checked, widget_entry)
+        end, lv.EVENT_CLICKED, nil)
+    end
+
+    return checkbox
+end
+
+
+
+
+
+
+
 
 -- 创建颜色选择框
 function PropertyInputs.create_color_input(ctx, prop_name, value, is_read_only, widget_entry, y_pos)
@@ -504,8 +592,11 @@ function PropertyInputs.create_enum_dropdown(ctx, prop_name, value, options, is_
         list:set_size(ctx.props.width - 105, list_height)
         
         -- 计算绝对位置
-        local abs_x = ctx.props.x + 95
+      --[[  local abs_x = ctx.props.x + 95
         local abs_y = ctx.props.y + ctx.props.title_height + y_pos + 26
+        list:set_pos(abs_x, abs_y)]]--
+        local abs_x = ctx.props.x + 95
+        local abs_y = ctx.props.y + ctx.props.title_height + y_pos 
         list:set_pos(abs_x, abs_y)
         
         list:set_style_bg_color(0x2D2D2D, 0)

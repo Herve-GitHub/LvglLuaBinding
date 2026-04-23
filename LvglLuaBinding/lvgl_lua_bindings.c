@@ -367,7 +367,7 @@ static int l_lv_tiny_ttf_create_file(lua_State* L) {
         lv_font_t** ud = (lv_font_t**)lua_newuserdata(L, sizeof(lv_font_t*));
         *ud = font;
         luaL_setmetatable(L, "lv_font");
-        g_current_ttf_font = font;
+      //  g_current_ttf_font = font;
     } else {
         printf("Failed to load TTF font: %s\n", path);
         lua_pushnil(L);

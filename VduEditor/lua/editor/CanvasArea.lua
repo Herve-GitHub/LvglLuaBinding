@@ -32,7 +32,7 @@ function CanvasArea.new(parent, props)
         page_width = props.page_width or 1024,
         page_height = props.page_height or 600,
         show_page_border = props.show_page_border ~= false,
-        page_border_color = props.page_border_color or 0xFF6600,
+        page_border_color = props.page_border_color or 0xF00000,--0xFF6600
         page_border_width = props.page_border_width or 2,
     }
     
@@ -91,7 +91,7 @@ function CanvasArea.new(parent, props)
     
     -- 创建画布容器
     self.container = lv.obj_create(parent)
-    self.container:set_pos(self.props.x, self.props.y)
+    self.container:set_pos(self.props.x+10, self.props.y)
     self.container:set_size(self.props.width, self.props.height)
     self.container:set_style_bg_color(self.props.bg_color, 0)
     self.container:set_style_radius(0, 0)

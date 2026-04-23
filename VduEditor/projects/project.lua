@@ -1,7 +1,7 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-04-21 09:55:48
+-- 生成时间: 2026-04-23 11:59:21
 -- 工程版本: 1.0
 -- ==============================================
 
@@ -47,39 +47,76 @@ local function create_page_1(parent)
 
     -- 控件 1: custom_button
     local widget_1 = widgets_new_button.new(container, {
-        navigation_action = "goto_page",
-        compare_operator = "大于",
-        x = 436,
-        y = 126,
-        http_token = "",
-        event_action = "写入绑定数据点",
-        target_page_name = "",
-        label = "颜",
-        design_mode = false,
-        http_data_type = "实时数据",
-        websocket_url = "",
-        height = 94,
-        true_color = "#ffffff",
-        bg_color = "#007acc",
-        color = "#ffffff",
-        true_bg_color = "#ffffff",
-        font_size = 24,
-        http_url = "",
-        on_double_clicked_handler = "",
-        custom_value = "",
-        instance_name = "",
         enable_page_navigation = false,
-        bind_point = "",
-        false_color = "#ffffff",
+        color = "#ffffff",
+        border_width = 2,
+        design_mode = false,
+        event_action = "写入绑定数据点",
+        http_url = "",
+        http_data_type = "实时数据",
+        label = "Button",
+        compare_operator = "大于",
+        custom_value = "",
+        true_color = "#ffffff",
+        target_page_name = "",
         false_bg_color = "#ffffff",
-        alignment = "center",
+        width = 100,
+        compare_value = "0",
+        bind_point = "",
+        instance_name = "",
+        y = 5,
+        bg_color = "#007acc",
         enabled = true,
-        width = 145,
-        on_clicked_handler = "",
-        on_single_clicked_handler = "",
+        alignment = "center",
+        websocket_url = "",
+        navigation_action = "goto_page",
+        border_color = "#007acc",
+        border_side = 2,
         target_page_index = 1,
+        true_bg_color = "#ffffff",
+        false_color = "#ffffff",
         custom_address = "",
-        compare_value = "0"
+        x = 5,
+        http_token = "",
+        font_size = 16,
+        height = 40
+    })
+
+    -- 控件 2: custom_button
+    local widget_2 = widgets_new_button.new(container, {
+        enable_page_navigation = false,
+        color = "#ffffff",
+        border_width = 2,
+        design_mode = false,
+        event_action = "写入绑定数据点",
+        http_url = "",
+        http_data_type = "实时数据",
+        label = "Button",
+        compare_operator = "大于",
+        custom_value = "",
+        true_color = "#ffffff",
+        target_page_name = "",
+        false_bg_color = "#ffffff",
+        width = 100,
+        compare_value = "0",
+        bind_point = "",
+        instance_name = "",
+        y = 0,
+        bg_color = "#007acc",
+        enabled = true,
+        alignment = "center",
+        websocket_url = "",
+        navigation_action = "goto_page",
+        border_color = "#007acc",
+        border_side = 2,
+        target_page_index = 1,
+        true_bg_color = "#ffffff",
+        false_color = "#ffffff",
+        custom_address = "",
+        x = 919,
+        http_token = "",
+        font_size = 16,
+        height = 40
     })
 
     return container

@@ -22,12 +22,13 @@ Valve.__widget_meta = {
         { name = "handle_color", type = "color", default = "#FF5722", label = "把手颜色" },
         { name = "design_mode", type = "boolean", default = true, label = "设计模式" },
         -- 事件处理代码属性
-        { name = "on_angle_changed_handler", type = "code", default = "", label = "角度变化处理代码",
+      --[[  { name = "on_angle_changed_handler", type = "code", default = "", label = "角度变化处理代码",
           event = "angle_changed", description = "角度变化时执行的Lua代码" },
         { name = "on_toggled_handler", type = "code", default = "", label = "切换处理代码",
-          event = "toggled", description = "阀门开关切换时执行的Lua代码" },
+          event = "toggled", description = "阀门开关切换时执行的Lua代码" },]]--
     },
-    events = { "angle_changed", "toggled" },
+   -- events = { "angle_changed", "toggled" },
+   events = {  },
 }
 
 Valve.instances = {}

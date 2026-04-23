@@ -29,7 +29,8 @@ PopupButton.__widget_meta = {
     { name = "websocket_url", type = "string", default = "", label = "WebSocket",
       description = "例如: ws://192.168.1.100:8080" },
   },
-  events = { "confirm", "cancel" },
+ -- events = { "confirm", "cancel" },
+    events = {  },
 }
 
 -- 仅保留实例列表用于手动清理（不再用于回调）
@@ -95,7 +96,7 @@ local function create_popup(self, parent)
     local title = lv.label_create(popup)
     title:set_text(self.props.popup_title)
     title:set_pos(100,2)
-    
+    self.title_label = title
     -- 输入框
     local textarea_margin = math.floor(popup_w * 0.07)
     local textarea_width = popup_w - 2 * textarea_margin
@@ -283,6 +284,18 @@ function PopupButton.new(parent, state)
         if name == "x" or name == "y" then self.btn:set_pos(self.props.x, self.props.y) end
         if name == "width" or name == "height" then self.btn:set_size(self.props.width, self.props.height) end
         if name == "color" or name =="bg_color" then apply_styles(self) end
+         -- 最后加上这两段 ✅
+        if name == "popup_title" then
+             if self.title_label then
+                self.title_label:set_text(self.props.popup_title)
+             end
+          end
+
+        if name == "input_hint" then
+            if self._popup_textarea then
+            self._popup_textarea:set_placeholder_text(self.props.input_hint)
+          end
+        end
         
         return true
     end

@@ -32,9 +32,10 @@ TrendChart.__widget_meta = {
         { name = "x_label_height", type = "number", default = 20, label = "X轴标签高度" },
         { name = "x_label_texts", type = "string", default = "0s,5s,10s", label = "X轴自定义" },
         { name = "x_label_color", type = "color", default = "#CCCCCC", label = "X轴标签颜色" },
-        { name = "on_updated_handler", type = "code", default = "", label = "更新处理代码" },
+        --{ name = "on_updated_handler", type = "code", default = "", label = "更新处理代码" },
     },
-    events = { "updated" },
+    --events = { "updated" },
+      events = {  },
 }
 
 local function parse_color(color)
