@@ -191,7 +191,9 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <None Include="lua\editor\savelua.lua" />
     <None Include="lua\general.lua" />
     <None Include="lua\print_widget_meta.lua" />
+    <None Include="lua\test_lua\ImageDialog.lua" />
     <None Include="lua\test_lua\websocket.lua" />
+    <None Include="lua\test_lua\基础版实时数据查询表格.lua" />
     <None Include="lua\widgets\ArcGauge.lua" />
     <None Include="lua\widgets\button.lua" />
     <None Include="lua\widgets\config.lua" />
@@ -236,6 +238,7 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <Font Include="fonts\simhei.ttf" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\..\用户需要实现的组态页面\image\bitbug_favicon.ico" />
     <Image Include="icons\ribbon\align_bottom.png" />
     <Image Include="icons\ribbon\align_center.png" />
     <Image Include="icons\ribbon\align_left.png" />
@@ -264,6 +267,12 @@ xcopy "$(ProjectDir)icons" "$(TargetDir)icons\" /S /Y</Command>
     <Image Include="icons\ribbon\zoom_out.png" />
     <Image Include="icons\ribbon\zoom_reset.png" />
     <Image Include="image\ahu3.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="VduEditor.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,7 +1,7 @@
 ﻿#include <Windows.h>
 #include <iostream>
 #include <string>
-
+#include "resource.h"  // 必须加这个
 // Lua 绑定
 extern "C" {
 #include "lvgl_lua_bindings.h"
@@ -16,8 +16,8 @@ static WNDPROC g_original_wndproc = nullptr;
 
 
 // 默认脚本路径（相对于可执行文件目录）
-//static const char* DEFAULT_SCRIPT_PATH = "websocket\\chart.lua";  // 修改为 websocket 测试脚本
-static const char* DEFAULT_SCRIPT_PATH = "lua\\editor\\Admin.lua";  // 修改为 websocket 测试脚本
+static const char* DEFAULT_SCRIPT_PATH = "websocket\\httphistory.lua";  // 修改为 websocket 测试脚本
+//static const char* DEFAULT_SCRIPT_PATH = "lua\\editor\\main_editor.lua";  // 修改为 websocket 测试脚本
 // static const char* DEFAULT_SCRIPT_PATH = "projects\\project.lua";  // 修改为 websocket 测试脚本
 // 默认 Lua 搜索路径（相对于可执行文件目录）
 static const char* DEFAULT_LUA_PATH_TEMPLATE =
@@ -442,6 +442,13 @@ int main(int argc, char* argv[])
     }
 
 
+    HWND top_window = GetAncestor(window_handle, GA_ROOT);
+    HICON hIcon = LoadIconA(GetModuleHandleA(NULL), MAKEINTRESOURCEA(IDI_ICON1));
+
+    if (hIcon && top_window) {
+        SendMessageA(top_window, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+        SendMessageA(top_window, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+    }
 
 
 

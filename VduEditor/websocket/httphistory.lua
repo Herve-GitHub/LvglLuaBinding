@@ -1,46 +1,24 @@
-﻿-- 测试正确的token传递方式
-print("=== 测试正确的token传递 ===")
-
--- 启动网络
+﻿-- 1. 先启动网络
 lvgl.start_network_service()
 
--- 等待网络初始化
-local t = os.clock()
-while (os.clock() - t) * 1000 < 300 do end
+-- 2. 准备参数
+local ip_port = "192.168.0.68"
+local token = "scadaToken"
+local ids = '["Device2.tag0001","Device2.tag0002"]'
+local startTime = "2026-04-14 13:12:31"
+local endTime = "2026-04-21 13:12:31"
+local count = 100
 
-print("开始查询...")
-
--- 正确的参数顺序
-local ok, result = lvgl.query_sync(
-    "192.168.0.99",                    -- server_url
-    "scadaToken",                      -- token (直接传递，不需要key-value对)
-    '["THmeter.AirRoomTemp1"]',        -- ids_json
-    100,                                 -- count (数字)
-    60,                                -- period (数字)
-    "2026-01-06 13:11:00",            -- start_time
-    "2026-01-07 13:11:00",            -- end_time
-    "LAST"                             -- agg_type
+-- 3. 调用历史数据查询
+local ok, json = lvgl.query_sync(
+    ip_port,
+    token,
+    ids,
+    startTime,
+    endTime,
+    count
 )
 
-print("结果状态:", ok)
-print("响应内容:", result)
-
-if ok then
-    -- 解析JSON响应
-    local code = result:match('"code":"([^"]+)"')
-    if code == "200" then
-        print("✅ 查询成功!")
-        
-        -- 提取数据
-        local data = result:match('"data":%s*(%[.*%])')
-        if data then
-            print("数据:", data)
-        end
-    else
-        print("❌ 业务错误，code:", code)
-    end
-else
-    print("❌ 查询失败:", result)
-end
-
-print("\n=== 测试结束 ===")
+-- 4. 结果
+print("查询成功:", ok)
+print("返回数据:", json)

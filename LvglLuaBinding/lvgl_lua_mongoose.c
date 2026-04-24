@@ -166,34 +166,26 @@ static void sync_query_handler(struct mg_connection* c, int ev, void* ev_data, v
 }
 
 // ===== 构建历史查询JSON =====
-static char* build_history_json(const char* ids_json, int count, int period,
-    const char* start_time, const char* end_time,
-    const char* agg_type) {
+// ===== 构建历史查询JSON（适配新接口：无period、无aggType）=====
+static char* build_history_json(const char* ids_json, int count,
+    const char* start_time, const char* end_time) {
     if (!ids_json) return NULL;
 
-    // 动态计算缓冲区大小，避免固定1024的限制
-    size_t base_len = strlen(ids_json) + strlen(agg_type) + 100;
+    size_t base_len = strlen(ids_json) + 100;
     size_t time_len = (start_time ? strlen(start_time) : 0) + (end_time ? strlen(end_time) : 0);
     char* json_body = (char*)malloc(base_len + time_len);
 
     if (!json_body) return NULL;
 
-    if (strlen(start_time) > 0 && strlen(end_time) > 0) {
-        snprintf(json_body, base_len + time_len,
-            "{\"ids\":%s,\"count\":%d,\"period\":%d,"
-            "\"startTime\":\"%s\",\"endTime\":\"%s\","
-            "\"aggType\":\"%s\"}",
-            ids_json, count, period, start_time, end_time, agg_type);
-    }
-    else {
-        snprintf(json_body, base_len + time_len,
-            "{\"ids\":%s,\"count\":%d,\"period\":%d,"
-            "\"aggType\":\"%s\"}",
-            ids_json, count, period, agg_type);
-    }
+    snprintf(json_body, base_len + time_len,
+        "{\"ids\":%s,\"startTime\":\"%s\",\"endTime\":\"%s\",\"count\":%d}",
+        ids_json, start_time, end_time, count);
 
     return json_body;
 }
+
+
+
 
 // ===== 初始化同步网络管理器 =====
 static void init_sync_network_manager(void) {
@@ -206,62 +198,74 @@ static void init_sync_network_manager(void) {
 }
 
 // ===== 同步查询历史数据 =====
-static int lua_query_history_sync(lua_State* L) {
-    const char* server_url = luaL_checkstring(L, 1);
-    const char* token = luaL_checkstring(L, 2);
-    const char* ids_json = luaL_checkstring(L, 3);
+static int lua_query_history_data(lua_State* L) {
+    const char* server_url = luaL_checkstring(L, 1);    // IP:PORT
+    const char* token = luaL_checkstring(L, 2);         // token（header）
+    const char* ids_json = luaL_checkstring(L, 3);      // 点ID数组字符串
+    const char* start_time = luaL_checkstring(L, 4);    // 开始时间
+    const char* end_time = luaL_checkstring(L, 5);      // 结束时间
+    int count = luaL_optinteger(L, 6, 100);             // 每页数量，默认100
 
-    int count = luaL_optinteger(L, 4, 100);
-    int period = luaL_optinteger(L, 5, 60);
-    const char* start_time = luaL_optstring(L, 6, "");
-    const char* end_time = luaL_optstring(L, 7, "");
-    const char* agg_type = luaL_optstring(L, 8, "LAST");
-
-    printf("\n[HISTORY_SYNC] Querying history data...\n");
-    printf("  Server: %s\n", server_url);
-    printf("  IDs: %s\n", ids_json);
+    printf("\n[QUERY_HISTORY] 查询历史数据...\n");
+    printf("  服务器: %s\n", server_url);
+    printf("  点ID: %s\n", ids_json);
+    printf("  时间: %s ~ %s\n", start_time, end_time);
+    printf("  数量: %d\n", count);
 
     // 重置全局上下文
     memset(&sync_ctx, 0, sizeof(SyncQueryData));
-
-    // 确保同步管理器已初始化
     init_sync_network_manager();
 
-    // 构建JSON请求体
-    char* json_body = build_history_json(ids_json, count, period, start_time, end_time, agg_type);
+    // 构建请求体
+    char* json_body = build_history_json(ids_json, count, start_time, end_time);
     if (!json_body) {
         lua_pushboolean(L, false);
-        lua_pushstring(L, "Failed to build JSON");
+        lua_pushstring(L, "构建JSON失败");
         return 2;
     }
 
-    // 构建请求URL
+    // 拼接URL
     char url[512];
-    snprintf(url, sizeof(url), "http://%s/scada/aggQueryHistory", server_url);
+    snprintf(url, sizeof(url), "http://%s/scada/queryHistory", server_url);
 
-    printf("[HISTORY_SYNC] URL: %s\n", url);
+    // 提取Host
+    char host[256];
+    const char* host_start = server_url;
+    if (strstr(server_url, "http://") == server_url) {
+        host_start += 7;
+    }
+    const char* path_start = strchr(host_start, '/');
+    if (path_start) {
+        size_t host_len = path_start - host_start;
+        snprintf(host, sizeof(host), "%.*s", (int)host_len, host_start);
+    }
+    else {
+        snprintf(host, sizeof(host), "%s", host_start);
+    }
 
-    // 创建HTTP连接
+    printf("[QUERY_HISTORY] URL: %s\n", url);
+
+    // 创建连接
     struct mg_connection* conn = mg_http_connect(&sync_mgr, url, sync_query_handler, NULL);
     if (!conn) {
         free(json_body);
         lua_pushboolean(L, false);
-        lua_pushstring(L, "Failed to create connection");
+        lua_pushstring(L, "创建连接失败");
         return 2;
     }
     sync_ctx.conn = conn;
 
-    // 发送HTTP请求
+    // 发送POST请求（token放在header）
     mg_printf(conn,
-        "POST /scada/aggQueryHistory HTTP/1.1\r\n"
+        "POST /scada/queryHistory HTTP/1.1\r\n"
         "Host: %s\r\n"
         "Content-Type: application/json\r\n"
-        "Authorization: %s\r\n"
+        "token: %s\r\n"
         "Content-Length: %d\r\n"
         "Connection: close\r\n"
         "\r\n"
         "%s",
-        server_url,
+        host,
         token,
         (int)strlen(json_body),
         json_body
@@ -269,9 +273,7 @@ static int lua_query_history_sync(lua_State* L) {
 
     free(json_body);
 
-    printf("[HISTORY_SYNC] Request sent, waiting for response...\n");
-
-    // 设置超时定时器（5秒）
+    // 超时定时器 5 秒
     lv_timer_t* timeout_timer = lv_timer_create(sync_query_timeout_cb, 5000, &sync_ctx);
 
     // 等待响应
@@ -281,69 +283,44 @@ static int lua_query_history_sync(lua_State* L) {
     int poll_count = 0;
 
     while (!sync_ctx.completed && poll_count < max_polls) {
-        // 处理网络事件
         mg_mgr_poll(&sync_mgr, 0);
-
-        // 处理LVGL定时器和任务
         lv_tick_inc(poll_interval);
         lv_timer_handler();
-
         poll_count++;
         SLEEP_MS(poll_interval);
     }
 
-    // 删除超时定时器
     lv_timer_del(timeout_timer);
 
-    printf("[HISTORY_SYNC] Loop finished: poll_count=%d, completed=%d, status=%d\n",
-        poll_count, sync_ctx.completed, sync_ctx.status_code);
-
-    // 判断业务是否成功
-    bool business_success = false;
-    const char* result_msg = sync_ctx.response_json;
+    // 结果判断
+    bool success = false;
+    const char* result = sync_ctx.response_json;
 
     if (sync_ctx.completed) {
         if (sync_ctx.status_code == 200) {
-            // HTTP状态200，检查业务状态
-            if (strstr(sync_ctx.response_json, "\"code\":\"200\"") != NULL) {
-                printf("[HISTORY_SYNC] SUCCESS: Business code 200\n");
-                business_success = true;
-            }
-            else if (strstr(sync_ctx.response_json, "\"code\":\"401\"") != NULL) {
-                printf("[HISTORY_SYNC] ERROR: Token invalid\n");
-                business_success = false;
-            }
-            else if (strstr(sync_ctx.response_json, "\"code\"") != NULL) {
-                printf("[HISTORY_SYNC] ERROR: Business error in response\n");
-                business_success = false;
-            }
-            else {
-                printf("[HISTORY_SYNC] WARNING: No business code in response\n");
-                business_success = true;
-            }
+            success = true;
         }
         else {
-            printf("[HISTORY_SYNC] ERROR: HTTP status %d\n", sync_ctx.status_code);
-            business_success = false;
+            success = false;
+            if (sync_ctx.status_code == 401) result = "token无效(401)";
+            else if (sync_ctx.status_code == 404) result = "接口不存在 /scada/queryHistory";
+            else result = sync_ctx.response_json;
         }
     }
     else {
-        printf("[HISTORY_SYNC] ERROR: Timeout\n");
-        business_success = false;
-        result_msg = "Request timeout (5000ms)";
+        success = false;
+        result = "请求超时(5000ms)";
     }
 
-    // 返回结果
-    lua_pushboolean(L, business_success);
-    lua_pushstring(L, result_msg);
+    // 返回
+    lua_pushboolean(L, success);
+    lua_pushstring(L, result);
 
-    // 清理连接
+    // 清理
     if (sync_ctx.conn) {
         mg_close_conn(sync_ctx.conn);
         sync_ctx.conn = NULL;
     }
-
-    // 最后处理剩余的网络事件
     for (int i = 0; i < 10; i++) {
         mg_mgr_poll(&sync_mgr, 1);
         SLEEP_MS(1);
@@ -351,6 +328,10 @@ static int lua_query_history_sync(lua_State* L) {
 
     return 2;
 }
+
+
+
+
 
 // ===== WebSocket事件处理器 =====
 /*static void ws_event_handler(struct mg_connection* c, int ev, void* ev_data, void* fn_data) {
@@ -1795,7 +1776,7 @@ static const luaL_Reg lv_mongoose_methods[] = {
     {"write_batch", lua_ws_write_multiple},
     {"read", lua_ws_read_values},
    // {"read_multiple", lua_ws_read_values}, // 别名
-    {"query_sync", lua_query_history_sync},
+    {"query_sync", lua_query_history_data},
     {"get_real_data", lua_get_real_data},  // 新增实时数据接口
     {"get_tags_tree", lua_get_tags_tree},  //  <-- 加这一行
     {"parse_tags_tree", lua_parse_tags_tree},  // <-- 加这行

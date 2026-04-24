@@ -1,19 +1,19 @@
 -- ==============================================
 -- 自动生成的Lua脚本
 -- 由 VduEditor 编译生成
--- 生成时间: 2026-04-23 11:59:21
+-- 生成时间: 2026-04-24 14:53:09
 -- 工程版本: 1.0
 -- ==============================================
 
 -- 启动网络服务
 lvgl.start_network_service(3000)
-lvgl.connect("", 3000)
+lvgl.connect("nil", 3000)
 
 -- 引用 LVGL
 local lv = require("lvgl")
 
 -- 引用控件模块
-local widgets_new_button = require("widgets.new_button")
+local widgets_new_table = require("widgets.new_table")
 
 -- 引用动作模块
 local actions_page_navigation = require("actions.page_navigation")
@@ -45,78 +45,27 @@ local function create_page_1(parent)
     container:remove_flag(lv.OBJ_FLAG_SCROLLABLE)
     container:clear_layout()
 
-    -- 控件 1: custom_button
-    local widget_1 = widgets_new_button.new(container, {
-        enable_page_navigation = false,
-        color = "#ffffff",
-        border_width = 2,
+    -- 控件 1: data_table
+    local widget_1 = widgets_new_table.new(container, {
+        height = 400,
+        width = 600,
+        rows_per_page = 6,
         design_mode = false,
-        event_action = "写入绑定数据点",
-        http_url = "",
-        http_data_type = "实时数据",
-        label = "Button",
-        compare_operator = "大于",
-        custom_value = "",
-        true_color = "#ffffff",
-        target_page_name = "",
-        false_bg_color = "#ffffff",
-        width = 100,
-        compare_value = "0",
-        bind_point = "",
+        header1 = "设备ID",
+        col4_width = 100,
+        col1_width = 180,
+        col2_width = 160,
+        refresh_sec = 5,
+        y = 131,
+        border_color = "#dddddd",
+        api_token = "scadaToken",
+        header4 = "数值",
+        header2 = "时间",
+        header3 = "状态",
+        col3_width = 100,
         instance_name = "",
-        y = 5,
-        bg_color = "#007acc",
-        enabled = true,
-        alignment = "center",
-        websocket_url = "",
-        navigation_action = "goto_page",
-        border_color = "#007acc",
-        border_side = 2,
-        target_page_index = 1,
-        true_bg_color = "#ffffff",
-        false_color = "#ffffff",
-        custom_address = "",
-        x = 5,
-        http_token = "",
-        font_size = 16,
-        height = 40
-    })
-
-    -- 控件 2: custom_button
-    local widget_2 = widgets_new_button.new(container, {
-        enable_page_navigation = false,
-        color = "#ffffff",
-        border_width = 2,
-        design_mode = false,
-        event_action = "写入绑定数据点",
-        http_url = "",
-        http_data_type = "实时数据",
-        label = "Button",
-        compare_operator = "大于",
-        custom_value = "",
-        true_color = "#ffffff",
-        target_page_name = "",
-        false_bg_color = "#ffffff",
-        width = 100,
-        compare_value = "0",
-        bind_point = "",
-        instance_name = "",
-        y = 0,
-        bg_color = "#007acc",
-        enabled = true,
-        alignment = "center",
-        websocket_url = "",
-        navigation_action = "goto_page",
-        border_color = "#007acc",
-        border_side = 2,
-        target_page_index = 1,
-        true_bg_color = "#ffffff",
-        false_color = "#ffffff",
-        custom_address = "",
-        x = 919,
-        http_token = "",
-        font_size = 16,
-        height = 40
+        x = 273,
+        api_server = "192.168.0.68"
     })
 
     return container
